@@ -47,6 +47,7 @@ class SqlClass extends SqlClassCommon {
 		$this->quoteChars = array(
 			"mysql"		=>	"`",
 			"postgres"	=>	'"',
+			"odbc"		=>	'"',
 			"mssql"		=>	array("[","]"),
 		);
 
@@ -81,6 +82,10 @@ class SqlClass extends SqlClassCommon {
 				$connect .= "password=" . $options["password"] . " ";
 				$connect .= "dbname= " . $options["database"] . " ";
 				$this->server = pg_connect($connect,PGSQL_CONNECT_FORCE_NEW);
+			break;
+
+			case "odbc":
+				$this->server = odbc_connect($options["server"], $options["username"], $options["password"]);
 			break;
 
 			case "mssql":
@@ -236,6 +241,16 @@ class SqlClass extends SqlClassCommon {
 				}
 			break;
 
+			case "odbc":
+				if(!$result = odbc_prepare($this->server,$query)) {
+					$this->error();
+				}
+				$params = $this->toArray($params);
+				if(!odbc_execute($result,$params)) {
+					$this->error();
+				}
+			break;
+
 			case "mssql":
 				if(!$result = mssql_query($preparedQuery,$this->server)) {
 					$this->error();
@@ -333,6 +348,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "odbc":
 				$query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
 			break;
 
@@ -350,6 +366,7 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 			case "postgres":
+			case "odbc":
 			case "mssql":
 				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
 			break;
@@ -380,6 +397,10 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 			case "postgres":
 				$query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
+			break;
+
+			case "odbc":
+				$query = preg_replace("/\bLIMIT\s+([0-9]+)\b/i","\nFETCH FIRST $1 ROWS ONLY\n",$query);
 			break;
 
 		}
@@ -509,6 +530,7 @@ class SqlClass extends SqlClassCommon {
 							$value = pg_escape_literal($this->server,$val);
 						break;
 
+						case "odbc":
 						case "mssql":
 							$value = str_replace("'","''",$val);
 						break;
@@ -618,6 +640,10 @@ class SqlClass extends SqlClassCommon {
 				$errorMsg = pg_last_error($this->server);
 			break;
 
+			case "odbc":
+				$errorMsg = odbc_errormsg($this->server);
+			break;
+
 			case "mssql":
 				$errorMsg = mssql_get_last_message();
 			break;
@@ -684,6 +710,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "odbc":
 
 				$fields = "";
 				$first = reset($params);
@@ -928,13 +955,17 @@ class SqlClass extends SqlClassCommon {
 
 		/**
 		 * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
+		 * Not all engines support this though, so we have to check which mode we are in
 		 */
-		if($where == self::NO_WHERE_CLAUSE) {
+		if($where == self::NO_WHERE_CLAUSE && $this->mode != "odbc") {
 			$query = "TRUNCATE TABLE " . $tableName;
 
 		} else {
-			$query = "DELETE FROM " . $tableName . "
-				WHERE " . $this->where($where,$params);
+			$query = "DELETE FROM " . $tableName . " ";
+
+			if($where != self::NO_WHERE_CLAUSE) {
+				$query .= "WHERE " . $this->where($where,$params);
+			}
 
 		}
 
@@ -965,10 +996,13 @@ class SqlClass extends SqlClassCommon {
 				$row = pg_fetch_assoc($result);
 			break;
 
+			case "odbc":
+				$row = odbc_fetch_array($result);
+			break;
+
 			case "mssql":
 				$row = mssql_fetch_assoc($result);
 			break;
-
 
 		}
 
@@ -1036,10 +1070,14 @@ class SqlClass extends SqlClassCommon {
 				$value = pg_fetch_result($result,$row,$col);
 			break;
 
+			case "odbc":
+				odbc_fetch_row($result,($row + 1));
+				$value = odbc_result($result,($col + 1));
+			break;
+
 			case "mssql":
 				$value = mssql_result($result,$row,$col);
 			break;
-
 
 		}
 
@@ -1100,10 +1138,16 @@ class SqlClass extends SqlClassCommon {
  		}
 
 		switch($this->mode) {
+
 			case "mysql":
 			case "postgres":
 				$query .= "LIMIT 1";
 			break;
+
+			case "odbc":
+				$query .= "FETCH FIRST 1 ROW ONLY";
+			break;
+
 		}
 
 		$result = $this->query($query,$params);
@@ -1227,6 +1271,11 @@ class SqlClass extends SqlClassCommon {
 				pg_result_seek($result,$row);
 			break;
 
+			case "odbc":
+				# This actually does a seek and fetch, so although the rows are numbered 1 higher than other databases, this will still work
+				odbc_fetch_row($result,$row);
+			break;
+
 			case "mssql":
 				mssql_data_seek($result,$row);
 			break;
@@ -1240,6 +1289,11 @@ class SqlClass extends SqlClassCommon {
 	 * Quote a field with the appropriate characters for this mode
 	 */
 	public function quoteField($field) {
+
+		# The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
+		if($this->mode == "odbc") {
+			return $field;
+		}
 
 		$field = trim($field);
 
@@ -1266,6 +1320,11 @@ class SqlClass extends SqlClassCommon {
 	 * Quote a table with the appropriate characters for this mode
 	 */
 	public function quoteTable($table) {
+
+		# The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
+		if($this->mode == "odbc") {
+			return $table;
+		}
 
 		$table = trim($table);
 
@@ -1348,6 +1407,11 @@ class SqlClass extends SqlClassCommon {
 				$result = pg_close($this->server);
 			break;
 
+			case "odbc":
+				odbc_close($this->server);
+				$result = true;
+			break;
+
 			case "mssql":
 				$result = mssql_close($this->server);
 			break;
@@ -1364,7 +1428,13 @@ class SqlClass extends SqlClassCommon {
 	 */
 	public function __destruct() {
 
-		$this->disconnect();
+		/**
+		 * Don't automatically close odbc connections, as odbc_connect() re-uses connections with the same credentials
+		 * So closing here could affect another instance of the sql class
+		 */
+		if($this->mode != "odbc") {
+			$this->disconnect();
+		}
 
 	}
 
