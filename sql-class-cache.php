@@ -16,6 +16,7 @@ class SqlClassCache extends SqlClassCommon {
 
 	public  $totalRows;     # The total number of rows
 	public  $nextRow;       # The number of the next row to fetch
+	public  $rowLimit;      # The maximum number of rows that we permit to cache
 
 	public  $timeout;       # How long the data should be cached for
 	public  $cacheTime;     # The time that the data was cached at
@@ -29,6 +30,8 @@ class SqlClassCache extends SqlClassCommon {
 			"query"         =>  false,
 			"params"        =>  false,
 			"timeout"       =>  self::DAY,
+			"limit"         =>  10000,
+			"directories"   =>  3,
 		));
 
 		$this->sql = $options["sql"];
@@ -40,9 +43,20 @@ class SqlClassCache extends SqlClassCommon {
 		# Create the hash of the query to use as an identifier
 		$this->hash = sha1($this->query . print_r($this->params,1));
 
-		$this->dir = $options["dir"] . "/" . $this->hash;
+		/**
+		 * Create the path to the cache directory
+		 * Adding the number of directories specified in the options
+		 * This is because most filesystems place a limit on how many links you can have within a directory,
+		 * so this reduces that problem by spliting the cache directories into subdirectories
+		 */
+		$this->dir = $options["dir"] . "/";
+		for($i = 0; $i < $options["directories"]; $i++) {
+			$this->dir .= $this->hash[$i] . "/";
+		}
+		$this->dir .= $this->hash;
 
 		$this->timeout = $options["timeout"];
+		$this->rowLimit = round($options["limit"]);
 
 		# Ensure a cache directory exists for this query
 		if(!is_dir($this->dir)) {
@@ -115,6 +129,10 @@ class SqlClassCache extends SqlClassCommon {
 			file_put_contents($this->dir . "/" . $rowNum . ".row",$json);
 
 			$rowNum++;
+
+			if($this->rowLimit && $rowNum > $this->rowLimit) {
+				break;
+			}
 
 		}
 
