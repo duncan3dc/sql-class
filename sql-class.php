@@ -671,6 +671,7 @@ class SqlClass extends SqlClassCommon {
 			$preparedQuery .= $value;
 
 		}
+		unset($val);
 
 		$preparedQuery .= $tmpQuery;
 
