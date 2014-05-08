@@ -7,6 +7,8 @@ class SqlClass extends SqlClassCommon {
 
 	public  $server;                # The connection to the server
 
+	public  $tables;		# An array of tables defined
+
 	public  $output;                # Whether the class should output queries or not
 	public  $htmlMode;              # Whether the output should be html or plain text
 
@@ -24,6 +26,7 @@ class SqlClass extends SqlClassCommon {
 			"database"    =>  false,
 			"charset"     =>  "utf8",
 			"timezone"    =>  false,
+			"definitions" =>  array(),
 		));
 
 		$this->output = false;
@@ -44,13 +47,58 @@ class SqlClass extends SqlClassCommon {
 			$this->error();
 		}
 
+		$this->tables = array();
+
+		if($options["definitions"]) {
+			$this->definitions($options["definitions"]);
+		}
+
+	}
+
+
+	/*
+	 * Define which database each table is located in
+	 */
+	public function definitions($data) {
+
+		# Either specified as an array of tables
+		if(is_array($data)) {
+			$tables = $data;
+
+		# Or as an includable script with a $tables array defined in it
+		} else {
+			require($data);
+
+		}
+
+		$this->tables = array_merge($this->tables,$tables);
+
+	}
+
+
+	/**
+	 * Get the database that should be used for this table
+	 */
+	public function getTableDatabase($name) {
+
+		if(!$database = $this->tables[$name]) {
+			return false;
+		}
+
+		return $database;
+
 	}
 
 
 	/**
 	 * Get the full table name (including database)
+	 * If the database isn't passed then look it up first
 	 */
 	public function getTableName($name,$database=false) {
+
+		if(!$database) {
+			$database = $this->getTableDatabase($name);
+		}
 
 		if($database) {
 			$table = $this->quoteField($database) . "." . $this->quoteField($name);
@@ -82,6 +130,7 @@ class SqlClass extends SqlClassCommon {
 
 		$preparedQuery = $this->query_prepare($query,$params);
 		$this->preparedQuery = $preparedQuery;
+		$this->query_tableNames($query);
 
 		if($this->output) {
 			if($this->htmlMode) {
@@ -106,6 +155,22 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		return $result;
+
+	}
+
+
+	/**
+	 * Convert table references to full database/table names
+	 * This allows tables to be surrounded in braces, without specifying the database
+	 */
+	public function query_tableNames(&$query) {
+
+		while(preg_match("/{([^}]*)}/",$query,$matches)) {
+			$table = $this->getTableName($matches[1]);
+			$query = str_replace($matches[0],$table,$query);
+		}
+
+		return true;
 
 	}
 
