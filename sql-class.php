@@ -9,6 +9,8 @@ class SqlClass extends SqlClassCommon {
 
 	public  $tables;		# An array of tables defined
 
+	public  $allowNulls;		# A flag to indicate whether nulls should be useds or not
+
 	public  $log;			# The directory to log errors to
 
 	public  $output;                # Whether the class should output queries or not
@@ -33,6 +35,9 @@ class SqlClass extends SqlClassCommon {
 
 		$this->output = false;
 		$this->htmlMode = false;
+
+		# Don't allow nulls by default
+		$this->allowNulls = false;
 
 		# Don't log by default
 		$this->log = false;
@@ -261,9 +266,18 @@ class SqlClass extends SqlClassCommon {
 				break;
 
 				case "NULL":
-					$val = "";
+					# If nulls are allowed then set the value to be null and break out of the switch
+					if($this->allowNulls) {
+						$value = "NULL";
+						break;
 
-					# Interpret null values as an empty string
+					# If nulls aren't allowed then convert this value in the params array
+					} else {
+						$val = "";
+
+					}
+
+					# If nulls aren't allowed then interpret them as an empty string
 
 				default:
 					$value = $this->server->real_escape_string($val);
