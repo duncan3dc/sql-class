@@ -21,6 +21,8 @@ class SqlClassCache extends SqlClassCommon {
 	public  $timeout;       # How long the data should be cached for
 	public  $cacheTime;     # The time that the data was cached at
 
+	public  $indexMap;      # An array that maps the row index to it's position in the sorted array
+
 
 	public function __construct($options=false) {
 
@@ -71,6 +73,8 @@ class SqlClassCache extends SqlClassCommon {
 		$this->totalRows = file_get_contents($this->dir . "/.status");
 		$this->nextRow = 0;
 
+		$this->indexMap = false;
+
 	}
 
 
@@ -120,6 +124,7 @@ class SqlClassCache extends SqlClassCommon {
 		$this->cacheTime = time();
 
 		file_put_contents($this->dir . "/.status","0");
+		file_put_contents($this->dir . "/.sorted","{}");
 
 		$rowNum = 0;
 		while($row = $this->sql->fetch($this->result)) {
@@ -147,7 +152,11 @@ class SqlClassCache extends SqlClassCommon {
 			return false;
 		}
 
-		$rowIndex = $this->nextRow;
+		if($this->indexMap) {
+			$rowIndex = $this->indexMap[$this->nextRow];
+		} else {
+			$rowIndex = $this->nextRow;
+		}
 
 		$json = file_get_contents($this->dir . "/" . $rowIndex . ".row");
 
@@ -184,6 +193,43 @@ class SqlClassCache extends SqlClassCommon {
 		$val = $row[$col];
 
 		return $val;
+
+	}
+
+
+	public function orderBy($col,$desc=false) {
+
+		# Check if the data has already been sorted by this column
+		$json = file_get_contents($this->dir . "/.sorted");
+		$sorted = json_decode($json);
+		$this->indexMap = $sorted[$col];
+
+		# If the data hasn't already been sorted then create an index map for it now
+		if(!is_array($this->indexMap)) {
+
+			$sort = array();
+			$pos = 0;
+			$this->seek(0);
+			while($row = $this->fetch()) {
+				$sort[$pos] = $row[$col];
+				$pos++;
+			}
+			$this->seek(0);
+
+			asort($sort);
+			$this->indexMap = array_keys($sort);
+
+			$sorted[$col] = $this->indexMap;
+			$json = json_encode($sorted);
+			file_put_contents($this->dir . "/.sorted",$json);
+
+		}
+
+		if($desc) {
+			$this->indexMap = array_reverse($this->indexMap);
+		}
+
+		return true;
 
 	}
 
