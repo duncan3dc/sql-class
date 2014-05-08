@@ -12,6 +12,8 @@ class SqlClass extends SqlClassCommon {
 
 	public  $quoteChars;		# The characters used to alias field names
 
+	public  $attached;		# An array of the sqlite databases that have been attached
+
 	public  $tables;		# An array of tables defined
 
 	public  $allowNulls;		# A flag to indicate whether nulls should be useds or not
@@ -46,6 +48,7 @@ class SqlClass extends SqlClassCommon {
 			"postgres"	=>	'"',
 			"redshift"	=>	'"',
 			"odbc"		=>	'"',
+			"sqlite"	=>	"`",
 			"mssql"		=>	array("[","]"),
 		);
 
@@ -91,6 +94,10 @@ class SqlClass extends SqlClassCommon {
 				$this->server = odbc_connect($options["server"], $options["username"], $options["password"]);
 			break;
 
+			case "sqlite":
+				$this->server = new Sqlite3($options["database"]);
+			break;
+
 			case "mssql":
 				$this->server = mssql_connect($options["server"],$options["username"],$options["password"]);
 			break;
@@ -100,6 +107,8 @@ class SqlClass extends SqlClassCommon {
 		if(!$this->server) {
 			$this->error();
 		}
+
+		$this->attached = array();
 
 		$this->tables = array();
 
@@ -126,6 +135,33 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		$this->tables = array_merge($this->tables,$tables);
+
+	}
+
+
+	/**
+	 * Attach another sqlite database to the current connection
+	 */
+	public function attachDatabase($filename,$database=false) {
+
+		if($this->mode != "sqlite") {
+			throw new Exception("You can only attach databases when in sqlite mode");
+		}
+
+		if(!$database) {
+			$database = pathinfo($filename,PATHINFO_FILENAME);
+		}
+
+		$query = "ATTACH DATABASE '" . $filename . "' AS " . $this->quoteTable($database);
+		$result = $this->query($query);
+
+		if(!$result) {
+			$this->error();
+		}
+
+		$this->attached[$database] = $filename;
+
+		return $result;
 
 	}
 
@@ -264,6 +300,61 @@ class SqlClass extends SqlClassCommon {
 				}
 			break;
 
+			case "sqlite":
+
+				if(!is_array($params)) {
+					if(!$result = $this->server->query($preparedQuery)) {
+						$this->error();
+					}
+
+				} else {
+
+					$newQuery = "";
+					foreach($params as $key => $val) {
+						$pos = strpos($query,"?");
+						$newQuery .= substr($query,0,$pos);
+						$query = substr($query,$pos + 1);
+
+						$newQuery .= ":var" . $key;
+					}
+					$newQuery .= $query;
+
+					if(!$result = $this->server->prepare($newQuery)) {
+						$this->error();
+					}
+
+					foreach($params as $key => $val) {
+						switch(gettype($val)) {
+							case "boolean":
+							case "integer":
+								$type = SQLITE3_INTEGER;
+							break;
+							case "double":
+								$type = SQLITE3_FLOAT;
+							break;
+							case "NULL":
+								if($this->allowNulls) {
+									$type = SQLITE3_NULL;
+								} else {
+									$type = SQLITE3_TEXT;
+									$val = "";
+								}
+							break;
+							default:
+								$type = SQLITE3_TEXT;
+							break;
+						}
+
+						$result->bindValue(":var" . $key, $val, $type);
+					}
+
+					if(!$result = $result->execute()) {
+						$this->error();
+					}
+
+				}
+			break;
+
 			case "mssql":
 				if(!$result = mssql_query($preparedQuery,$this->server)) {
 					$this->error();
@@ -362,6 +453,7 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 			case "odbc":
+			case "sqlite":
 				$query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
 			break;
 
@@ -384,6 +476,10 @@ class SqlClass extends SqlClassCommon {
 			case "odbc":
 			case "mssql":
 				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
+			break;
+
+			case "sqlite":
+				$query = preg_replace("/\bSUBSTRING\(/","SUBSTR(",$query);
 			break;
 
 		}
@@ -413,6 +509,7 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 			case "postgres":
 			case "redshift":
+			case "sqlite":
 				$query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
 			break;
 
@@ -553,6 +650,10 @@ class SqlClass extends SqlClassCommon {
 							$value = str_replace("'","''",$val);
 						break;
 
+						case "sqlite":
+							$value = $this->server->escapeString($val);
+						break;
+
 						default:
 							$value = $val;
 						break;
@@ -663,10 +764,13 @@ class SqlClass extends SqlClassCommon {
 				$errorMsg = odbc_errormsg($this->server);
 			break;
 
+			case "sqlite":
+				$errorMsg = $this->server->lastErrorMsg() . " (" . $this->server->lastErrorCode() . ")";
+			break;
+
 			case "mssql":
 				$errorMsg = mssql_get_last_message();
 			break;
-
 
 		}
 
@@ -852,6 +956,13 @@ class SqlClass extends SqlClassCommon {
 				$id = pg_last_oid($result);
 			break;
 
+			case "sqlite":
+				$query = "SELECT last_insert_rowid() `id`";
+				$result = $this->query($query);
+				$row = $this->fetch($result);
+				$id = $row["id"];
+			break;
+
 		}
 
 		if(!$id) {
@@ -1029,6 +1140,10 @@ class SqlClass extends SqlClassCommon {
 				$row = odbc_fetch_array($result);
 			break;
 
+			case "sqlite":
+				$row = $result->fetchArray(SQLITE3_ASSOC);
+			break;
+
 			case "mssql":
 				$row = mssql_fetch_assoc($result);
 			break;
@@ -1090,6 +1205,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "sqlite":
 				$this->seek($result,$row);
 				$data = $this->fetch($result,true);
 				$value = $data[$col];
@@ -1172,6 +1288,7 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 			case "postgres":
 			case "redshift":
+			case "sqlite":
 				$query .= "LIMIT 1";
 			break;
 
@@ -1308,6 +1425,13 @@ class SqlClass extends SqlClassCommon {
 				odbc_fetch_row($result,$row);
 			break;
 
+			case "sqlite":
+				$result->reset();
+				for($i = 0; $i < $row; $i++) {
+					$this->fetch($result);
+				}
+			break;
+
 			case "mssql":
 				mssql_data_seek($result,$row);
 			break;
@@ -1432,6 +1556,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "sqlite":
 				$result = $this->server->close();
 			break;
 
