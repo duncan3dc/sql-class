@@ -5,16 +5,14 @@ abstract class SqlClassCommon {
 
 	/**
 	 * Parse the options array passed
-	 * Basically just merge the two arrays, giving user specified options the preference
-	 * Also ensures that each paramater in the user array is valid
+	 * Basically just merge the two arrays, giving non-default options the preference
+	 * Also ensures that each paramater in the options array is valid
 	 */
-	public function getOptions($userSpecified,$defaults) {
+	public function getOptions($options,$defaults) {
 
-		if(!is_array($userSpecified)) {
-			return $defaults;
-		}
+		$options = $this->toArray($options);
 
-		foreach($userSpecified as $key => $val) {
+		foreach($options as $key => $val) {
 			if(!array_key_exists($key,$defaults)) {
 				throw new Exception("Unknown parameter (" . $key . ")");
 			}
@@ -23,6 +21,18 @@ abstract class SqlClassCommon {
 
 		return $defaults;
 
+	}
+
+
+	/**
+	* Ensure the passed parameter is an array
+	* If not, create an empty array
+	*/
+	public function toArray($array) {
+		if(is_array($array)) {
+			return $array;
+		}
+		return array();
 	}
 
 
