@@ -3,6 +3,7 @@
 class SqlClass extends SqlClassCommon {
 
 	const   NO_WHERE_CLAUSE = 101;  # Allow queries to be created without a where cluase
+	const   USE_PHP_TIMEZONE = 102; # Set the database timezone to be the same as the php one
 
 	public  $server;                # The connection to the server
 
@@ -22,6 +23,7 @@ class SqlClass extends SqlClassCommon {
 			"password"    =>  "",
 			"database"    =>  false,
 			"charset"     =>  "utf8",
+			"timezone"    =>  false,
 		));
 
 		$this->output = false;
@@ -30,6 +32,12 @@ class SqlClass extends SqlClassCommon {
 		$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
 		if($options["charset"]) {
 			$this->server->set_charset($options["charset"]);
+		}
+		if($timezone = $options["timezone"]) {
+			if($timezone == self::USE_PHP_TIMEZONE) {
+				$timezone = ini_get("date.timezone");
+			}
+			$this->query("SET time_zone='" . $timezone . "'");
 		}
 
 		if(!$this->server) {
