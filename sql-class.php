@@ -7,7 +7,10 @@ class SqlClass extends SqlClassCommon {
 	const   INSERT_REPLACE = 103;   # Mysql extension to replace any existing records with a unique key match
 	const   INSERT_INSERT = 104;    # Mysql extension to ignore any existing records with a unique key match
 
+	public  $mode;			# The type of database we're connected to
 	public  $server;                # The connection to the server
+
+	public  $quoteChars;		# The characters used to alias field names
 
 	public  $tables;		# An array of tables defined
 
@@ -26,6 +29,7 @@ class SqlClass extends SqlClassCommon {
 	public function __construct($options=false) {
 
 		$options = $this->getOptions($options,array(
+			"mode"        =>  "mysql",
 			"hostname"    =>  "",
 			"username"    =>  "",
 			"password"    =>  "",
@@ -34,6 +38,15 @@ class SqlClass extends SqlClassCommon {
 			"timezone"    =>  false,
 			"definitions" =>  array(),
 		));
+
+		$this->mode = $options["mode"];
+		if(!in_array($this->mode,array("mysql"))) {
+			throw new Exception("Unsupported mode (" . $this->mode . ")");
+		}
+
+		$this->quoteChars = array(
+			"mysql"		=>	"`",
+		);
 
 		$this->output = false;
 		$this->htmlMode = false;
@@ -45,15 +58,19 @@ class SqlClass extends SqlClassCommon {
 		$this->log = false;
 		$this->logDir = "/tmp/sql-class-logs";
 
-		$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
-		if($options["charset"]) {
-			$this->server->set_charset($options["charset"]);
-		}
-		if($timezone = $options["timezone"]) {
-			if($timezone == self::USE_PHP_TIMEZONE) {
-				$timezone = ini_get("date.timezone");
-			}
-			$this->query("SET time_zone='" . $timezone . "'");
+		switch($this->mode) {
+			case "mysql":
+				$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
+				if($options["charset"]) {
+					$this->server->set_charset($options["charset"]);
+				}
+				if($timezone = $options["timezone"]) {
+					if($timezone == self::USE_PHP_TIMEZONE) {
+						$timezone = ini_get("date.timezone");
+					}
+					$this->query("SET time_zone='" . $timezone . "'");
+				}
+			break;
 		}
 
 		if(!$this->server) {
@@ -98,6 +115,15 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
+		# If this table's database depends on the mode
+		if(is_array($database)) {
+			if(array_key_exists($this->mode,$database)) {
+				$database = $database[$this->mode];
+			} else {
+				$database = $database["default"];
+			}
+		}
+
 		return $database;
 
 	}
@@ -139,6 +165,9 @@ class SqlClass extends SqlClassCommon {
 			$this->params = $params;
 		}
 
+		$this->query_quoteChars($query);
+		$this->query_functions($query);
+		$this->query_limit($query);
 		$this->query_paramArrays($query,$params);
 
 		$preparedQuery = $this->query_prepare($query,$params);
@@ -159,8 +188,14 @@ class SqlClass extends SqlClassCommon {
 			}
 		}
 
-		if(!$result = $this->server->query($preparedQuery)) {
-			$this->error();
+		switch($this->mode) {
+
+			case "mysql":
+				if(!$result = $this->server->query($preparedQuery)) {
+					$this->error();
+				}
+			break;
+
 		}
 
 		if(!$result) {
@@ -168,6 +203,122 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		return $result;
+
+	}
+
+
+	/**
+	 * Replace any quote characters used to the appropriate type for the current mode
+	 * This function attempts to ignore any instances that are surrounded by single quotes, as these should not be converted
+	 */
+	 public function query_quoteChars(&$query) {
+
+		$checked = array();
+
+		$chars = $this->quoteChars[$this->mode];
+		if(is_array($chars)) {
+			$newFrom = $chars[0];
+			$newTo = $chars[1];
+		} else {
+			$newFrom = $chars;
+			$newTo = $chars;
+		}
+
+		foreach($this->quoteChars as $mode => $chars) {
+			if($mode == $this->mode) {
+				continue;
+			}
+
+			if(is_array($chars)) {
+				$oldFrom = $chars[0];
+				$oldTo = $chars[1];
+			} else {
+				$oldFrom = $chars;
+				$oldTo = $chars;
+			}
+
+			if($oldFrom == $newFrom && $oldTo == $newTo) {
+				continue;
+			}
+
+			# Create part of the regex that will represent the quoted field we are trying to find
+			$match = preg_quote($oldFrom) . "([^" . preg_quote($oldTo) . "]*)" . preg_quote($oldTo);
+
+			# If we've already checked this regex then don't check it again
+			if(in_array($match,$checked)) {
+				continue;
+			}
+			$checked[] = $match;
+
+			/**
+			 * Break up the query by single quoted strings
+			 * This is because we don't want to modify the contents of these strings
+			 */
+			$parts = preg_split("/('[^']*')/",$query,null,PREG_SPLIT_DELIM_CAPTURE);
+			$query = "";
+			foreach($parts as $part) {
+
+				# If this part of the query isn't a string, then perform the replace on it
+				if($part[0] != "'") {
+
+					# If the replace was successful then override this part of the query with the new part
+					if($newPart = preg_replace("/" . $match . "/","$newFrom$1$newTo",$part)) {
+						$part = $newPart;
+					}
+				}
+
+				# Tag this part of the query onto the new query we are constructing
+				$query .= $part;
+
+			}
+
+		}
+
+		return true;
+
+	}
+
+
+	/**
+	 * Replace any non-standard functions with the appropriate function for the current mode
+	 */
+	public function query_functions(&$query) {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
+			break;
+
+		}
+
+		switch($this->mode) {
+
+			case "mysql":
+				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
+			break;
+
+		}
+
+		return true;
+
+	}
+
+
+	/**
+	 * Convert any limit usage
+	 */
+	public function query_limit(&$query) {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
+			break;
+
+		}
+
+		return true;
 
 	}
 
@@ -282,7 +433,18 @@ class SqlClass extends SqlClassCommon {
 					# If nulls aren't allowed then interpret them as an empty string
 
 				default:
-					$value = $this->server->real_escape_string($val);
+					switch($this->mode) {
+
+						case "mysql":
+							$value = $this->server->real_escape_string($val);
+						break;
+
+						default:
+							$value = $val;
+						break;
+
+					}
+
 					$value = "'" . $value . "'";
 				break;
 			}
@@ -364,10 +526,16 @@ class SqlClass extends SqlClassCommon {
 
 		$errorMsg = "";
 
-		if($this->server->connect_error) {
-			$errorMsg = $this->server->connect_error . " (" . $this->server->connect_errno . ")";
-		} else {
-			$errorMsg = $this->server->error . " (" . $this->server->errno . ")";
+		switch($this->mode) {
+
+			case "mysql":
+				if($this->server->connect_error) {
+					$errorMsg = $this->server->connect_error . " (" . $this->server->connect_errno . ")";
+				} else {
+					$errorMsg = $this->server->error . " (" . $this->server->errno . ")";
+				}
+			break;
+
 		}
 
 		return $errorMsg;
@@ -426,48 +594,68 @@ class SqlClass extends SqlClassCommon {
 
 	public function bulkInsert($table,$params,$extra=false) {
 
-		$fields = "";
-		$first = reset($params);
-		foreach($first as $key => $val) {
-			if($fields) {
-				$fields .= ",";
-			}
-			$fields .= $this->quoteField($key);
-		}
+		switch($this->mode) {
 
-		$newParams = array();
-		$values = "";
+			case "mysql":
 
-		foreach($params as $row) {
-			if($values) {
-				$values .= ",";
-			}
-			$values .= "(";
-			$first = true;
-
-			foreach($row as $key => $val) {
-				if($first) {
-					$first = false;
-				} else {
-					$values .= ",";
+				$fields = "";
+				$first = reset($params);
+				foreach($first as $key => $val) {
+					if($fields) {
+						$fields .= ",";
+					}
+					$fields .= $this->quoteField($key);
 				}
-				$values .= "?";
-				$newParams[] = $val;
-			}
-			$values .= ")";
+
+				$newParams = array();
+				$values = "";
+
+				foreach($params as $row) {
+					if($values) {
+						$values .= ",";
+					}
+					$values .= "(";
+					$first = true;
+
+					foreach($row as $key => $val) {
+						if($first) {
+							$first = false;
+						} else {
+							$values .= ",";
+						}
+						$values .= "?";
+						$newParams[] = $val;
+					}
+					$values .= ")";
+				}
+
+				$tableName = $this->getTableName($table);
+				if($extra == self::INSERT_REPLACE) {
+					$query = "REPLACE ";
+				} elseif($extra == self::INSERT_IGNORE) {
+					$query = "INSERT IGNORE ";
+				} else {
+					$query = "INSERT ";
+				}
+				$query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
+
+				$result = $this->query($query,$newParams);
+
+			break;
+
+			default:
+				$result = true;
+				foreach($params as $newParams) {
+					if(!$this->insert($table,$newParams)) {
+						$result = false;
+						break;
+					}
+				}
+			break;
+
 		}
 
-		$tableName = $this->getTableName($table);
-		if($extra == self::INSERT_REPLACE) {
-			$query = "REPLACE ";
-		} elseif($extra == self::INSERT_IGNORE) {
-			$query = "INSERT IGNORE ";
-		} else {
-			$query = "INSERT ";
-		}
-		$query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
-
-		if(!$result = $this->query($query,$newParams)) {
+		if(!$result) {
 			$this->error();
 		}
 
@@ -483,8 +671,16 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
-		if(!$id = $this->server->insert_id) {
-			throw new Exception("Failed to get the last inserted row id");
+		$id = false;
+
+		switch($this->mode) {
+			case "mysql":
+				$id = $this->server->insert_id;
+			break;
+		}
+
+		if(!$id) {
+			throw new Exception("Failed to retrieve the last inserted row id");
 		}
 
 		return $id;
@@ -639,7 +835,13 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
-		$row = $result->fetch_assoc();
+		switch($this->mode) {
+
+			case "mysql":
+				$row = $result->fetch_assoc();
+			break;
+
+		}
 
 		# If the fetch fails then there are no rows left to retrieve
 		if(!$row) {
@@ -693,9 +895,15 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
-		$this->seek($result,$row);
-		$data = $this->fetch($result,true);
-		$value = $data[$col];
+		switch($this->mode) {
+
+			case "mysql":
+				$this->seek($result,$row);
+				$data = $this->fetch($result,true);
+				$value = $data[$col];
+			break;
+
+		}
 
 		$value = rtrim($value);
 
@@ -747,7 +955,11 @@ class SqlClass extends SqlClassCommon {
 			$query .= $this->orderBy($orderBy) . " ";
  		}
 
-		$query .= "LIMIT 1";
+		switch($this->mode) {
+			case "mysql":
+				$query .= "LIMIT 1";
+			break;
+		}
 
 		$result = $this->query($query,$params);
 
@@ -860,19 +1072,37 @@ class SqlClass extends SqlClassCommon {
 	 */
 	public function seek(&$result,$row) {
 
-		$result->data_seek($row);
+		switch($this->mode) {
+
+			case "mysql":
+				$result->data_seek($row);
+			break;
+
+		}
 
 	}
 
 
 	/**
-	 * Quote a field with the appropriate characters
+	 * Quote a field with the appropriate characters for this mode
 	 */
 	public function quoteField($field) {
 
 		$field = trim($field);
 
-		$quoted = "`" . $field . "`";
+		$chars = $this->quoteChars[$this->mode];
+
+		if(is_array($chars)) {
+			$from = $chars[0];
+			$to = $chars[1];
+
+		} else {
+			$from = $chars;
+			$to = $chars;
+
+		}
+
+		$quoted = $from . $field . $to;
 
 		return $quoted;
 
@@ -880,13 +1110,25 @@ class SqlClass extends SqlClassCommon {
 
 
 	/**
-	 * Quote a table with the appropriate characters
+	 * Quote a table with the appropriate characters for this mode
 	 */
 	public function quoteTable($table) {
 
 		$table = trim($table);
 
-		$quoted = "`" . $table . "`";
+		$chars = $this->quoteChars[$this->mode];
+
+		if(is_array($chars)) {
+			$from = $chars[0];
+			$to = $chars[1];
+
+		} else {
+			$from = $chars;
+			$to = $chars;
+
+		}
+
+		$quoted = $from . $table . $to;
 
 		return $quoted;
 
@@ -902,7 +1144,13 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
-		$result = $this->server->close();
+		switch($this->mode) {
+
+			case "mysql":
+				$result = $this->server->close();
+			break;
+
+		}
 
 		return $result;
 
