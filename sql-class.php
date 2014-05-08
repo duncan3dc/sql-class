@@ -46,6 +46,7 @@ class SqlClass extends SqlClassCommon {
 
 		$this->quoteChars = array(
 			"mysql"		=>	"`",
+			"mssql"		=>	array("[","]"),
 		);
 
 		$this->output = false;
@@ -59,6 +60,7 @@ class SqlClass extends SqlClassCommon {
 		$this->logDir = "/tmp/sql-class-logs";
 
 		switch($this->mode) {
+
 			case "mysql":
 				$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
 				if($options["charset"]) {
@@ -71,6 +73,11 @@ class SqlClass extends SqlClassCommon {
 					$this->query("SET time_zone='" . $timezone . "'");
 				}
 			break;
+
+			case "mssql":
+				$this->server = mssql_connect($options["server"],$options["username"],$options["password"]);
+			break;
+
 		}
 
 		if(!$this->server) {
@@ -140,7 +147,14 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		if($database) {
-			$table = $this->quoteField($database) . "." . $this->quoteField($name);
+			switch($this->mode) {
+				case "mssql":
+					$table = $this->quoteField($database) . ".dbo." . $this->quoteField($name);
+				break;
+				default:
+					$table = $this->quoteField($database) . "." . $this->quoteField($name);
+				break;
+			}
 
 		} else {
 			$table = $name;
@@ -192,6 +206,12 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 				if(!$result = $this->server->query($preparedQuery)) {
+					$this->error();
+				}
+			break;
+
+			case "mssql":
+				if(!$result = mssql_query($preparedQuery,$this->server)) {
 					$this->error();
 				}
 			break;
@@ -290,11 +310,16 @@ class SqlClass extends SqlClassCommon {
 				$query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
 			break;
 
+			case "mssql":
+				$query = preg_replace("/\bIFNULL\(/","ISNULL(",$query);
+			break;
+
 		}
 
 		switch($this->mode) {
 
 			case "mysql":
+			case "mssql":
 				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
 			break;
 
@@ -307,6 +332,7 @@ class SqlClass extends SqlClassCommon {
 
 	/**
 	 * Convert any limit usage
+	 * Doesn't work with the mssql variety
 	 */
 	public function query_limit(&$query) {
 
@@ -438,6 +464,10 @@ class SqlClass extends SqlClassCommon {
 						case "mysql":
 							$value = $this->server->real_escape_string($val);
 						break;
+						case "mssql":
+							$value = str_replace("'","''",$val);
+						break;
+
 
 						default:
 							$value = $val;
@@ -535,6 +565,10 @@ class SqlClass extends SqlClassCommon {
 					$errorMsg = $this->server->error . " (" . $this->server->errno . ")";
 				}
 			break;
+			case "mssql":
+				$errorMsg = mssql_get_last_message();
+			break;
+
 
 		}
 
@@ -840,6 +874,10 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 				$row = $result->fetch_assoc();
 			break;
+			case "mssql":
+				$row = mssql_fetch_assoc($result);
+			break;
+
 
 		}
 
@@ -902,6 +940,10 @@ class SqlClass extends SqlClassCommon {
 				$data = $this->fetch($result,true);
 				$value = $data[$col];
 			break;
+			case "mssql":
+				$value = mssql_result($result,$row,$col);
+			break;
+
 
 		}
 
@@ -943,7 +985,13 @@ class SqlClass extends SqlClassCommon {
 
 		$table = $this->getTableName($table);
 
-		$query = "SELECT " . $this->selectFields($fields);
+		$query = "SELECT ";
+
+		if($this->mode == "mssql") {
+			$query .= "TOP 1 ";
+		}
+
+		$query .= $this->selectFields($fields);
 
 		$query .= " FROM " . $table . " ";
 
@@ -1078,6 +1126,10 @@ class SqlClass extends SqlClassCommon {
 				$result->data_seek($row);
 			break;
 
+			case "mssql":
+				mssql_data_seek($result,$row);
+			break;
+
 		}
 
 	}
@@ -1184,6 +1236,10 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 				$result = $this->server->close();
+			break;
+
+			case "mssql":
+				$result = mssql_close($this->server);
 			break;
 
 		}
