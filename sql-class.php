@@ -47,6 +47,7 @@ class SqlClass extends SqlClassCommon {
 		$this->quoteChars = array(
 			"mysql"		=>	"`",
 			"postgres"	=>	'"',
+			"redshift"	=>	'"',
 			"odbc"		=>	'"',
 			"mssql"		=>	array("[","]"),
 		);
@@ -77,6 +78,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$connect = "host=" . $options["server"] . " ";
 				$connect .= "user=" . $options["username"] . " ";
 				$connect .= "password=" . $options["password"] . " ";
@@ -221,16 +223,26 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 				if(!$result = $this->server->query($preparedQuery)) {
 					$this->error();
+				$noParams = false;
+				if($this->mode == "redshift" && count($params) > 32767) {
+					$noParams = true;
+				}
+
 				}
 			break;
 
 			case "postgres":
+			case "redshift":
 				$tmpQuery = $query;
 				$query = "";
 
 				$i = 1;
 				while($pos = strpos($tmpQuery,"?")) {
-					$query .= substr($tmpQuery,0,$pos) . "\$" . $i++;
+					if($noParams) {
+						$query .= substr($tmpQuery,0,$pos) . "'" . pg_escape_string(array_shift($params)) . "'";
+					} else {
+						$query .= substr($tmpQuery,0,$pos) . "\$" . $i++;
+					}
 					$tmpQuery = substr($tmpQuery,$pos + 1);
 				}
 				$query .= $tmpQuery;
@@ -353,6 +365,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$query = preg_replace("/\bI[FS]NULL\(/","COALESCE(",$query);
 			break;
 
@@ -366,6 +379,7 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 			case "postgres":
+			case "redshift":
 			case "odbc":
 			case "mssql":
 				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
@@ -376,6 +390,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "postgres":
+			case "redshift":
 				$query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/","TO_CHAR(ABSTIME($1),$3)",$query);
 			break;
 
@@ -396,6 +411,7 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 			case "postgres":
+			case "redshift":
 				$query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
 			break;
 
@@ -527,6 +543,7 @@ class SqlClass extends SqlClassCommon {
 						break;
 
 						case "postgres":
+						case "redshift":
 							$value = pg_escape_literal($this->server,$val);
 						break;
 
@@ -542,7 +559,7 @@ class SqlClass extends SqlClassCommon {
 					}
 
 					# Postgres does it's own quoting
-					if($this->mode != "postgres") {
+					if(in_array($this->mode,array("postgres","redshift"))) {
 						$value = "'" . $value . "'";
 					}
 
@@ -637,6 +654,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$errorMsg = pg_last_error($this->server);
 			break;
 
@@ -710,6 +728,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "redshift":
 			case "odbc":
 
 				$fields = "";
@@ -722,6 +741,10 @@ class SqlClass extends SqlClassCommon {
 				}
 
 				$newParams = array();
+				$noParams = false;
+				if($this->mode == "redshift" && (count($params) * count($first)) > 32767) {
+					$noParams = true;
+				}
 				$values = "";
 
 				foreach($params as $row) {
@@ -737,8 +760,12 @@ class SqlClass extends SqlClassCommon {
 						} else {
 							$values .= ",";
 						}
-						$values .= "?";
-						$newParams[] = $val;
+						if($noParams) {
+							$values .= "'" . pg_escape_string($val) . "'";
+						} else {
+							$values .= "?";
+							$newParams[] = $val;
+						}
 					}
 					$values .= ")";
 				}
@@ -993,6 +1020,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$row = pg_fetch_assoc($result);
 			break;
 
@@ -1067,6 +1095,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$value = pg_fetch_result($result,$row,$col);
 			break;
 
@@ -1141,6 +1170,7 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 			case "postgres":
+			case "redshift":
 				$query .= "LIMIT 1";
 			break;
 
@@ -1268,6 +1298,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				pg_result_seek($result,$row);
 			break;
 
@@ -1329,7 +1360,7 @@ class SqlClass extends SqlClassCommon {
 		$table = trim($table);
 
 		# There is a standard function for quoting postgres table names
-		if($this->mode == "postgres") {
+		if(in_array($this->mode,array("postgres","redshift"))) {
 			return pg_escape_identifier($this->server,$table);
 		}
 
@@ -1404,6 +1435,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "postgres":
+			case "redshift":
 				$result = pg_close($this->server);
 			break;
 
