@@ -40,7 +40,7 @@ class SqlClass extends SqlClassCommon {
 		));
 
 		$this->mode = $options["mode"];
-		if(!in_array($this->mode,array("mysql"))) {
+		if(!in_array($this->mode,array("mysql","postgres","odbc","mssql"))) {
 			throw new Exception("Unsupported mode (" . $this->mode . ")");
 		}
 
