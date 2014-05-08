@@ -1055,18 +1055,6 @@ class SqlClass extends SqlClassCommon {
 
 			# Special processing for arrays
 			} else {
-				$valid = array(
-					"<"	=>	"<",
-					"<="	=>	"<=",
-					"=<"	=>	"<=",
-					">"	=>	">",
-					">="	=>	">=",
-					"=>"	=>	">=",
-					"="	=>	"=",
-					"<>"	=>	"<>",
-					"!="	=>	"<>",
-				);
-
 				$first = reset($val);
 				$second = next($val);
 
@@ -1076,7 +1064,7 @@ class SqlClass extends SqlClassCommon {
 					$params[] = $first;
 
 				# If the array is only two elements long and the first element is a valid comparison operator then use it as such
-				} elseif(count($val) == 2 && in_array($first,$valid)) {
+				} elseif(count($val) == 2 && in_array($first,array("<","<=",">",">=","=","<>"))) {
 					$query .= $first . "? ";
 					$params[] = $second;
 
