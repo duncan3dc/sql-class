@@ -4,6 +4,8 @@ class SqlClass extends SqlClassCommon {
 
 	const   NO_WHERE_CLAUSE = 101;  # Allow queries to be created without a where cluase
 	const   USE_PHP_TIMEZONE = 102; # Set the database timezone to be the same as the php one
+	const   INSERT_REPLACE = 103;   # Mysql extension to replace any existing records with a unique key match
+	const   INSERT_INSERT = 104;    # Mysql extension to ignore any existing records with a unique key match
 
 	public  $server;                # The connection to the server
 
@@ -421,6 +423,58 @@ class SqlClass extends SqlClassCommon {
 		return $result;
 
 	}
+
+	public function bulkInsert($table,$params,$extra=false) {
+
+		$fields = "";
+		$first = reset($params);
+		foreach($first as $key => $val) {
+			if($fields) {
+				$fields .= ",";
+			}
+			$fields .= $this->quoteField($key);
+		}
+
+		$newParams = array();
+		$values = "";
+
+		foreach($params as $row) {
+			if($values) {
+				$values .= ",";
+			}
+			$values .= "(";
+			$first = true;
+
+			foreach($row as $key => $val) {
+				if($first) {
+					$first = false;
+				} else {
+					$values .= ",";
+				}
+				$values .= "?";
+				$newParams[] = $val;
+			}
+			$values .= ")";
+		}
+
+		$tableName = $this->getTableName($table);
+		if($extra == self::INSERT_REPLACE) {
+			$query = "REPLACE ";
+		} elseif($extra == self::INSERT_IGNORE) {
+			$query = "INSERT IGNORE ";
+		} else {
+			$query = "INSERT ";
+		}
+		$query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
+
+		if(!$result = $this->query($query,$newParams)) {
+			$this->error();
+		}
+
+		return $result;
+
+	}
+
 
 
 	public function getId($result) {
