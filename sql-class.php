@@ -40,9 +40,6 @@ class SqlClass extends SqlClassCommon {
 		));
 
 		$this->mode = $options["mode"];
-		if(!in_array($this->mode,array("mysql","postgres","odbc","mssql"))) {
-			throw new Exception("Unsupported mode (" . $this->mode . ")");
-		}
 
 		$this->quoteChars = array(
 			"mysql"		=>	"`",
@@ -51,6 +48,10 @@ class SqlClass extends SqlClassCommon {
 			"odbc"		=>	'"',
 			"mssql"		=>	array("[","]"),
 		);
+
+		if(!array_key_exists($this->mode,$this->quoteChars)) {
+			throw new Exception("Unsupported mode (" . $this->mode . ")");
+		}
 
 		$this->output = false;
 		$this->htmlMode = false;
