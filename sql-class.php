@@ -1545,6 +1545,80 @@ class SqlClass extends SqlClassCommon {
 
 
 	/**
+	 * Lock some tables for exlusive write access
+	 * But allow read access to other processes
+	 */
+	public function lockTables($tables) {
+
+		/**
+		 * Unlock any previously locked tables
+		 * This is done to provide consistency across different modes, as mysql only allows one single lock over multiple tables
+		 * Also the odbc only allows all locks to be released, not individual tables. So it makes sense to force the batching of lock/unlock operations
+		 */
+		$this->unlockTables();
+
+		$tables = $this->toArray($tables);
+
+		if($this->mode == "odbc") {
+			foreach($tables as $table) {
+				$table = $this->getTableName($table);
+				$query = "LOCK TABLE " . $table . " IN EXCLUSIVE MODE ALLOW READ";
+				$this->query($query);
+			}
+
+			# If none of the locks failed then report success
+			return true;
+		}
+
+		foreach($tables as &$table) {
+			$table = $this->getTableName($table);
+		}
+		unset($table);
+
+		if($this->mode == "mysql") {
+			$query = "LOCK TABLES " . implode(",",$tables) . " WRITE";
+			return $this->query($query);
+		}
+
+		if(in_array($this->mode,array("postgres","redshift"))) {
+			$query = "LOCK TABLE " . implode(",",$tables) . " IN EXCLUSIVE MODE";
+			return $this->query($query);
+		}
+
+		throw new Exception("lockTables() not supported in this mode (" . $this->mode . ")",SQL_NOT_SUPPORTED);
+
+	}
+
+
+	/**
+	 * Unlock all tables previously locked
+	 */
+	public function unlockTables() {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$query = "UNLOCK TABLES";
+			break;
+
+			case "postgres":
+			case "redshift":
+			case "odbc":
+				$query = "COMMIT";
+			break;
+
+			default:
+				throw new Exception("unlockTables() not supported in this mode (" . $this->mode . ")",SQL_NOT_SUPPORTED);
+			break;
+
+		}
+
+		return $this->query($query);
+
+	}
+
+
+	/**
 	 * Close the sql connection
 	 */
 	public function disconnect() {
