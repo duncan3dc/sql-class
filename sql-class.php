@@ -2,6 +2,8 @@
 
 class SqlClass extends SqlClassCommon {
 
+	const   NO_WHERE_CLAUSE = 101;  # Allow queries to be created without a where cluase
+
 	public  $server;                # The connection to the server
 
 	public  $output;                # Whether the class should output queries or not
@@ -237,7 +239,9 @@ class SqlClass extends SqlClassCommon {
 
 		$query = substr($query,0,-1) . " ";
 
-		$query .= "WHERE " . $this->where($where,$params);
+		if($where != self::NO_WHERE_CLAUSE) {
+			$query .= "WHERE " . $this->where($where,$params);
+		}
 
 		$result = $this->query($query,$params);
 
@@ -404,8 +408,17 @@ class SqlClass extends SqlClassCommon {
 
 		$tableName = $this->getTableName($table);
 
-		$query = "DELETE FROM " . $tableName . "
-			WHERE " . $this->where($where,$params);
+		/**
+		 * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
+		 */
+		if($where == self::NO_WHERE_CLAUSE) {
+			$query = "TRUNCATE TABLE " . $tableName;
+
+		} else {
+			$query = "DELETE FROM " . $tableName . "
+				WHERE " . $this->where($where,$params);
+
+		}
 
 		$result = $this->query($query,$params);
 
@@ -524,7 +537,9 @@ class SqlClass extends SqlClassCommon {
 
 		$query .= " FROM " . $table . " ";
 
-		$query .= "WHERE " . $this->where($where,$params);
+		if($where != self::NO_WHERE_CLAUSE) {
+			$query .= "WHERE " . $this->where($where,$params);
+		}
 
 		if($orderBy) {
 			$query .= $this->orderBy($orderBy) . " ";
@@ -563,7 +578,9 @@ class SqlClass extends SqlClassCommon {
 
 		$query .= " FROM " . $table . " ";
 
-		$query .= "WHERE " . $this->where($where,$params);
+		if($where != self::NO_WHERE_CLAUSE) {
+			$query .= "WHERE " . $this->where($where,$params);
+		}
 
 		if($orderBy) {
 			$query .= $this->orderBy($orderBy) . " ";
