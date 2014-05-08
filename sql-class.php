@@ -6,6 +6,9 @@ class SqlClass extends SqlClassCommon {
 	const   USE_PHP_TIMEZONE = 102; # Set the database timezone to be the same as the php one
 	const   INSERT_REPLACE = 103;   # Mysql extension to replace any existing records with a unique key match
 	const   INSERT_INSERT = 104;    # Mysql extension to ignore any existing records with a unique key match
+	const   TRIGGER_INSERT = 105;   # A trigger to be run after a successful insert
+	const   TRIGGER_UPDATE = 106;   # A trigger to be run after a successful update
+	const   TRIGGER_DELETE = 107;   # A trigger to be run after a successful delete
 
 	public  $mode;			# The type of database we're connected to
 	public  $server;                # The connection to the server
@@ -17,6 +20,8 @@ class SqlClass extends SqlClassCommon {
 	public  $tables;		# An array of tables defined
 
 	public  $allowNulls;		# A flag to indicate whether nulls should be useds or not
+
+	public  $triggers;		# An array of triggers that have been registered
 
 	public  $transaction;		# A flag to indicate whether we are currently in transaction mode or not
 
@@ -46,12 +51,12 @@ class SqlClass extends SqlClassCommon {
 		$this->mode = $options["mode"];
 
 		$this->quoteChars = array(
-			"mysql"		=>	"`",
-			"postgres"	=>	'"',
-			"redshift"	=>	'"',
-			"odbc"		=>	'"',
-			"sqlite"	=>	"`",
-			"mssql"		=>	array("[","]"),
+			"mysql"      =>  "`",
+			"postgres"   =>  '"',
+			"redshift"   =>  '"',
+			"odbc"       =>  '"',
+			"sqlite"     =>  "`",
+			"mssql"      =>  array("[","]"),
 		);
 
 		if(!array_key_exists($this->mode,$this->quoteChars)) {
@@ -60,6 +65,13 @@ class SqlClass extends SqlClassCommon {
 
 		$this->output = false;
 		$this->htmlMode = false;
+
+		# Create the empty triggers array, with each acceptable type
+		$this->triggers = array(
+			self::TRIGGER_INSERT => array(),
+			self::TRIGGER_UPDATE => array(),
+			self::TRIGGER_DELETE => array(),
+		);
 
 		# Don't allow nulls by default
 		$this->allowNulls = false;
@@ -802,6 +814,8 @@ class SqlClass extends SqlClassCommon {
 
 		$result = $this->query($query,$params);
 
+		$this->callTriggers(self::TRIGGER_UPDATE,$table,$set,$where);
+
 		return $result;
 
 	}
@@ -826,6 +840,8 @@ class SqlClass extends SqlClassCommon {
 		$query = "INSERT INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
 
 		$result = $this->query($query,$newParams);
+
+		$this->callTriggers(self::TRIGGER_INSERT,$table,$params);
 
 		return $result;
 
@@ -1113,6 +1129,8 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		$result = $this->query($query,$params);
+
+		$this->callTriggers(self::TRIGGER_DELETE,$table,$where);
 
 		return $result;
 
@@ -1778,6 +1796,49 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		return $this->query($query);
+
+	}
+
+
+	/**
+	 * Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)
+	 */
+	public function addTrigger($type,$table,$trigger) {
+
+		if(!array_key_exists($type,$this->triggers)) {
+			throw new Exception("Invalid trigger type specified");
+		}
+
+		$this->triggers[$type][$table][] = $trigger;
+
+	}
+
+
+	/**
+	 * Call any triggers that were previously registered using addTrigger()
+	 */
+	public function callTriggers($type,$table,$params1,$params2=false) {
+
+		$triggers = $this->triggers[$type][$table];
+
+		if(!is_array($triggers)) {
+			return true;
+		}
+
+		foreach($triggers as $trigger) {
+			$result = $trigger(array(
+				"sql"		=>	$this,
+				"type"		=>	$type,
+				"table"		=>	$table,
+				"params1"	=>	$params1,
+				"params2"	=>	$params2,
+			));
+			if(!$result) {
+				return false;
+			}
+		}
+
+		return true;
 
 	}
 
