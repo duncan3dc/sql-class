@@ -10,22 +10,25 @@ class SqlClass extends SqlClassCommon {
 	const   TRIGGER_UPDATE = 106;   # A trigger to be run after a successful update
 	const   TRIGGER_DELETE = 107;   # A trigger to be run after a successful delete
 
-	public  $mode;			# The type of database we're connected to
+	public  $mode;                  # The type of database we're connected to
 	public  $server;                # The connection to the server
 
-	public  $quoteChars;		# The characters used to alias field names
+	public  $quoteChars;            # The characters used to alias field names
 
-	public  $attached;		# An array of the sqlite databases that have been attached
+	public  $attached;              # An array of the sqlite databases that have been attached
 
-	public  $tables;		# An array of tables defined
+	public  $tables;                # An array of tables defined
 
-	public  $allowNulls;		# A flag to indicate whether nulls should be useds or not
+	public  $allowNulls;            # A flag to indicate whether nulls should be useds or not
 
-	public  $triggers;		# An array of triggers that have been registered
+	public  $cacheOptions;          # An array of options to pass when initiating an SqlClassCache instance
+	public  $cacheNext;             # Internal flag to indicate the next query we run should be done using cache
 
-	public  $transaction;		# A flag to indicate whether we are currently in transaction mode or not
+	public  $triggers;              # An array of triggers that have been registered
 
-	public  $log;			# The directory to log errors to
+	public  $transaction;           # A flag to indicate whether we are currently in transaction mode or not
+
+	public  $log;                   # The directory to log errors to
 
 	public  $output;                # Whether the class should output queries or not
 	public  $htmlMode;              # Whether the output should be html or plain text
@@ -129,6 +132,9 @@ class SqlClass extends SqlClassCommon {
 		if($options["definitions"]) {
 			$this->definitions($options["definitions"]);
 		}
+
+		$this->cacheOptions = array();
+		$this->cacheNext = false;
 
 	}
 
@@ -237,6 +243,12 @@ class SqlClass extends SqlClassCommon {
 	 * Execute an sql query
 	 */
 	public function query($query,$params=false) {
+
+		# If the next query should be cached then run the cache function instead
+		if($this->cacheNext) {
+			$this->cacheNext = false;
+			return $this->cache($query,$params);
+		}
 
 		$this->query = $query;
 		$this->params = false;
@@ -694,6 +706,26 @@ class SqlClass extends SqlClassCommon {
 	}
 
 
+	/**
+	 * Convienience method to create a cached query instance
+	 */
+	public function cache($query,$params=false,$timeout=false) {
+
+		$options = array_merge($this->cacheOptions,array(
+			"sql"     =>  $this,
+			"query"   =>  $query,
+			"params"  =>  $params,
+		));
+
+		if($timeout) {
+			$options["timeout"] = $timeout;
+		}
+
+		return new SqlClassCache($options);
+
+	}
+
+
 	public function error() {
 
 		# If logging is turned on then log the error details to the log directory
@@ -1142,6 +1174,11 @@ class SqlClass extends SqlClassCommon {
 	 */
 	public function _fetch(&$result) {
 
+		# If this is an object created by the cache class then run the fetch method directly on it
+		if(is_a($result,"SqlClassCache")) {
+			return $result->fetch($indexed);
+		}
+
 		# If the result resource is invalid then don't bother trying to fetch
 		if(!$result) {
 			return false;
@@ -1224,6 +1261,11 @@ class SqlClass extends SqlClassCommon {
 			return false;
 		}
 
+		# If this is an object created by the cache class then run the result method directly on it
+		if(is_a($result,"SqlClassCache")) {
+			return $result->result($row,$col);
+		}
+
 		switch($this->mode) {
 
 			case "mysql":
@@ -1270,12 +1312,36 @@ class SqlClass extends SqlClassCommon {
 
 
 	/**
+	 * Cached version of queryFetch()
+	 */
+	public function queryFetchC($query,$params=false,$indexed=false) {
+
+		$this->cacheNext = true;
+
+		return $this->queryFetch($query,$params,$indexed);
+
+	}
+
+
+	/**
 	 * Grab the first row from a table using the standard select statement
 	 * This is a convience method for a fieldSelect() where all fields are required
 	 */
 	public function select($table,$where,$orderBy=false) {
 
 		return $this->fieldSelect($table,"*",$where,$orderBy);
+
+	}
+
+
+	/**
+	 * Cached version of select()
+	 */
+	public function selectC($table,$where,$orderBy=false) {
+
+		$this->cacheNext = true;
+
+		return $this->select($table,$where,$orderBy);
 
 	}
 
@@ -1303,7 +1369,7 @@ class SqlClass extends SqlClassCommon {
 
 		if($orderBy) {
 			$query .= $this->orderBy($orderBy) . " ";
- 		}
+		}
 
 		switch($this->mode) {
 
@@ -1327,6 +1393,18 @@ class SqlClass extends SqlClassCommon {
 	}
 
 
+	/*
+	 * Cached version of fieldSelect()
+	 */
+	public function fieldSelectC($table,$fields,$where,$orderBy=false) {
+
+		$this->cacheNext = true;
+
+		return $this->fieldSelect($table,$fields,$where,$orderBy);
+
+	}
+
+
 	/**
 	 * Create a standard select statement and return the result
 	 * This is a convience method for a fieldSelectAll() where all fields are required
@@ -1334,6 +1412,18 @@ class SqlClass extends SqlClassCommon {
 	public function selectAll($table,$where,$orderBy=false) {
 
 		return $this->fieldSelectAll($table,"*",$where,$orderBy);
+
+	}
+
+
+	/*
+	 * Cached version of selectAll()
+	 */
+	public function selectAllC($table,$where,$orderBy=false) {
+
+		$this->cacheNext = true;
+
+		return $this->selectAll($table,$where,$orderBy);
 
 	}
 
@@ -1360,6 +1450,18 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		return $this->query($query,$params);
+
+	}
+
+
+	/*
+	 * Cached version of fieldSelectAll()
+	 */
+	public function fieldSelectAllC($table,$fields,$where,$orderBy=false) {
+
+		$this->cacheNext = true;
+
+		return $this->fieldSelectAll($table,$fields,$where,$orderBy);
 
 	}
 
@@ -1430,6 +1532,11 @@ class SqlClass extends SqlClassCommon {
 	 * Seek to a specific record of the result set
 	 */
 	public function seek(&$result,$row) {
+
+		# If this is an object created by the cache class then run the seek method directly on it
+		if(is_a($result,"SqlClassCache")) {
+			return $result->seek($row);
+		}
 
 		switch($this->mode) {
 
@@ -1827,11 +1934,11 @@ class SqlClass extends SqlClassCommon {
 
 		foreach($triggers as $trigger) {
 			$result = $trigger(array(
-				"sql"		=>	$this,
-				"type"		=>	$type,
-				"table"		=>	$table,
-				"params1"	=>	$params1,
-				"params2"	=>	$params2,
+				"sql"      =>  $this,
+				"type"     =>  $type,
+				"table"    =>  $table,
+				"params1"  =>  $params1,
+				"params2"  =>  $params2,
 			));
 			if(!$result) {
 				return false;
