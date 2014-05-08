@@ -249,11 +249,11 @@ class SqlClass extends SqlClassCommon {
 		$this->query_quoteChars($query);
 		$this->query_functions($query);
 		$this->query_limit($query);
+		$this->query_tableNames($query);
 		$this->query_paramArrays($query,$params);
 
 		$preparedQuery = $this->query_prepare($query,$params);
 		$this->preparedQuery = $preparedQuery;
-		$this->query_tableNames($query);
 
 		if($this->output) {
 			if($this->htmlMode) {
