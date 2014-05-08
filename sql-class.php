@@ -9,6 +9,8 @@ class SqlClass extends SqlClassCommon {
 
 	public  $tables;		# An array of tables defined
 
+	public  $log;			# The directory to log errors to
+
 	public  $output;                # Whether the class should output queries or not
 	public  $htmlMode;              # Whether the output should be html or plain text
 
@@ -31,6 +33,10 @@ class SqlClass extends SqlClassCommon {
 
 		$this->output = false;
 		$this->htmlMode = false;
+
+		# Don't log by default
+		$this->log = false;
+		$this->logDir = "/tmp/sql-class-logs";
 
 		$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
 		if($options["charset"]) {
@@ -278,7 +284,62 @@ class SqlClass extends SqlClassCommon {
 
 	public function error() {
 
+		# If logging is turned on then log the error details to the log directory
+		if($this->log) {
+			$this->logError();
+		}
+
 		throw new Exception($this->getError());
+
+	}
+
+
+	public function logError() {
+
+		if(!$this->log) {
+			return false;
+		}
+
+		# Ensure the log directory exists
+		if(!is_dir($this->logDir)) {
+			if(!mkdir($this->logDir,0775,true)) {
+				return false;
+			}
+		}
+
+		$logFile = date("Y-m-d_H-i-s") . ".log";
+
+		if(!$file = fopen($this->logDir . "/" . $logFile,"a")) {
+			return false;
+		}
+
+		fwrite($file,"Error: " . $this->getError() . "\n");
+
+		fwrite($file,"SQL ERROR\n");
+		if($this->query) {
+			fwrite($file,"Query: " . $this->query . "\n");
+		}
+		if($this->params) {
+			fwrite($file,"Params: " . print_r($this->params,1) . "\n");
+		}
+		if($this->preparedQuery) {
+			fwrite($file,"Prepared Query: " . $this->preparedQuery . "\n");
+		}
+		fwrite($file,"\n");
+
+		fwrite($file,print_r(debug_backtrace(),1));
+		fwrite($file,"\n\n");
+
+		fwrite($file,print_r($this,1));
+		fwrite($file,"\n\n");
+
+		fwrite($file,"-----------------------------------------------------------------------------\n");
+		fwrite($file,"-----------------------------------------------------------------------------\n");
+		fwrite($file,"\n\n");
+
+		fclose($file);
+
+		return $logFile;
 
 	}
 
