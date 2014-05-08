@@ -46,6 +46,7 @@ class SqlClass extends SqlClassCommon {
 
 		$this->quoteChars = array(
 			"mysql"		=>	"`",
+			"postgres"	=>	'"',
 			"mssql"		=>	array("[","]"),
 		);
 
@@ -72,6 +73,14 @@ class SqlClass extends SqlClassCommon {
 					}
 					$this->query("SET time_zone='" . $timezone . "'");
 				}
+			break;
+
+			case "postgres":
+				$connect = "host=" . $options["server"] . " ";
+				$connect .= "user=" . $options["username"] . " ";
+				$connect .= "password=" . $options["password"] . " ";
+				$connect .= "dbname= " . $options["database"] . " ";
+				$this->server = pg_connect($connect,PGSQL_CONNECT_FORCE_NEW);
 			break;
 
 			case "mssql":
@@ -210,6 +219,23 @@ class SqlClass extends SqlClassCommon {
 				}
 			break;
 
+			case "postgres":
+				$tmpQuery = $query;
+				$query = "";
+
+				$i = 1;
+				while($pos = strpos($tmpQuery,"?")) {
+					$query .= substr($tmpQuery,0,$pos) . "\$" . $i++;
+					$tmpQuery = substr($tmpQuery,$pos + 1);
+				}
+				$query .= $tmpQuery;
+
+				$params = $this->toArray($params);
+				if(!$result = pg_query_params($this->server,$query,$params)) {
+					$this->error();
+				}
+			break;
+
 			case "mssql":
 				if(!$result = mssql_query($preparedQuery,$this->server)) {
 					$this->error();
@@ -310,6 +336,10 @@ class SqlClass extends SqlClassCommon {
 				$query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
 			break;
 
+			case "postgres":
+				$query = preg_replace("/\bI[FS]NULL\(/","COALESCE(",$query);
+			break;
+
 			case "mssql":
 				$query = preg_replace("/\bIFNULL\(/","ISNULL(",$query);
 			break;
@@ -319,8 +349,17 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "postgres":
 			case "mssql":
 				$query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
+			break;
+
+		}
+
+		switch($this->mode) {
+
+			case "postgres":
+				$query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/","TO_CHAR(ABSTIME($1),$3)",$query);
 			break;
 
 		}
@@ -339,6 +378,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
+			case "postgres":
 				$query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
 			break;
 
@@ -464,10 +504,14 @@ class SqlClass extends SqlClassCommon {
 						case "mysql":
 							$value = $this->server->real_escape_string($val);
 						break;
+
+						case "postgres":
+							$value = pg_escape_literal($this->server,$val);
+						break;
+
 						case "mssql":
 							$value = str_replace("'","''",$val);
 						break;
-
 
 						default:
 							$value = $val;
@@ -475,7 +519,11 @@ class SqlClass extends SqlClassCommon {
 
 					}
 
-					$value = "'" . $value . "'";
+					# Postgres does it's own quoting
+					if($this->mode != "postgres") {
+						$value = "'" . $value . "'";
+					}
+
 				break;
 			}
 
@@ -565,6 +613,11 @@ class SqlClass extends SqlClassCommon {
 					$errorMsg = $this->server->error . " (" . $this->server->errno . ")";
 				}
 			break;
+
+			case "postgres":
+				$errorMsg = pg_last_error($this->server);
+			break;
+
 			case "mssql":
 				$errorMsg = mssql_get_last_message();
 			break;
@@ -677,6 +730,33 @@ class SqlClass extends SqlClassCommon {
 
 			break;
 
+			case "postgres":
+				$fields = "";
+				$first = reset($params);
+				foreach($first as $key => $val) {
+					if($fields) {
+						$fields .= ",";
+					}
+					$fields .= $this->quoteField($key);
+				}
+
+				$tableName = $this->getTableName($table);
+				$this->query("COPY " . $tableName . " (" . $fields . ") FROM STDIN");
+
+				foreach($params as $row) {
+					if(!pg_put_line($this->server,implode("\t",$row) . "\n")) {
+						$this->error();
+					}
+				}
+
+				if(pg_put_line($this->server, "\\.\n")) {
+					$this->error();
+				}
+
+				$result = pg_end_copy($this->server);
+
+			break;
+
 			default:
 				$result = true;
 				foreach($params as $newParams) {
@@ -708,9 +788,15 @@ class SqlClass extends SqlClassCommon {
 		$id = false;
 
 		switch($this->mode) {
+
 			case "mysql":
 				$id = $this->server->insert_id;
 			break;
+
+			case "postgres":
+				$id = pg_last_oid($result);
+			break;
+
 		}
 
 		if(!$id) {
@@ -874,6 +960,11 @@ class SqlClass extends SqlClassCommon {
 			case "mysql":
 				$row = $result->fetch_assoc();
 			break;
+
+			case "postgres":
+				$row = pg_fetch_assoc($result);
+			break;
+
 			case "mssql":
 				$row = mssql_fetch_assoc($result);
 			break;
@@ -940,6 +1031,11 @@ class SqlClass extends SqlClassCommon {
 				$data = $this->fetch($result,true);
 				$value = $data[$col];
 			break;
+
+			case "postgres":
+				$value = pg_fetch_result($result,$row,$col);
+			break;
+
 			case "mssql":
 				$value = mssql_result($result,$row,$col);
 			break;
@@ -1005,6 +1101,7 @@ class SqlClass extends SqlClassCommon {
 
 		switch($this->mode) {
 			case "mysql":
+			case "postgres":
 				$query .= "LIMIT 1";
 			break;
 		}
@@ -1126,6 +1223,10 @@ class SqlClass extends SqlClassCommon {
 				$result->data_seek($row);
 			break;
 
+			case "postgres":
+				pg_result_seek($result,$row);
+			break;
+
 			case "mssql":
 				mssql_data_seek($result,$row);
 			break;
@@ -1167,6 +1268,11 @@ class SqlClass extends SqlClassCommon {
 	public function quoteTable($table) {
 
 		$table = trim($table);
+
+		# There is a standard function for quoting postgres table names
+		if($this->mode == "postgres") {
+			return pg_escape_identifier($this->server,$table);
+		}
 
 		$chars = $this->quoteChars[$this->mode];
 
@@ -1236,6 +1342,10 @@ class SqlClass extends SqlClassCommon {
 
 			case "mysql":
 				$result = $this->server->close();
+			break;
+
+			case "postgres":
+				$result = pg_close($this->server);
 			break;
 
 			case "mssql":
