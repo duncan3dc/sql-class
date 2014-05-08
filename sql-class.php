@@ -1586,7 +1586,7 @@ class SqlClass extends SqlClassCommon {
 			return $this->query($query);
 		}
 
-		throw new Exception("lockTables() not supported in this mode (" . $this->mode . ")",SQL_NOT_SUPPORTED);
+		throw new Exception("lockTables() not supported in this mode (" . $this->mode . ")");
 
 	}
 
@@ -1609,7 +1609,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("unlockTables() not supported in this mode (" . $this->mode . ")",SQL_NOT_SUPPORTED);
+				throw new Exception("unlockTables() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
