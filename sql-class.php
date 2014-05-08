@@ -18,6 +18,8 @@ class SqlClass extends SqlClassCommon {
 
 	public  $allowNulls;		# A flag to indicate whether nulls should be useds or not
 
+	public  $transaction;		# A flag to indicate whether we are currently in transaction mode or not
+
 	public  $log;			# The directory to log errors to
 
 	public  $output;                # Whether the class should output queries or not
@@ -1096,8 +1098,9 @@ class SqlClass extends SqlClassCommon {
 		/**
 		 * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
 		 * Not all engines support this though, so we have to check which mode we are in
+		 * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
 		 */
-		if($where == self::NO_WHERE_CLAUSE && $this->mode != "odbc") {
+		if($where == self::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
 			$query = "TRUNCATE TABLE " . $tableName;
 
 		} else {
@@ -1541,6 +1544,166 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		$query .= ") ";
+
+	}
+
+
+	/**
+	 * Start a transaction by turning autocommit off
+	 */
+	public function startTransaction() {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$result = $this->server->autocommit(false);
+			break;
+
+			case "postgres":
+				$result = $this->query("SET AUTOCOMMIT = OFF");
+			break;
+
+			case "redshift":
+				$result = $this->query("START TRANSACTION");
+			break;
+
+			case "odbc":
+				$result = odbc_autocommit($this->server,false);
+			break;
+
+			default:
+				throw new Exception("startTransaction() not supported in this mode (" . $this->mode . ")");
+			break;
+
+		}
+
+		if(!$result) {
+			$this->error();
+		}
+
+		$this->transaction = true;
+
+		return true;
+
+	}
+
+
+	/**
+	 * End a transaction by either committing changes made, or reverting them
+	 */
+	public function endTransaction($commit) {
+
+		if($commit) {
+			$result = $this->commit();
+		} else {
+			$result = $this->rollback();
+		}
+
+		switch($this->mode) {
+
+			case "mysql":
+				if(!$this->server->autocommit(true)) {
+					$result = false;
+				}
+			break;
+
+			case "postgres":
+				$result = $this->query("SET AUTOCOMMIT = ON");
+			break;
+
+			case "redshift":
+				# Do nothing, and use the result from the commit/rollback
+			break;
+
+			case "odbc":
+				if(!odbc_autocommit($this->server,true)) {
+					$result = false;
+				}
+			break;
+
+			default:
+				throw new Exception("endTransaction() not supported in this mode (" . $this->mode . ")");
+			break;
+
+		}
+
+		if(!$result) {
+			$this->error();
+		}
+
+		$this->transaction = false;
+
+		return true;
+
+	}
+
+
+	/**
+	 * Commit queries without ending the transaction
+	 */
+	public function commit() {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$result = $this->server->commit();
+			break;
+
+			case "postgres":
+			case "redshift":
+				$result = $this->query("COMMIT");
+			break;
+
+			case "odbc":
+				$result = odbc_commit($this->server);
+			break;
+
+			default:
+				throw new Exception("commit() not supported in this mode (" . $this->mode . ")");
+			break;
+
+		}
+
+		if(!$result) {
+			$this->error();
+		}
+
+		return true;
+
+	}
+
+
+	/**
+	 * Rollback queries without ending the transaction
+	 */
+	public function rollback() {
+
+		switch($this->mode) {
+
+			case "mysql":
+				$result = $this->server->rollback();
+			break;
+
+			case "postgres":
+			case "redshift":
+				$result = $this->query("ROLLBACK");
+			break;
+
+			case "odbc":
+				$result = odbc_rollback($this->server);
+			break;
+
+			default:
+				throw new Exception("rollback() not supported in this mode (" . $this->mode . ")");
+			break;
+
+		}
+
+		if(!$result) {
+			$this->error();
+		}
+
+		return true;
 
 	}
 
