@@ -1136,6 +1136,42 @@ class SqlClass extends SqlClassCommon {
 
 
 	/**
+	 * This method allows easy appending of search criteria to queries
+	 * It takes existing query/params to be edited as the first 2 parameters
+	 * The third parameter is the string that is being searched for
+	 * The fourth parameter is an array of fields that should be searched for in the sql
+	 */
+	public function search(&$query,&$params,$search,$fields) {
+
+		$query .= "( ";
+
+		$search = str_replace('"','',$search);
+
+		$words = explode(" ",$search);
+
+		foreach($words as $key => $word) {
+
+			if($key) {
+				$query .= "AND ";
+			}
+
+			$query .= "( ";
+				foreach($fields as $key => $field) {
+					if($key) {
+						$query .= "OR ";
+					}
+					$query .= "LOWER(" . $field . ") LIKE ? ";
+					$params[] = "%" . strtolower(trim($word)) . "%";
+				}
+			$query .= ") ";
+		}
+
+		$query .= ") ";
+
+	}
+
+
+	/**
 	 * Close the sql connection
 	 */
 	public function disconnect() {
