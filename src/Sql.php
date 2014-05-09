@@ -1,6 +1,8 @@
 <?php
 
-class SqlClass extends SqlClassCommon {
+namespace SqlClass;
+
+class Sql extends Common {
 
 	const   NO_WHERE_CLAUSE = 101;  # Allow queries to be created without a where cluase
 	const   USE_PHP_TIMEZONE = 102; # Set the database timezone to be the same as the php one
@@ -21,7 +23,7 @@ class SqlClass extends SqlClassCommon {
 
 	public  $allowNulls;            # A flag to indicate whether nulls should be useds or not
 
-	public  $cacheOptions;          # An array of options to pass when initiating an SqlClassCache instance
+	public  $cacheOptions;          # An array of options to pass when initiating an Cache instance
 	public  $cacheNext;             # Internal flag to indicate the next query we run should be done using cache
 
 	public  $triggers;              # An array of triggers that have been registered
@@ -63,7 +65,7 @@ class SqlClass extends SqlClassCommon {
 		);
 
 		if(!array_key_exists($this->mode,$this->quoteChars)) {
-			throw new Exception("Unsupported mode (" . $this->mode . ")");
+			throw new \Exception("Unsupported mode (" . $this->mode . ")");
 		}
 
 		$this->output = false;
@@ -86,7 +88,7 @@ class SqlClass extends SqlClassCommon {
 		switch($this->mode) {
 
 			case "mysql":
-				$this->server = new mysqli($options["hostname"],$options["username"],$options["password"]);
+				$this->server = new \mysqli($options["hostname"],$options["username"],$options["password"]);
 				if($options["charset"]) {
 					$this->server->set_charset($options["charset"]);
 				}
@@ -112,7 +114,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			case "sqlite":
-				$this->server = new Sqlite3($options["database"]);
+				$this->server = new \Sqlite3($options["database"]);
 			break;
 
 			case "mssql":
@@ -165,7 +167,7 @@ class SqlClass extends SqlClassCommon {
 	public function attachDatabase($filename,$database=false) {
 
 		if($this->mode != "sqlite") {
-			throw new Exception("You can only attach databases when in sqlite mode");
+			throw new \Exception("You can only attach databases when in sqlite mode");
 		}
 
 		if(!$database) {
@@ -721,7 +723,7 @@ class SqlClass extends SqlClassCommon {
 			$options["timeout"] = $timeout;
 		}
 
-		return new SqlClassCache($options);
+		return new Cache($options);
 
 	}
 
@@ -733,7 +735,7 @@ class SqlClass extends SqlClassCommon {
 			$this->logError();
 		}
 
-		throw new Exception($this->getError());
+		throw new \Exception($this->getError());
 
 	}
 
@@ -1017,7 +1019,7 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		if(!$id) {
-			throw new Exception("Failed to retrieve the last inserted row id");
+			throw new \Exception("Failed to retrieve the last inserted row id");
 		}
 
 		return $id;
@@ -1163,7 +1165,7 @@ class SqlClass extends SqlClassCommon {
 	public function _fetch(&$result) {
 
 		# If this is an object created by the cache class then run the fetch method directly on it
-		if(is_a($result,"SqlClassCache")) {
+		if($result instanceof Cache) {
 			return $result->fetch($indexed);
 		}
 
@@ -1250,7 +1252,7 @@ class SqlClass extends SqlClassCommon {
 		}
 
 		# If this is an object created by the cache class then run the result method directly on it
-		if(is_a($result,"SqlClassCache")) {
+		if($result instanceof Cache) {
 			return $result->result($row,$col);
 		}
 
@@ -1522,7 +1524,7 @@ class SqlClass extends SqlClassCommon {
 	public function seek(&$result,$row) {
 
 		# If this is an object created by the cache class then run the seek method directly on it
-		if(is_a($result,"SqlClassCache")) {
+		if($result instanceof Cache) {
 			return $result->seek($row);
 		}
 
@@ -1685,7 +1687,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("startTransaction() not supported in this mode (" . $this->mode . ")");
+				throw new \Exception("startTransaction() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
@@ -1735,7 +1737,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("endTransaction() not supported in this mode (" . $this->mode . ")");
+				throw new \Exception("endTransaction() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
@@ -1772,7 +1774,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("commit() not supported in this mode (" . $this->mode . ")");
+				throw new \Exception("commit() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
@@ -1807,7 +1809,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("rollback() not supported in this mode (" . $this->mode . ")");
+				throw new \Exception("rollback() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
@@ -1862,7 +1864,7 @@ class SqlClass extends SqlClassCommon {
 			return $this->query($query);
 		}
 
-		throw new Exception("lockTables() not supported in this mode (" . $this->mode . ")");
+		throw new \Exception("lockTables() not supported in this mode (" . $this->mode . ")");
 
 	}
 
@@ -1885,7 +1887,7 @@ class SqlClass extends SqlClassCommon {
 			break;
 
 			default:
-				throw new Exception("unlockTables() not supported in this mode (" . $this->mode . ")");
+				throw new \Exception("unlockTables() not supported in this mode (" . $this->mode . ")");
 			break;
 
 		}
@@ -1901,7 +1903,7 @@ class SqlClass extends SqlClassCommon {
 	public function addTrigger($type,$table,$trigger) {
 
 		if(!array_key_exists($type,$this->triggers)) {
-			throw new Exception("Invalid trigger type specified");
+			throw new \Exception("Invalid trigger type specified");
 		}
 
 		$this->triggers[$type][$table][] = $trigger;

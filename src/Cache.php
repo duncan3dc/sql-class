@@ -1,6 +1,8 @@
 <?php
 
-class SqlClassCache extends SqlClassCommon {
+namespace SqlClass;
+
+class Cache extends Common {
 
 	const   MINUTE = 60;
 	const   HOUR = 3600;

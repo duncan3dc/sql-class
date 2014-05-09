@@ -1,6 +1,8 @@
 <?php
 
-abstract class SqlClassCommon {
+namespace SqlClass;
+
+abstract class Common {
 
 
 	/**
@@ -14,7 +16,7 @@ abstract class SqlClassCommon {
 
 		foreach($options as $key => $val) {
 			if(!array_key_exists($key,$defaults)) {
-				throw new Exception("Unknown parameter (" . $key . ")");
+				throw new \Exception("Unknown parameter (" . $key . ")");
 			}
 			$defaults[$key] = $val;
 		}
