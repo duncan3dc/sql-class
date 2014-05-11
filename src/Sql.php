@@ -689,7 +689,7 @@ class Sql extends Common {
 					}
 
 					# Postgres does it's own quoting
-					if(in_array($this->mode,array("postgres","redshift"))) {
+					if(!in_array($this->mode,array("postgres","redshift"))) {
 						$value = "'" . $value . "'";
 					}
 
