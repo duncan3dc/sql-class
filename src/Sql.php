@@ -1115,7 +1115,7 @@ class Sql extends Common {
 			}
 
 		# if the fields isn't an array
-		} else {
+		} elseif(!is_bool($fields)) {
 			# Otherwise assume it is a string of fields to select and add them to the query
 			if(strlen($fields) > 0) {
 				$select = $fields;
