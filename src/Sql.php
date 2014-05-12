@@ -193,9 +193,11 @@ class Sql extends Common {
 	 */
 	public function getTableDatabase($name) {
 
-		if(!$database = $this->tables[$name]) {
+		if(!array_key_exists($name,$this->tables)) {
 			return false;
 		}
+
+		$database = $this->tables[$name];
 
 		# If this table's database depends on the mode
 		if(is_array($database)) {
@@ -452,7 +454,7 @@ class Sql extends Common {
 			foreach($parts as $part) {
 
 				# If this part of the query isn't a string, then perform the replace on it
-				if($part[0] != "'") {
+				if(substr($part,0,1) != "'") {
 
 					# If the replace was successful then override this part of the query with the new part
 					if($newPart = preg_replace("/" . $match . "/","$newFrom$1$newTo",$part)) {
