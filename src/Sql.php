@@ -1942,6 +1942,93 @@ class Sql extends Common {
     }
 
 
+    public function getDatabases() {
+
+        switch($this->mode) {
+
+            case "mysql":
+                $query = "SHOW DATABASES";
+            break;
+
+            case "mssql":
+                $query = "SELECT name FROM master..sysdatabases";
+            break;
+
+            default:
+                throw new Exception("getDatabases() not supported in this mode (" . $this->mode . ")");
+            break;
+
+        }
+
+        $databases = array();
+        $result = $this->query($query);
+        while($row = $this->fetch($result,true)) {
+            $databases[] = $row[0];
+        }
+
+        return $databases;
+
+    }
+
+
+    public function getTables($database) {
+
+        switch($this->mode) {
+
+            case "mysql":
+                $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
+            break;
+
+            case "mssql":
+                $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
+            break;
+
+            default:
+                throw new Exception("getTables() not supported in this mode (" . $this->mode . ")");
+            break;
+
+        }
+
+        $tables = array();
+        $result = $this->query($query);
+        while($row = $this->fetch($result,true)) {
+            $tables[] = $row[0];
+        }
+
+        return $tables;
+
+    }
+
+
+    public function getViews($database) {
+
+        switch($this->mode) {
+
+            case "mysql":
+                $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
+            break;
+
+            case "mssql":
+                $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
+            break;
+
+            default:
+                throw new Exception("getViews() not supported in this mode (" . $this->mode . ")");
+            break;
+
+        }
+
+        $views = array();
+        $result = $this->query($query);
+        while($row = $this->fetch($result,true)) {
+            $views[] = $row[0];
+        }
+
+        return $views;
+
+    }
+
+
     /**
      * Close the sql connection
      */
