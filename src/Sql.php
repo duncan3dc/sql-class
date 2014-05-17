@@ -999,7 +999,6 @@ class Sql extends Common {
     }
 
 
-
     public function getId($result) {
 
         if(!$result) {
@@ -1141,6 +1140,7 @@ class Sql extends Common {
     public function delete($table,$where) {
 
         $tableName = $this->getTableName($table);
+        $params = false;
 
         /**
          * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
@@ -1362,6 +1362,7 @@ class Sql extends Common {
 
         $query .= " FROM " . $table . " ";
 
+        $params = false;
         if($where != self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
@@ -1440,6 +1441,7 @@ class Sql extends Common {
 
         $query .= " FROM " . $table . " ";
 
+        $params = false;
         if($where != self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
