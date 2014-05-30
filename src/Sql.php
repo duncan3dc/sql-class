@@ -88,7 +88,9 @@ class Sql extends Common {
         switch($this->mode) {
 
             case "mysql":
-                $this->server = new \mysqli($options["hostname"],$options["username"],$options["password"]);
+                if(!$this->server = new \mysqli($options["hostname"],$options["username"],$options["password"])) {
+                    $this->error();
+                }
                 if($options["charset"]) {
                     $this->server->set_charset($options["charset"]);
                 }
@@ -97,6 +99,11 @@ class Sql extends Common {
                         $timezone = ini_get("date.timezone");
                     }
                     $this->query("SET time_zone='" . $timezone . "'");
+                }
+                if($database = $options["database"]) {
+                    if(!$this->server->select_db($database)) {
+                        $this->error();
+                    }
                 }
             break;
 
