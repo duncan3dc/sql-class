@@ -7,7 +7,7 @@ class Sql extends Common {
     const   NO_WHERE_CLAUSE  = 101;     # Allow queries to be created without a where cluase
     const   USE_PHP_TIMEZONE = 102;     # Set the database timezone to be the same as the php one
     const   INSERT_REPLACE   = 103;     # Mysql extension to replace any existing records with a unique key match
-    const   INSERT_INSERT    = 104;     # Mysql extension to ignore any existing records with a unique key match
+    const   INSERT_IGNORE    = 104;     # Mysql extension to ignore any existing records with a unique key match
     const   TRIGGER_INSERT   = 105;     # A trigger to be run after a successful insert
     const   TRIGGER_UPDATE   = 106;     # A trigger to be run after a successful update
     const   TRIGGER_DELETE   = 107;     # A trigger to be run after a successful delete
