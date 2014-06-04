@@ -892,6 +892,11 @@ class Sql extends Common {
 
     public function bulkInsert($table,$params,$extra=false) {
 
+        if($output = $this->output) {
+            $this->output = false;
+            echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
+        }
+
         switch($this->mode) {
 
             case "mysql":
@@ -992,6 +997,10 @@ class Sql extends Common {
 
         if(!$result) {
             $this->error();
+        }
+
+        if($output) {
+            $this->output = true;
         }
 
         return $result;
