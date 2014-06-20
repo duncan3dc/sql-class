@@ -1332,6 +1332,31 @@ class Sql extends Common {
 
 
     /**
+     * Execute the query and get a specific value from the result set
+     * This is just a shorter way of doing a query() and then a result()
+     */
+    public function queryResult($query,$params,$row,$col) {
+
+        $result = $this->query($query,$params);
+
+        return $this->result($result,$row,$col);
+
+    }
+
+
+    /**
+     * Cached version of queryResult()
+     */
+    public function queryResultC($query,$params,$row,$col) {
+
+        $this->cacheNext = true;
+
+        return $this->queryResult($query,$params,$row,$col);
+
+    }
+
+
+    /**
      * Grab the first row from a table using the standard select statement
      * This is a convience method for a fieldSelect() where all fields are required
      */
