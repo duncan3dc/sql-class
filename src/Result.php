@@ -172,8 +172,38 @@ class Result {
     }
 
 
-    public function __destruct() {
+    public function free() {
 
+        switch($this->mode) {
+
+            case "mysql":
+                $this->result->free();
+            break;
+
+            case "postgres":
+            case "redshift":
+                pg_free_result($this->result);
+            break;
+
+            case "odbc":
+                odbc_free_result($this->result);
+            break;
+
+            case "sqlite":
+                $this->result->finalize();
+            break;
+
+            case "mssql":
+                mssql_free_result($this->result);
+            break;
+
+        }
+
+    }
+
+
+    public function __destruct() {
+        $this->free();
     }
 
 
