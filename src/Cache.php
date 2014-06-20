@@ -1,6 +1,6 @@
 <?php
 
-namespace SqlClass;
+namespace duncan3dc\SqlClass;
 
 class Cache extends Common {
 
