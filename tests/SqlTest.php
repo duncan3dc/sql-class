@@ -411,4 +411,37 @@ class SqlTest extends PHPUnit_Framework_TestCase {
     }
 
 
+    public function namedParams() {
+
+        $this->sql->mode = "mysql";
+
+        $check = "SELECT field1 `field1`, field2 `field2`, field3 `field3` FROM table1 a
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3='three' AND b.field4='four'
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3='three' AND b.field4='four'
+                WHERE field1='one'
+                        AND field2='two'
+                        AND field3='three'
+                        AND field4='four'";
+
+        $query = "SELECT field1 `field1`, field2 [field2], field3 \"field3\" FROM {table1} a
+                JOIN {table2} b ON b.field1=a.field1 AND b.field2='?' AND b.field3=?field3 AND b.field4=?field4
+                JOIN {table2} b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3=?field3 AND b.field4=?field4
+                WHERE field1=?field1
+                    AND field2=?field2
+                    AND field3=?field3
+                    AND field4=?field4";
+        $params = array(
+            "field3"    =>  "three",
+            "field4"    =>  "four",
+            "field1"    =>  "one",
+            "field2"    =>  "two",
+        );
+
+        $args = [&$query,&$params];
+        $query = $this->callProtectedMethod("prepareQuery",$args);
+        $this->assertEquals($check,$query);
+
+    }
+
+
 }

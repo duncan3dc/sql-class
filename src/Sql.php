@@ -273,6 +273,7 @@ class Sql extends Common {
         $this->functions($query);
         $this->limit($query);
         $this->tableNames($query);
+        $this->namedParams($query,$params);
         $this->paramArrays($query,$params);
 
         $preparedQuery = $this->prepareQuery($query,$params);
@@ -631,6 +632,32 @@ class Sql extends Common {
 
         $query = $newQuery;
         $params = $newParams;
+
+    }
+
+
+    /**
+     * If the params array uses named keys then convert them to the regular markers
+     */
+    protected function namedParams(&$query,&$params) {
+
+        if(!is_array($params)) {
+            return false;
+        }
+
+        $oldParams = $params;
+        $params = [];
+
+        $this->modifyQuery($query,function($part) use(&$params,&$oldParams) {
+            return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/",function($match) use(&$params,&$oldParams) {
+                if($key = $match[1]) {
+                    $params[] = $oldParams[$key];
+                } else {
+                    $params[] = array_shift($oldParams);
+                }
+                return "?" . $match[2];
+            },$part);
+        });
 
     }
 
