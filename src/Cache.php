@@ -33,7 +33,7 @@ class Cache extends Common {
             "sql"           =>  false,
             "query"         =>  false,
             "params"        =>  false,
-            "timeout"       =>  self::DAY,
+            "timeout"       =>  static::DAY,
             "limit"         =>  10000,
             "directories"   =>  3,
         ));

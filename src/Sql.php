@@ -269,13 +269,13 @@ class Sql extends Common {
             $this->params = $params;
         }
 
-        $this->query_quoteChars($query);
-        $this->query_functions($query);
-        $this->query_limit($query);
-        $this->query_tableNames($query);
-        $this->query_paramArrays($query,$params);
+        $this->quoteChars($query);
+        $this->functions($query);
+        $this->limit($query);
+        $this->tableNames($query);
+        $this->paramArrays($query,$params);
 
-        $preparedQuery = $this->query_prepare($query,$params);
+        $preparedQuery = $this->prepareQuery($query,$params);
         $this->preparedQuery = $preparedQuery;
 
         if($this->output) {
@@ -409,11 +409,41 @@ class Sql extends Common {
     }
 
 
+    /*
+     * Allow a query to be modified without affecting quoted strings within it
+     */
+    protected function modifyQuery(&$query,$callback) {
+
+        $regex = "/('[^']+')/";
+        if(!preg_match($regex,$query)) {
+            $query = $callback($query);
+            return;
+        }
+
+        $parts = preg_split($regex,$query,null,PREG_SPLIT_DELIM_CAPTURE);
+
+        $query = "";
+
+        foreach($parts as $part) {
+
+            # If this part of the query isn't a string, then perform the replace on it
+            if($part[0] != "'") {
+                $part = $callback($part);
+            }
+
+            # Append this part of the query onto the new query we are constructing
+            $query .= $part;
+
+        }
+
+    }
+
+
     /**
      * Replace any quote characters used to the appropriate type for the current mode
      * This function attempts to ignore any instances that are surrounded by single quotes, as these should not be converted
      */
-     public function query_quoteChars(&$query) {
+    protected function quoteChars(&$query) {
 
         $checked = array();
 
@@ -452,31 +482,11 @@ class Sql extends Common {
             }
             $checked[] = $match;
 
-            /**
-             * Break up the query by single quoted strings
-             * This is because we don't want to modify the contents of these strings
-             */
-            $parts = preg_split("/('[^']*')/",$query,null,PREG_SPLIT_DELIM_CAPTURE);
-            $query = "";
-            foreach($parts as $part) {
-
-                # If this part of the query isn't a string, then perform the replace on it
-                if(substr($part,0,1) != "'") {
-
-                    # If the replace was successful then override this part of the query with the new part
-                    if($newPart = preg_replace("/" . $match . "/","$newFrom$1$newTo",$part)) {
-                        $part = $newPart;
-                    }
-                }
-
-                # Tag this part of the query onto the new query we are constructing
-                $query .= $part;
-
-            }
+            $this->modifyQuery($query,function($part) use($match,$newFrom,$newTo) {
+                return preg_replace("/" . $match . "/","$newFrom$1$newTo",$part);
+            });
 
         }
-
-        return true;
 
     }
 
@@ -484,7 +494,7 @@ class Sql extends Common {
     /**
      * Replace any non-standard functions with the appropriate function for the current mode
      */
-    public function query_functions(&$query) {
+    protected function functions(&$query) {
 
         switch($this->mode) {
 
@@ -530,8 +540,6 @@ class Sql extends Common {
 
         }
 
-        return true;
-
     }
 
 
@@ -539,7 +547,7 @@ class Sql extends Common {
      * Convert any limit usage
      * Doesn't work with the mssql variety
      */
-    public function query_limit(&$query) {
+    protected function limit(&$query) {
 
         switch($this->mode) {
 
@@ -556,8 +564,6 @@ class Sql extends Common {
 
         }
 
-        return true;
-
     }
 
 
@@ -565,14 +571,13 @@ class Sql extends Common {
      * Convert table references to full database/table names
      * This allows tables to be surrounded in braces, without specifying the database
      */
-    public function query_tableNames(&$query) {
+    protected function tableNames(&$query) {
 
-        while(preg_match("/{([^}]*)}/",$query,$matches)) {
-            $table = $this->getTableName($matches[1]);
-            $query = str_replace($matches[0],$table,$query);
-        }
-
-        return true;
+        $this->modifyQuery($query,function($part) {
+            return preg_replace_callback("/{([^}]+)}/",function($match) {
+                return $this->getTableName($match[1]);
+            },$part);
+        });
 
     }
 
@@ -580,10 +585,10 @@ class Sql extends Common {
     /**
      * If any of the parameters are arrays, then convert the single marker from the query to handle them
      */
-    public function query_paramArrays(&$query,&$params) {
+    protected function paramArrays(&$query,&$params) {
 
         if(!is_array($params)) {
-            return false;
+            return;
         }
 
         $tmpQuery = $query;
@@ -627,92 +632,92 @@ class Sql extends Common {
         $query = $newQuery;
         $params = $newParams;
 
-        return true;
+    }
+
+
+    protected function convertNulls(&$params) {
+
+        if($this->allowNulls) {
+            return;
+        }
+
+        foreach($params as &$val) {
+            if(gettype($val) == "NULL") {
+                $val = "";
+            }
+        }
 
     }
 
 
-    public function query_prepare($query,&$params) {
+    protected function prepareQuery($query,$params) {
 
         if(!is_array($params)) {
             return $query;
         }
 
-        $preparedQuery = "";
-        $tmpQuery = $query;
+        $this->modifyQuery($query,function($part) use(&$params) {
+            $newPart = "";
+            while($pos = strpos($part,"?")) {
+                $newPart .= substr($part,0,$pos);
+                $part = substr($part,$pos + 1);
 
-        foreach($params as &$val) {
+                $value = array_shift($params);
 
-            $pos = strpos($tmpQuery,"?");
-            $preparedQuery .= substr($tmpQuery,0,$pos);
-            $tmpQuery = substr($tmpQuery,$pos + 1);
+                switch(gettype($value)) {
+                    case "boolean":
+                        $value = (int)$value;
+                    break;
+                    case "integer":
+                    case "double":
+                    break;
 
-            switch(gettype($val)) {
-                case "boolean":
-                    $value = round($val);
-                break;
-                case "integer":
-                case "double":
-                    $value = $val;
-                break;
+                    case "NULL":
+                        # If nulls are allowed then set the value to be null and break out of the switch
+                        if($this->allowNulls) {
+                            $value = "NULL";
+                            break;
+                        }
 
-                case "NULL":
-                    # If nulls are allowed then set the value to be null and break out of the switch
-                    if($this->allowNulls) {
-                        $value = "NULL";
-                        break;
+                        # If nulls aren't allowed then use an empty string
+                        $value = "";
 
-                    # If nulls aren't allowed then convert this value in the params array
-                    } else {
-                        $val = "";
+                        # If nulls aren't allowed then process it as a string
+                    default:
+                        switch($this->mode) {
+                            case "mysql":
+                                $value = $this->server->real_escape_string($value);
+                            break;
+                            case "postgres":
+                            case "redshift":
+                                $value = pg_escape_literal($this->server,$value);
+                            break;
+                            case "sqlite":
+                                $value = $this->server->escapeString($value);
+                            break;
+                            case "mssql":
+                            case "odbc":
+                                $value = str_replace("'","''",$value);
+                            break;
+                        }
 
-                    }
+                        # Postgres does it's own quoting
+                        if(!in_array($this->mode,array("postgres","redshift"))) {
+                            $value = "'" . $value . "'";
+                        }
 
-                    # If nulls aren't allowed then interpret them as an empty string
+                    break;
 
-                default:
-                    switch($this->mode) {
+                }
 
-                        case "mysql":
-                            $value = $this->server->real_escape_string($val);
-                        break;
+                $newPart .= $value;
 
-                        case "postgres":
-                        case "redshift":
-                            $value = pg_escape_literal($this->server,$val);
-                        break;
-
-                        case "odbc":
-                        case "mssql":
-                            $value = str_replace("'","''",$val);
-                        break;
-
-                        case "sqlite":
-                            $value = $this->server->escapeString($val);
-                        break;
-
-                        default:
-                            $value = $val;
-                        break;
-
-                    }
-
-                    # Postgres does it's own quoting
-                    if(!in_array($this->mode,array("postgres","redshift"))) {
-                        $value = "'" . $value . "'";
-                    }
-
-                break;
             }
 
-            $preparedQuery .= $value;
+            return $newPart . $part;
+        });
 
-        }
-        unset($val);
-
-        $preparedQuery .= $tmpQuery;
-
-        return $preparedQuery;
+        return $query;
 
     }
 
@@ -752,20 +757,20 @@ class Sql extends Common {
     public function logError() {
 
         if(!$this->log) {
-            return false;
+            return;
         }
 
         # Ensure the log directory exists
         if(!is_dir($this->logDir)) {
             if(!mkdir($this->logDir,0775,true)) {
-                return false;
+                return;
             }
         }
 
         $logFile = date("Y-m-d_H-i-s") . ".log";
 
         if(!$file = fopen($this->logDir . "/" . $logFile,"a")) {
-            return false;
+            return;
         }
 
         fwrite($file,"Error: " . $this->getError() . "\n");
