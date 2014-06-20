@@ -1,8 +1,9 @@
 <?php
 
 namespace duncan3dc\SqlClass;
+use \duncan3dc\Helpers\Helper;
 
-class Sql extends Common {
+class Sql {
 
     const   NO_WHERE_CLAUSE  = 101;     # Allow queries to be created without a where cluase
     const   USE_PHP_TIMEZONE = 102;     # Set the database timezone to be the same as the php one
@@ -42,7 +43,7 @@ class Sql extends Common {
 
     public function __construct($options=false) {
 
-        $options = $this->getOptions($options,[
+        $options = Helper::getOptions($options,[
             "mode"          =>  "mysql",
             "hostname"      =>  "",
             "username"      =>  "",
@@ -322,7 +323,7 @@ class Sql extends Common {
                 }
                 $query .= $tmpQuery;
 
-                $params = $this->toArray($params);
+                $params = Helper::toArray($params);
                 if(!$result = pg_query_params($this->server,$query,$params)) {
                     $this->error();
                 }
@@ -332,7 +333,7 @@ class Sql extends Common {
                 if(!$result = odbc_prepare($this->server,$query)) {
                     $this->error();
                 }
-                $params = $this->toArray($params);
+                $params = Helper::toArray($params);
                 if(!odbc_execute($result,$params)) {
                     $this->error();
                 }
@@ -1082,7 +1083,7 @@ class Sql extends Common {
      */
     public function where($where,&$params) {
 
-        $params = $this->toArray($params);
+        $params = Helper::toArray($params);
 
         $query = "";
 
@@ -1914,7 +1915,7 @@ class Sql extends Common {
          */
         $this->unlockTables();
 
-        $tables = $this->toArray($tables);
+        $tables = Helper::toArray($tables);
 
         if($this->mode == "odbc") {
             foreach($tables as $table) {

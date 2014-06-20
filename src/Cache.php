@@ -1,8 +1,9 @@
 <?php
 
 namespace duncan3dc\SqlClass;
+use \duncan3dc\Helpers\Helper;
 
-class Cache extends Common {
+class Cache {
 
     const   MINUTE = 60;
     const   HOUR = 3600;
@@ -28,7 +29,7 @@ class Cache extends Common {
 
     public function __construct($options=false) {
 
-        $options = $this->getOptions($options,[
+        $options = Helper::getOptions($options,[
             "dir"           =>  "/tmp/query_cache",
             "sql"           =>  false,
             "query"         =>  false,
