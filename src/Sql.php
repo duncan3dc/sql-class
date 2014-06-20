@@ -406,7 +406,7 @@ class Sql {
             $this->error();
         }
 
-        return $result;
+        return new Result($result,$this->mode);
 
     }
 
@@ -1214,129 +1214,32 @@ class Sql {
     /**
      * Fetch the next row from the result set
      */
-    public function _fetch(&$result) {
-
-        # If this is an object created by the cache class then run the fetch method directly on it
-        if($result instanceof Cache) {
-            return $result->fetch($indexed);
-        }
-
-        # If the result resource is invalid then don't bother trying to fetch
-        if(!$result) {
-            return false;
-        }
-
-        switch($this->mode) {
-
-            case "mysql":
-                $row = $result->fetch_assoc();
-            break;
-
-            case "postgres":
-            case "redshift":
-                $row = pg_fetch_assoc($result);
-            break;
-
-            case "odbc":
-                $row = odbc_fetch_array($result);
-            break;
-
-            case "sqlite":
-                $row = $result->fetchArray(SQLITE3_ASSOC);
-            break;
-
-            case "mssql":
-                $row = mssql_fetch_assoc($result);
-            break;
-
-        }
-
-        # If the fetch fails then there are no rows left to retrieve
-        if(!$row) {
-            return false;
-        }
-
-        return $row;
-
+    public function _fetch($result) {
+        return $result->fetch($indexed);
     }
 
 
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch(&$result,$indexed=false) {
-
-        # If the fetch fails then there are no rows left to retrieve
-        if(!$data = $this->_fetch($result)) {
-            return false;
-        }
-
-        $row = [];
-
-        foreach($data as $key => $val) {
-
-            $val = rtrim($val);
-
-            # If the data should be returned as an enumerated array then ignore the key
-            if($indexed) {
-                $row[] = $val;
-
-            } else {
-                $key = strtolower($key);
-                $row[$key] = $val;
-
-            }
-
-        }
-
-        return $row;
-
+    public function fetch($result,$indexed=false) {
+        return $result->fetch($indexed);
     }
 
 
     /**
      * Fetch an indiviual value from the result set
      */
-    public function result(&$result,$row,$col) {
+    public function result($result,$row,$col) {
+        return $result->result($row,$col);
+    }
 
-        if(!$result) {
-            return false;
-        }
 
-        # If this is an object created by the cache class then run the result method directly on it
-        if($result instanceof Cache) {
-            return $result->result($row,$col);
-        }
-
-        switch($this->mode) {
-
-            case "mysql":
-            case "sqlite":
-                $this->seek($result,$row);
-                $data = $this->fetch($result,true);
-                $value = $data[$col];
-            break;
-
-            case "postgres":
-            case "redshift":
-                $value = pg_fetch_result($result,$row,$col);
-            break;
-
-            case "odbc":
-                odbc_fetch_row($result,($row + 1));
-                $value = odbc_result($result,($col + 1));
-            break;
-
-            case "mssql":
-                $value = mssql_result($result,$row,$col);
-            break;
-
-        }
-
-        $value = rtrim($value);
-
-        return $value;
-
+    /**
+     * Seek to a specific record of the result set
+     */
+    public function seek($result,$row) {
+        return $result->seek($row);
     }
 
 
@@ -1593,48 +1496,6 @@ class Sql {
         }
 
         return $orderBy;
-
-    }
-
-
-    /**
-     * Seek to a specific record of the result set
-     */
-    public function seek(&$result,$row) {
-
-        # If this is an object created by the cache class then run the seek method directly on it
-        if($result instanceof Cache) {
-            return $result->seek($row);
-        }
-
-        switch($this->mode) {
-
-            case "mysql":
-                $result->data_seek($row);
-            break;
-
-            case "postgres":
-            case "redshift":
-                pg_result_seek($result,$row);
-            break;
-
-            case "odbc":
-                # This actually does a seek and fetch, so although the rows are numbered 1 higher than other databases, this will still work
-                odbc_fetch_row($result,$row);
-            break;
-
-            case "sqlite":
-                $result->reset();
-                for($i = 0; $i < $row; $i++) {
-                    $this->fetch($result);
-                }
-            break;
-
-            case "mssql":
-                mssql_data_seek($result,$row);
-            break;
-
-        }
 
     }
 
