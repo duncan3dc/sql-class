@@ -851,6 +851,7 @@ class Sql extends Common {
 
         $query = substr($query,0,-1) . " ";
 
+        $params = false;
         if($where != self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
