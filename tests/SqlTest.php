@@ -12,10 +12,10 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);
 
-        $this->sql->definitions(array(
+        $this->sql->definitions([
             "table1"    =>  "test1",
             "table2"    =>  "test2",
-        ));
+        ]);
 
     }
 
@@ -50,12 +50,12 @@ class SqlTest extends PHPUnit_Framework_TestCase {
 
         $query = "SELECT field1 `field2` FROM table1";
 
-        $modes = array(
+        $modes = [
             "mssql"    =>  "SELECT field1 [field2] FROM table1",
             "mysql"    =>  "SELECT field1 `field2` FROM table1",
             "odbc"     =>  "SELECT field1 \"field2\" FROM table1",
             "sqlite"   =>  "SELECT field1 `field2` FROM table1",
-        );
+        ];
         foreach($modes as $mode => $check) {
             $this->sql->mode = $mode;
             $this->callProtectedMethod("quoteChars",$query);
@@ -109,12 +109,12 @@ class SqlTest extends PHPUnit_Framework_TestCase {
 
         $query = "SELECT IFNULL(field1,0), SUBSTR(field1,5,3) FROM table1";
 
-        $modes = array(
+        $modes = [
             "mssql"    =>  "SELECT ISNULL(field1,0), SUBSTRING(field1,5,3) FROM table1",
             "sqlite"   =>  "SELECT IFNULL(field1,0), SUBSTR(field1,5,3) FROM table1",
             "odbc"     =>  "SELECT IFNULL(field1,0), SUBSTRING(field1,5,3) FROM table1",
             "mysql"    =>  "SELECT IFNULL(field1,0), SUBSTRING(field1,5,3) FROM table1",
-        );
+        ];
         foreach($modes as $mode => $check) {
             $this->sql->mode = $mode;
             $this->callProtectedMethod("functions",$query);
@@ -127,13 +127,13 @@ class SqlTest extends PHPUnit_Framework_TestCase {
 
     public function testLimit() {
 
-        $modes = array(
+        $modes = [
             "mysql"    =>  ["SELECT * FROM table1 FETCH FIRST 10 ROWS ONLY", "SELECT * FROM table1 \nLIMIT 10\n"],
             "sqlite"   =>  ["SELECT * FROM table1
                         FETCH FIRST 10 ROWS ONLY", "SELECT * FROM table1
                         \nLIMIT 10\n"],
             "odbc"     =>  ["SELECT * FROM table1 LIMIT 1", "SELECT * FROM table1 \nFETCH FIRST 1 ROWS ONLY\n"],
-        );
+        ];
         foreach($modes as $mode => list($query,$check)) {
             $this->sql->mode = $mode;
             $this->callProtectedMethod("limit",$query);
@@ -146,7 +146,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
 
     public function testTableNames() {
 
-        $modes = array(
+        $modes = [
             "mysql"    =>  ["SELECT * FROM {table1}", "SELECT * FROM `test1`.`table1`"],
             "mssql"    =>  ["SELECT * FROM {table1}
                             LEFT OUTER JOIN hardcoded.nosuchtable ON field2a=field1a", "SELECT * FROM [test1].dbo.[table1]
@@ -155,7 +155,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "sqlite"   =>  ["SELECT * FROM {table1}
                             LEFT OUTER JOIN {nosuchtable} ON field2a=field1a", "SELECT * FROM `test1`.`table1`
                             LEFT OUTER JOIN nosuchtable ON field2a=field1a"],
-        );
+        ];
         foreach($modes as $mode => list($query,$check)) {
             $this->sql->mode = $mode;
             $this->callProtectedMethod("tableNames",$query);
@@ -177,7 +177,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
                 AND field7=?
                 AND field8 IN (?,?)
             ORDER BY field2";
-        $checkParams = array(
+        $checkParams = [
             "marker1",
             "marker2a",
             "marker2b",
@@ -191,7 +191,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "marker7a",
             "marker8a",
             "marker8b",
-        );
+        ];
 
         $query = "SELECT * FROM test
             WHERE field1=?
@@ -203,16 +203,16 @@ class SqlTest extends PHPUnit_Framework_TestCase {
                 AND field7 IN ?
                 AND field8 IN ?
             ORDER BY field2";
-        $params = array(
+        $params = [
             "marker1",
-            array("marker2a","marker2b","marker2c"),
+            ["marker2a","marker2b","marker2c"],
             "marker3",
-            array("marker4a"),
-            array("marker5a","marker5b","marker5c"),
-            array("marker6a"),
-            array("assoc" => "marker7a"),
-            array("assoc1" => "marker8a","assoc2" => "marker8b"),
-        );
+            ["marker4a"],
+            ["marker5a","marker5b","marker5c"],
+            ["marker6a"],
+            ["assoc" => "marker7a"],
+            ["assoc1" => "marker8a","assoc2" => "marker8b"],
+        ];
 
         $args = [&$query,&$params];
         $this->callProtectedMethod("paramArrays",$args);
@@ -227,9 +227,9 @@ class SqlTest extends PHPUnit_Framework_TestCase {
         $this->sql->mode = "mssql";
 
         $query = "SELECT * FROM test WHERE field1=? ORDER BY field2";
-        $params = array(
+        $params = [
             "Test's",
-        );
+        ];
 
         $check = "SELECT * FROM test WHERE field1='Test''s' ORDER BY field2";
 
@@ -265,7 +265,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
                 AND field7=?
                 AND field8=?
             ORDER BY field2";
-        $params = array(
+        $params = [
             "Test",
             3.4,
             "3.5.6",
@@ -274,7 +274,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "",
             0,
             "00004",
-        );
+        ];
         $args = [&$query,&$params];
         $query = $this->callProtectedMethod("prepareQuery",$args);
 
@@ -309,7 +309,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
                 AND field7=?
                 AND field8=?
             ORDER BY field2";
-        $params = array(
+        $params = [
             "Test",
             3.4,
             "3.5.6",
@@ -318,7 +318,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "",
             0,
             "00004",
-        );
+        ];
         $args = [&$query,&$params];
         $query = $this->callProtectedMethod("prepareQuery",$args);
 
@@ -334,17 +334,17 @@ class SqlTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($check,$result);
 
         $check = "''";
-        $result = $this->sql->selectFields(array());
+        $result = $this->sql->selectFields([]);
         $this->assertEquals($check,$result);
 
         $this->sql->mode = "mysql";
         $check = "`field1`, `field2`";
-        $result = $this->sql->selectFields(array("field1","field2"));
+        $result = $this->sql->selectFields(["field1","field2"]);
         $this->assertEquals($check,$result);
 
         $this->sql->mode = "mssql";
         $check = "[field1]";
-        $result = $this->sql->selectFields(array("field1"));
+        $result = $this->sql->selectFields(["field1"]);
         $this->assertEquals($check,$result);
 
         $check = "''";
@@ -381,11 +381,11 @@ class SqlTest extends PHPUnit_Framework_TestCase {
         $this->assertEquals($check,$query);
 
         $check = "";
-        $query = $this->sql->orderBy(array());
+        $query = $this->sql->orderBy([]);
         $this->assertEquals($check,$query);
 
         $check = "ORDER BY `field1`, `field2`, `field3`";
-        $query = $this->sql->orderBy(array("field1","field2","field3"));
+        $query = $this->sql->orderBy(["field1","field2","field3"]);
         $this->assertEquals($check,$query);
 
         $check = "ORDER BY CASE WHEN field1>0 THEN 0 ELSE 1 END, `field2`";
@@ -430,12 +430,12 @@ class SqlTest extends PHPUnit_Framework_TestCase {
                     AND field2=?field2
                     AND field3=?field3
                     AND field4=?field4";
-        $params = array(
+        $params = [
             "field3"    =>  "three",
             "field4"    =>  "four",
             "field1"    =>  "one",
             "field2"    =>  "two",
-        );
+        ];
 
         $args = [&$query,&$params];
         $query = $this->callProtectedMethod("prepareQuery",$args);

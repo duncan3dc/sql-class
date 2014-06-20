@@ -42,7 +42,7 @@ class Sql extends Common {
 
     public function __construct($options=false) {
 
-        $options = $this->getOptions($options,array(
+        $options = $this->getOptions($options,[
             "mode"          =>  "mysql",
             "hostname"      =>  "",
             "username"      =>  "",
@@ -50,19 +50,19 @@ class Sql extends Common {
             "database"      =>  false,
             "charset"       =>  "utf8",
             "timezone"      =>  false,
-            "definitions"   =>  array(),
-        ));
+            "definitions"   =>  [],
+        ]);
 
         $this->mode = $options["mode"];
 
-        $this->quoteChars = array(
+        $this->quoteChars = [
             "mysql"     =>  "`",
             "postgres"  =>  '"',
             "redshift"  =>  '"',
             "odbc"      =>  '"',
             "sqlite"    =>  "`",
-            "mssql"     =>  array("[","]"),
-        );
+            "mssql"     =>  ["[","]"],
+        ];
 
         if(!array_key_exists($this->mode,$this->quoteChars)) {
             throw new \Exception("Unsupported mode (" . $this->mode . ")");
@@ -72,11 +72,11 @@ class Sql extends Common {
         $this->htmlMode = false;
 
         # Create the empty triggers array, with each acceptable type
-        $this->triggers = array(
-            static::TRIGGER_INSERT => array(),
-            static::TRIGGER_UPDATE => array(),
-            static::TRIGGER_DELETE => array(),
-        );
+        $this->triggers = [
+            static::TRIGGER_INSERT => [],
+            static::TRIGGER_UPDATE => [],
+            static::TRIGGER_DELETE => [],
+        ];
 
         # Don't allow nulls by default
         $this->allowNulls = false;
@@ -134,15 +134,15 @@ class Sql extends Common {
             $this->error();
         }
 
-        $this->attached = array();
+        $this->attached = [];
 
-        $this->tables = array();
+        $this->tables = [];
 
         if($options["definitions"]) {
             $this->definitions($options["definitions"]);
         }
 
-        $this->cacheOptions = array();
+        $this->cacheOptions = [];
         $this->cacheNext = false;
 
     }
@@ -446,7 +446,7 @@ class Sql extends Common {
      */
     protected function quoteChars(&$query) {
 
-        $checked = array();
+        $checked = [];
 
         $chars = $this->quoteChars[$this->mode];
         if(is_array($chars)) {
@@ -594,7 +594,7 @@ class Sql extends Common {
 
         $tmpQuery = $query;
         $newQuery = "";
-        $newParams = array();
+        $newParams = [];
 
         foreach($params as $val) {
 
@@ -605,7 +605,7 @@ class Sql extends Common {
 
             if(is_array($val)) {
                 if(count($val) > 1) {
-                    $markers = array();
+                    $markers = [];
                     foreach($val as $v) {
                         $markers[] = "?";
                         $newParams[] = $v;
@@ -729,7 +729,7 @@ class Sql extends Common {
                         }
 
                         # Postgres does it's own quoting
-                        if(!in_array($this->mode,array("postgres","redshift"))) {
+                        if(!in_array($this->mode,["postgres","redshift"])) {
                             $value = "'" . $value . "'";
                         }
 
@@ -754,11 +754,11 @@ class Sql extends Common {
      */
     public function cache($query,$params=false,$timeout=false) {
 
-        $options = array_merge($this->cacheOptions,array(
+        $options = array_merge($this->cacheOptions,[
             "sql"     =>  $this,
             "query"   =>  $query,
             "params"  =>  $params,
-        ));
+        ]);
 
         if($timeout) {
             $options["timeout"] = $timeout;
@@ -875,7 +875,7 @@ class Sql extends Common {
 
         $query = "UPDATE " . $tableName . " SET ";
 
-        $params = array();
+        $params = [];
         foreach($set as $key => $val) {
             $query .= $this->quoteField($key) . "=?,";
             $params[] = $val;
@@ -901,7 +901,7 @@ class Sql extends Common {
 
         $tableName = $this->getTableName($table);
 
-        $newParams = array();
+        $newParams = [];
         foreach($params as $key => $val) {
             if($fields) {
                 $fields .= ",";
@@ -945,7 +945,7 @@ class Sql extends Common {
                     $fields .= $this->quoteField($key);
                 }
 
-                $newParams = array();
+                $newParams = [];
                 $noParams = false;
                 if($this->mode == "redshift" && (count($params) * count($first)) > 32767) {
                     $noParams = true;
@@ -1116,13 +1116,13 @@ class Sql extends Common {
                     $params[] = $first;
 
                 # If the array is only two elements long and the first element is a valid comparison operator then use it as such
-                } elseif(count($val) == 2 && in_array($first,array("<","<=",">",">=","=","<>"))) {
+                } elseif(count($val) == 2 && in_array($first,["<","<=",">",">=","=","<>"])) {
                     $query .= $first . "? ";
                     $params[] = $second;
 
                 # Otherwise treat the array as a set of values for an IN()
                 } else {
-                    $markers = array();
+                    $markers = [];
                     foreach($val as $v) {
                         $markers[] = "?";
                         $params[] = $v;
@@ -1270,7 +1270,7 @@ class Sql extends Common {
             return false;
         }
 
-        $row = array();
+        $row = [];
 
         foreach($data as $key => $val) {
 
@@ -1682,7 +1682,7 @@ class Sql extends Common {
         $table = trim($table);
 
         # There is a standard function for quoting postgres table names
-        if(in_array($this->mode,array("postgres","redshift"))) {
+        if(in_array($this->mode,["postgres","redshift"])) {
             return pg_escape_identifier($this->server,$table);
         }
 
@@ -1937,7 +1937,7 @@ class Sql extends Common {
             return $this->query($query);
         }
 
-        if(in_array($this->mode,array("postgres","redshift"))) {
+        if(in_array($this->mode,["postgres","redshift"])) {
             $query = "LOCK TABLE " . implode(",",$tables) . " IN EXCLUSIVE MODE";
             return $this->query($query);
         }
@@ -2001,13 +2001,13 @@ class Sql extends Common {
         }
 
         foreach($triggers as $trigger) {
-            $result = $trigger(array(
+            $result = $trigger([
                 "sql"      =>  $this,
                 "type"     =>  $type,
                 "table"    =>  $table,
                 "params1"  =>  $params1,
                 "params2"  =>  $params2,
-            ));
+            ]);
             if(!$result) {
                 return false;
             }
@@ -2036,7 +2036,7 @@ class Sql extends Common {
 
         }
 
-        $databases = array();
+        $databases = [];
         $result = $this->query($query);
         while($row = $this->fetch($result,true)) {
             $databases[] = $row[0];
@@ -2065,7 +2065,7 @@ class Sql extends Common {
 
         }
 
-        $tables = array();
+        $tables = [];
         $result = $this->query($query);
         while($row = $this->fetch($result,true)) {
             $tables[] = $row[0];
@@ -2094,7 +2094,7 @@ class Sql extends Common {
 
         }
 
-        $views = array();
+        $views = [];
         $result = $this->query($query);
         while($row = $this->fetch($result,true)) {
             $views[] = $row[0];

@@ -28,7 +28,7 @@ class Cache extends Common {
 
     public function __construct($options=false) {
 
-        $options = $this->getOptions($options,array(
+        $options = $this->getOptions($options,[
             "dir"           =>  "/tmp/query_cache",
             "sql"           =>  false,
             "query"         =>  false,
@@ -36,7 +36,7 @@ class Cache extends Common {
             "timeout"       =>  static::DAY,
             "limit"         =>  10000,
             "directories"   =>  3,
-        ));
+        ]);
 
         $this->sql = $options["sql"];
 
@@ -167,7 +167,7 @@ class Cache extends Common {
         $this->nextRow++;
 
         if($indexed) {
-            $new = array();
+            $new = [];
             foreach($row as $val) {
                 $new[] = $val;
             }
@@ -209,7 +209,7 @@ class Cache extends Common {
         # If the data hasn't already been sorted then create an index map for it now
         if(!is_array($this->indexMap)) {
 
-            $sort = array();
+            $sort = [];
             $pos = 0;
             $this->seek(0);
             while($row = $this->fetch()) {
