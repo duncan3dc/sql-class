@@ -73,9 +73,9 @@ class Sql extends Common {
 
         # Create the empty triggers array, with each acceptable type
         $this->triggers = array(
-            self::TRIGGER_INSERT => array(),
-            self::TRIGGER_UPDATE => array(),
-            self::TRIGGER_DELETE => array(),
+            static::TRIGGER_INSERT => array(),
+            static::TRIGGER_UPDATE => array(),
+            static::TRIGGER_DELETE => array(),
         );
 
         # Don't allow nulls by default
@@ -95,7 +95,7 @@ class Sql extends Common {
                     $this->server->set_charset($options["charset"]);
                 }
                 if($timezone = $options["timezone"]) {
-                    if($timezone == self::USE_PHP_TIMEZONE) {
+                    if($timezone == static::USE_PHP_TIMEZONE) {
                         $timezone = ini_get("date.timezone");
                     }
                     $this->query("SET time_zone='" . $timezone . "'");
@@ -852,13 +852,13 @@ class Sql extends Common {
         $query = substr($query,0,-1) . " ";
 
         $params = false;
-        if($where != self::NO_WHERE_CLAUSE) {
+        if($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
 
         $result = $this->query($query,$params);
 
-        $this->callTriggers(self::TRIGGER_UPDATE,$table,$set,$where);
+        $this->callTriggers(static::TRIGGER_UPDATE,$table,$set,$where);
 
         return $result;
 
@@ -885,7 +885,7 @@ class Sql extends Common {
 
         $result = $this->query($query,$newParams);
 
-        $this->callTriggers(self::TRIGGER_INSERT,$table,$params);
+        $this->callTriggers(static::TRIGGER_INSERT,$table,$params);
 
         return $result;
 
@@ -944,9 +944,9 @@ class Sql extends Common {
                 }
 
                 $tableName = $this->getTableName($table);
-                if($extra == self::INSERT_REPLACE) {
+                if($extra == static::INSERT_REPLACE) {
                     $query = "REPLACE ";
-                } elseif($extra == self::INSERT_IGNORE) {
+                } elseif($extra == static::INSERT_IGNORE) {
                     $query = "INSERT IGNORE ";
                 } else {
                     $query = "INSERT ";
@@ -1157,13 +1157,13 @@ class Sql extends Common {
          * Not all engines support this though, so we have to check which mode we are in
          * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
          */
-        if($where == self::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
+        if($where == static::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
             $query = "TRUNCATE TABLE " . $tableName;
 
         } else {
             $query = "DELETE FROM " . $tableName . " ";
 
-            if($where != self::NO_WHERE_CLAUSE) {
+            if($where != static::NO_WHERE_CLAUSE) {
                 $query .= "WHERE " . $this->where($where,$params);
             }
 
@@ -1171,7 +1171,7 @@ class Sql extends Common {
 
         $result = $this->query($query,$params);
 
-        $this->callTriggers(self::TRIGGER_DELETE,$table,$where);
+        $this->callTriggers(static::TRIGGER_DELETE,$table,$where);
 
         return $result;
 
@@ -1398,7 +1398,7 @@ class Sql extends Common {
         $query .= " FROM " . $table . " ";
 
         $params = false;
-        if($where != self::NO_WHERE_CLAUSE) {
+        if($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
 
@@ -1477,7 +1477,7 @@ class Sql extends Common {
         $query .= " FROM " . $table . " ";
 
         $params = false;
-        if($where != self::NO_WHERE_CLAUSE) {
+        if($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
 
