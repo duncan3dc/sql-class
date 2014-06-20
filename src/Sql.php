@@ -1998,7 +1998,7 @@ class Sql extends Common {
             break;
 
             default:
-                throw new Exception("getDatabases() not supported in this mode (" . $this->mode . ")");
+                throw new \Exception("getDatabases() not supported in this mode (" . $this->mode . ")");
             break;
 
         }
@@ -2027,7 +2027,7 @@ class Sql extends Common {
             break;
 
             default:
-                throw new Exception("getTables() not supported in this mode (" . $this->mode . ")");
+                throw new \Exception("getTables() not supported in this mode (" . $this->mode . ")");
             break;
 
         }
@@ -2056,7 +2056,7 @@ class Sql extends Common {
             break;
 
             default:
-                throw new Exception("getViews() not supported in this mode (" . $this->mode . ")");
+                throw new \Exception("getViews() not supported in this mode (" . $this->mode . ")");
             break;
 
         }
