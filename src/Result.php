@@ -172,6 +172,82 @@ class Result {
     }
 
 
+    public function rowCount() {
+
+        switch($this->mode) {
+
+            case "mysql":
+                $rows = $this->result->num_rows;
+            break;
+
+            case "postgres":
+            case "redshift":
+                $rows = pg_num_rows($this->result);
+            break;
+
+            case "odbc":
+                $rows = odbc_num_rows($this->result);
+            break;
+
+            case "sqlite":
+                $rows = 0;
+                while($this->fetch) {
+                    $rows++;
+                }
+                $this->result->reset();
+            break;
+
+            case "mssql":
+                $columns = mssql_num_rows($this->result);
+            break;
+
+        }
+
+        if($rows === false || $rows < 0) {
+            throw new \Exception("Failed to get the row count from the result set");
+        }
+
+        return $rows;
+
+    }
+
+
+    public function columnCount() {
+
+        switch($this->mode) {
+
+            case "mysql":
+                $columns = $this->result->field_count;
+            break;
+
+            case "postgres":
+            case "redshift":
+                $columns = pg_num_fields($this->result);
+            break;
+
+            case "odbc":
+                $columns = odbc_num_fields($this->result);
+            break;
+
+            case "sqlite":
+                $columns = $this->result->numColumns;
+            break;
+
+            case "mssql":
+                $columns = mssql_num_fields($this->result);
+            break;
+
+        }
+
+        if($columns === false || $columns < 0) {
+            throw new \Exception("Failed to get the column count from the result set");
+        }
+
+        return $columns;
+
+    }
+
+
     public function free() {
 
         switch($this->mode) {
