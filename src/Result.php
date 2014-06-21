@@ -279,7 +279,13 @@ class Result {
 
 
     public function __destruct() {
+
+        if(is_bool($this->result)) {
+            return;
+        }
+
         $this->free();
+
     }
 
 
