@@ -884,7 +884,6 @@ class Sql {
 
         $query = substr($query,0,-1) . " ";
 
-        $params = false;
         if($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where,$params);
         }
