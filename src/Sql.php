@@ -897,7 +897,7 @@ class Sql {
     }
 
 
-    public function insert($table,$params) {
+    public function insert($table,$params,$extra=false) {
 
         $tableName = $this->getTableName($table);
 
@@ -913,7 +913,14 @@ class Sql {
             $newParams[] = $val;
         }
 
-        $query = "INSERT INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
+        if($extra == static::INSERT_REPLACE) {
+            $query = "REPLACE ";
+        } elseif($extra == static::INSERT_IGNORE) {
+            $query = "INSERT IGNORE ";
+        } else {
+            $query = "INSERT ";
+        }
+        $query .= "INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
 
         $result = $this->query($query,$newParams);
 
