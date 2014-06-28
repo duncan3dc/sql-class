@@ -416,7 +416,7 @@ class Sql {
      */
     protected function modifyQuery(&$query,$callback) {
 
-        $regex = "/('[^']+')/";
+        $regex = "/('[^']*')/";
         if(!preg_match($regex,$query)) {
             $query = $callback($query);
             return;
