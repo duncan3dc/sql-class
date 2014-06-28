@@ -1123,7 +1123,7 @@ class Sql {
                     $params[] = $first;
 
                 # If the array is only two elements long and the first element is a valid comparison operator then use it as such
-                } elseif(count($val) == 2 && in_array($first,["<","<=",">",">=","=","<>"])) {
+                } elseif(count($val) == 2 && in_array($first,["<","<=",">",">=","=","<>"],true)) {
                     $query .= $first . "? ";
                     $params[] = $second;
 
