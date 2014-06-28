@@ -110,7 +110,7 @@ class Sql {
 
             case "postgres":
             case "redshift":
-                $connect = "host=" . $options["server"] . " ";
+                $connect = "host=" . $options["hostname"] . " ";
                 $connect .= "user=" . $options["username"] . " ";
                 $connect .= "password=" . $options["password"] . " ";
                 $connect .= "dbname= " . $options["database"] . " ";
@@ -118,7 +118,7 @@ class Sql {
             break;
 
             case "odbc":
-                $this->server = odbc_connect($options["server"], $options["username"], $options["password"]);
+                $this->server = odbc_connect($options["hostname"], $options["username"], $options["password"]);
             break;
 
             case "sqlite":
@@ -126,7 +126,7 @@ class Sql {
             break;
 
             case "mssql":
-                $this->server = mssql_connect($options["server"],$options["username"],$options["password"]);
+                $this->server = mssql_connect($options["hostname"],$options["username"],$options["password"]);
             break;
 
         }
