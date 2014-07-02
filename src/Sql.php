@@ -670,6 +670,10 @@ class Sql {
             return;
         }
 
+        if(!is_array($params)) {
+            return;
+        }
+
         foreach($params as &$val) {
             if(gettype($val) == "NULL") {
                 $val = "";
