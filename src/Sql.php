@@ -276,6 +276,7 @@ class Sql {
         $this->tableNames($query);
         $this->namedParams($query,$params);
         $this->paramArrays($query,$params);
+        $this->convertNulls($params);
 
         $preparedQuery = $this->prepareQuery($query,$params);
         $this->preparedQuery = $preparedQuery;
@@ -701,16 +702,9 @@ class Sql {
                     break;
 
                     case "NULL":
-                        # If nulls are allowed then set the value to be null and break out of the switch
-                        if($this->allowNulls) {
-                            $value = "NULL";
-                            break;
-                        }
+                        $value = "NULL";
+                    break;
 
-                        # If nulls aren't allowed then use an empty string
-                        $value = "";
-
-                        # If nulls aren't allowed then process it as a string
                     default:
                         switch($this->mode) {
                             case "mysql":

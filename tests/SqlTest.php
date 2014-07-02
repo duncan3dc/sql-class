@@ -243,6 +243,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
     public function testPrepareQueryTypes() {
 
         $this->sql->mode = "odbc";
+        $this->sql->allowNulls = false;
 
         $check = "SELECT * FROM test
             WHERE field1='Test'
@@ -275,6 +276,10 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             0,
             "00004",
         ];
+
+        $args = [&$params];
+        $this->callProtectedMethod("convertNulls",$args);
+
         $args = [&$query,&$params];
         $query = $this->callProtectedMethod("prepareQuery",$args);
 
@@ -319,6 +324,10 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             0,
             "00004",
         ];
+
+        $args = [&$params];
+        $this->callProtectedMethod("convertNulls",$args);
+
         $args = [&$query,&$params];
         $query = $this->callProtectedMethod("prepareQuery",$args);
 
