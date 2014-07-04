@@ -40,6 +40,84 @@ class Sql {
     private $params;
     private $preparedQuery;
 
+    protected static $servers = [];
+    protected static $instances = [];
+
+
+    static function addServer($server, array $options) {
+
+        if(!$server) {
+            throw new \Exception("No name specified for the server to add");
+        }
+
+        if(array_key_exists($server,static::$servers)) {
+            throw new \Exception("This server (" . $server . ") has already been defined");
+        }
+
+        static::$servers[$server] = $options;
+
+    }
+
+
+    static function getInstance($server=false) {
+
+        # If no server was specified then default to the first one defined
+        if(!$server) {
+            $server = array_keys(static::$servers)[0];
+        }
+
+        if(!array_key_exists($server,static::$instances)) {
+            static::$instances[$server] = static::getNewInstance($server);
+        }
+
+        return static::$instances[$server];
+
+    }
+
+
+    static function getNewInstance($server) {
+
+        if(!array_key_exists($server,static::$servers)) {
+            throw new \Exception("Unknown SQL Server (" . $server . ")");
+        }
+
+        $options = static::$servers[$server];
+        $construct = [
+            "mode"          =>  null,
+            "hostname"      =>  null,
+            "username"      =>  null,
+            "password"      =>  null,
+            "database"      =>  null,
+            "charset"       =>  null,
+            "timezone"      =>  null,
+            "definitions"   =>  null,
+        ];
+        foreach($construct as $key => $null) {
+            if(array_key_exists($key,$options)) {
+                $construct[$key] = $options[$key];
+            } else {
+                unset($construct[$key]);
+            }
+        }
+
+        $sql = new static($construct);
+
+        if(array_key_exists("output",$options)) {
+            $sql->output = $options["output"];
+        }
+
+        if(array_key_exists("htmlMode",$options)) {
+            $sql->htmlMode = $options["htmlMode"];
+        }
+
+        if(array_key_exists("cacheOptions",$options)) {
+            $sql->cacheOptions = $options["cacheOptions"];
+        }
+
+        return $sql;
+
+    }
+
 
     public function __construct($options=false) {
 
