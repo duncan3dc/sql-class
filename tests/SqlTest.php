@@ -455,4 +455,30 @@ class SqlTest extends PHPUnit_Framework_TestCase {
     }
 
 
+    public function testEmptyStrings() {
+
+        $this->sql->mode = "sqlite";
+        $this->sql->definitions([
+            "table1"    =>  "database1",
+            "table2"    =>  "database2",
+            "table3"    =>  "database3",
+        ]);
+
+        $check = "SELECT a.* FROM `database1`.`table1` a
+                JOIN `database2`.`table2` b ON b.field1=a.field1 AND b.field2=''
+                JOIN `database3`.`table3` c ON c.field1=a.field1
+                WHERE a.field1='TEST'";
+
+        $query = "SELECT a.* FROM {table1} a
+                JOIN {table2} b ON b.field1=a.field1 AND b.field2=''
+                JOIN {table3} c ON c.field1=a.field1
+                WHERE a.field1='TEST'";
+
+        $args = [&$query];
+        $this->callProtectedMethod("tableNames",$args);
+        $this->assertEquals($check,$query);
+
+    }
+
+
 }
