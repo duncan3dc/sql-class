@@ -1,7 +1,7 @@
 {
 	"name": "duncan3dc/sql-class",
 	"type": "library",
-	"description": "A pair of classes that provide a simple database abstraction layer, and an on disk caching facility",
+	"description": "A group of classes that provide a simple database abstraction layer, and an on disk caching facility",
 	"keywords": ["sql","abstraction","database","cache","mysql","mysqli","postgres","redshift","odbc","sqlite","mssql"],
 	"homepage": "https://github.com/duncan3dc/sql-class",
 	"license": "Apache-2.0",
