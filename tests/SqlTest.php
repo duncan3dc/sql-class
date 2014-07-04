@@ -481,4 +481,23 @@ class SqlTest extends PHPUnit_Framework_TestCase {
     }
 
 
+    public function testStrictWhere() {
+
+        $this->sql->mode = "mysql";
+
+        $check = "`field1` IN(?,?) ";
+        $params = [0,1];
+
+        $where = [
+            "field1"    =>  [0,1],
+        ];
+
+        $null = [];
+        $args = [&$where,&$null];
+        $query = $this->callProtectedMethod("where",$args);
+        $this->assertEquals($check,$query);
+
+    }
+
+
 }
