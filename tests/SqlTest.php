@@ -420,21 +420,21 @@ class SqlTest extends PHPUnit_Framework_TestCase {
     }
 
 
-    public function namedParams() {
+    public function testNamedParams() {
 
-        $this->sql->mode = "mysql";
+        $this->sql->mode = "sqlite";
 
-        $check = "SELECT field1 `field1`, field2 `field2`, field3 `field3` FROM table1 a
+        $check = "SELECT field1 FROM table1 a
                 JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3='three' AND b.field4='four'
                 JOIN table2 b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3='three' AND b.field4='four'
                 WHERE field1='one'
-                        AND field2='two'
-                        AND field3='three'
-                        AND field4='four'";
+                    AND field2='two'
+                    AND field3='three'
+                    AND field4='four'";
 
-        $query = "SELECT field1 `field1`, field2 [field2], field3 \"field3\" FROM {table1} a
-                JOIN {table2} b ON b.field1=a.field1 AND b.field2='?' AND b.field3=?field3 AND b.field4=?field4
-                JOIN {table2} b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3=?field3 AND b.field4=?field4
+        $query = "SELECT field1 FROM table1 a
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3=?field3 AND b.field4=?field4
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3=?field3 AND b.field4=?field4
                 WHERE field1=?field1
                     AND field2=?field2
                     AND field3=?field3
@@ -447,7 +447,9 @@ class SqlTest extends PHPUnit_Framework_TestCase {
         ];
 
         $args = [&$query,&$params];
+        $this->callProtectedMethod("namedParams",$args);
         $query = $this->callProtectedMethod("prepareQuery",$args);
+
         $this->assertEquals($check,$query);
 
     }
