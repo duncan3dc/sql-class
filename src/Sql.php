@@ -31,7 +31,8 @@ class Sql {
 
     public  $transaction;               # A flag to indicate whether we are currently in transaction mode or not
 
-    public  $log;                       # The directory to log errors to
+    public  $log;                       # Whether we should log errors to disk or not
+    public  $logDir;                    # The directory to log errors to
 
     public  $output;                    # Whether the class should output queries or not
     public  $htmlMode;                  # Whether the output should be html or plain text
@@ -102,16 +103,18 @@ class Sql {
 
         $sql = new static($construct);
 
-        if(array_key_exists("output",$options)) {
-            $sql->output = $options["output"];
-        }
-
-        if(array_key_exists("htmlMode",$options)) {
-            $sql->htmlMode = $options["htmlMode"];
-        }
-
-        if(array_key_exists("cacheOptions",$options)) {
-            $sql->cacheOptions = $options["cacheOptions"];
+        $properties = [
+            "allowNulls",
+            "cacheOptions",
+            "log",
+            "logDir",
+            "output",
+            "htmlMode",
+        ];
+        foreach($properties as $property) {
+            if(array_key_exists($property,$options)) {
+                $sql->$property = $options[$property];
+            }
         }
 
         return $sql;
