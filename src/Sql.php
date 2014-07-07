@@ -396,9 +396,11 @@ class Sql {
                 $query = "";
 
                 $i = 1;
+                reset($params);
                 while($pos = strpos($tmpQuery,"?")) {
                     if($noParams) {
-                        $query .= substr($tmpQuery,0,$pos) . "'" . pg_escape_string(array_shift($params)) . "'";
+                        $query .= substr($tmpQuery,0,$pos) . "'" . pg_escape_string(current($params)) . "'";
+                        next($params);
                     } else {
                         $query .= substr($tmpQuery,0,$pos) . "\$" . $i++;
                     }
@@ -726,18 +728,24 @@ class Sql {
     protected function namedParams(&$query,&$params) {
 
         if(!is_array($params)) {
-            return false;
+            return;
+        }
+
+        if(!preg_match("/\?([a-zA-Z0-9]+)/",$query)) {
+            return;
         }
 
         $oldParams = $params;
         $params = [];
 
+        reset($oldParams);
         $this->modifyQuery($query,function($part) use(&$params,&$oldParams) {
             return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/",function($match) use(&$params,&$oldParams) {
                 if($key = $match[1]) {
                     $params[] = $oldParams[$key];
                 } else {
-                    $params[] = array_shift($oldParams);
+                    $params[] = current($oldParams);
+                    next($oldParams);
                 }
                 return "?" . $match[2];
             },$part);
@@ -771,13 +779,14 @@ class Sql {
             return $query;
         }
 
+        reset($params);
         $this->modifyQuery($query,function($part) use(&$params) {
-            $newPart = "";
             while($pos = strpos($part,"?")) {
                 $newPart .= substr($part,0,$pos);
                 $part = substr($part,$pos + 1);
 
-                $value = array_shift($params);
+                $value = current($params);
+                next($params);
 
                 switch(gettype($value)) {
                     case "boolean":
