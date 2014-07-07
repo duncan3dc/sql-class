@@ -1,7 +1,7 @@
 <?php
 
 namespace duncan3dc\SqlClass;
-use \duncan3dc\Helpers\Helper;
+use duncan3dc\Helpers\Helper;
 
 class Cache {
 

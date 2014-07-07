@@ -1,7 +1,8 @@
 <?php
 
 namespace duncan3dc\SqlClass;
-use \duncan3dc\Helpers\Helper;
+
+use duncan3dc\Helpers\Helper;
 
 class Sql {
 
@@ -280,7 +281,7 @@ class Sql {
     /**
      * Get the database that should be used for this table
      */
-    public function getTableDatabase($name) {
+    protected function getTableDatabase($name) {
 
         if(!array_key_exists($name,$this->tables)) {
             return false;
@@ -306,7 +307,7 @@ class Sql {
      * Get the full table name (including database)
      * If the database isn't passed then look it up first
      */
-    public function getTableName($name,$database=false) {
+    protected function getTableName($name,$database=false) {
 
         if(!$database) {
             $database = $this->getTableDatabase($name);
@@ -849,7 +850,7 @@ class Sql {
     }
 
 
-    public function error() {
+    protected function error() {
 
         # If logging is turned on then log the error details to the log directory
         if($this->log) {
@@ -861,7 +862,7 @@ class Sql {
     }
 
 
-    public function logError() {
+    protected function logError() {
 
         if(!$this->log) {
             return;
@@ -1588,7 +1589,7 @@ class Sql {
     /**
      * Quote a field with the appropriate characters for this mode
      */
-    public function quoteField($field) {
+    protected function quoteField($field) {
 
         # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
         if($this->mode == "odbc") {
@@ -1619,7 +1620,7 @@ class Sql {
     /**
      * Quote a table with the appropriate characters for this mode
      */
-    public function quoteTable($table) {
+    protected function quoteTable($table) {
 
         # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
         if($this->mode == "odbc") {
@@ -1939,7 +1940,7 @@ class Sql {
     /**
      * Call any triggers that were previously registered using addTrigger()
      */
-    public function callTriggers($type,$table,$params1,$params2=false) {
+    protected function callTriggers($type,$table,$params1,$params2=false) {
 
         $triggers = $this->triggers[$type][$table];
 
