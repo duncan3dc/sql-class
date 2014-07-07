@@ -1310,7 +1310,7 @@ class Sql {
      * Fetch the next row from the result set
      */
     public function _fetch($result) {
-        return $result->fetch($indexed);
+        return $result->_fetch($indexed);
     }
 
 
