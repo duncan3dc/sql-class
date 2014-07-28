@@ -4,8 +4,8 @@ namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 
-class Sql {
-
+class Sql
+{
     const   NO_WHERE_CLAUSE  = 101;     # Allow queries to be created without a where cluase
     const   USE_PHP_TIMEZONE = 102;     # Set the database timezone to be the same as the php one
     const   INSERT_REPLACE   = 103;     # Mysql extension to replace any existing records with a unique key match
@@ -49,40 +49,39 @@ class Sql {
     protected static $instances = [];
 
 
-    static function addServer($server, array $options) {
-
-        if(!$server) {
+    static function addServer($server, array $options)
+    {
+        if (!$server) {
             throw new \Exception("No name specified for the server to add");
         }
 
-        if(array_key_exists($server,static::$servers)) {
+        if (array_key_exists($server, static::$servers)) {
             throw new \Exception("This server (" . $server . ") has already been defined");
         }
 
         static::$servers[$server] = $options;
-
     }
 
 
-    static function getInstance($server=false) {
+    static function getInstance($server = null)
+    {
 
         # If no server was specified then default to the first one defined
-        if(!$server) {
+        if (!$server) {
             $server = array_keys(static::$servers)[0];
         }
 
-        if(!array_key_exists($server,static::$instances)) {
+        if (!array_key_exists($server, static::$instances)) {
             static::$instances[$server] = static::getNewInstance($server);
         }
 
         return static::$instances[$server];
-
     }
 
 
-    static function getNewInstance($server) {
-
-        if(!array_key_exists($server,static::$servers)) {
+    static function getNewInstance($server)
+    {
+        if (!array_key_exists($server, static::$servers)) {
             throw new \Exception("Unknown SQL Server (" . $server . ")");
         }
 
@@ -97,8 +96,8 @@ class Sql {
             "timezone"      =>  null,
             "definitions"   =>  null,
         ];
-        foreach($construct as $key => $null) {
-            if(array_key_exists($key,$options)) {
+        foreach ($construct as $key => $null) {
+            if (array_key_exists($key, $options)) {
                 $construct[$key] = $options[$key];
             } else {
                 unset($construct[$key]);
@@ -115,20 +114,19 @@ class Sql {
             "output",
             "htmlMode",
         ];
-        foreach($properties as $property) {
-            if(array_key_exists($property,$options)) {
+        foreach ($properties as $property) {
+            if (array_key_exists($property, $options)) {
                 $sql->$property = $options[$property];
             }
         }
 
         return $sql;
-
     }
 
 
-    public function __construct($options=false) {
-
-        $options = Helper::getOptions($options,[
+    public function __construct($options = null)
+    {
+        $options = Helper::getOptions($options, [
             "mode"          =>  "mysql",
             "hostname"      =>  "",
             "username"      =>  "",
@@ -149,10 +147,10 @@ class Sql {
             "redshift"  =>  '"',
             "odbc"      =>  '"',
             "sqlite"    =>  "`",
-            "mssql"     =>  ["[","]"],
+            "mssql"     =>  ["[", "]"],
         ];
 
-        if(!array_key_exists($this->mode,$this->quoteChars)) {
+        if (!array_key_exists($this->mode, $this->quoteChars)) {
             throw new \Exception("Unsupported mode (" . $this->mode . ")");
         }
 
@@ -177,46 +175,45 @@ class Sql {
 
         $this->tables = [];
 
-        if($options["definitions"]) {
+        if ($options["definitions"]) {
             $this->definitions($options["definitions"]);
         }
 
         $this->cacheOptions = [];
         $this->cacheNext = false;
-
     }
 
 
     /**
      * If we have not already connected then connect to the database now
      */
-    protected function connect() {
-
-        if($this->connected) {
+    public function connect()
+    {
+        if ($this->connected) {
             return;
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
-                if(!$this->server = new \mysqli($this->options["hostname"], $this->options["username"], $this->options["password"])) {
+                if (!$this->server = new \mysqli($this->options["hostname"], $this->options["username"], $this->options["password"])) {
                     $this->error();
                 }
-                if($this->options["charset"]) {
+                if ($this->options["charset"]) {
                     $this->server->set_charset($this->options["charset"]);
                 }
-                if($timezone = $this->options["timezone"]) {
-                    if($timezone == static::USE_PHP_TIMEZONE) {
+                if ($timezone = $this->options["timezone"]) {
+                    if ($timezone == static::USE_PHP_TIMEZONE) {
                         $timezone = ini_get("date.timezone");
                     }
                     $this->query("SET time_zone='" . $timezone . "'");
                 }
-                if($database = $this->options["database"]) {
-                    if(!$this->server->select_db($database)) {
+                if ($database = $this->options["database"]) {
+                    if (!$this->server->select_db($database)) {
                         $this->error();
                     }
                 }
-            break;
+                break;
 
             case "postgres":
             case "redshift":
@@ -224,93 +221,88 @@ class Sql {
                 $connect .= "user=" . $this->options["username"] . " ";
                 $connect .= "password=" . $this->options["password"] . " ";
                 $connect .= "dbname= " . $this->options["database"] . " ";
-                $this->server = pg_connect($connect,PGSQL_CONNECT_FORCE_NEW);
-            break;
+                $this->server = pg_connect($connect, PGSQL_CONNECT_FORCE_NEW);
+                break;
 
             case "odbc":
                 $this->server = odbc_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
-            break;
+                break;
 
             case "sqlite":
                 $this->server = new \Sqlite3($this->options["database"]);
-            break;
+                break;
 
             case "mssql":
                 $this->server = mssql_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
-            break;
-
+                break;
         }
 
-        if(!$this->server) {
+        if (!$this->server) {
             $this->error();
         }
 
         $this->connected = true;
-
     }
 
 
     /*
      * Define which database each table is located in
      */
-    public function definitions($data) {
-
+    public function definitions($data)
+    {
         # Either specified as an array of tables
-        if(is_array($data)) {
+        if (is_array($data)) {
             $tables = $data;
 
         # Or as an includable script with a $tables array defined in it
         } else {
             require($data);
-
         }
 
-        $this->tables = array_merge($this->tables,$tables);
-
+        $this->tables = array_merge($this->tables, $tables);
     }
 
 
     /**
      * Attach another sqlite database to the current connection
      */
-    public function attachDatabase($filename,$database=false) {
-
-        if($this->mode != "sqlite") {
+    public function attachDatabase($filename, $database = null)
+    {
+        if ($this->mode != "sqlite") {
             throw new \Exception("You can only attach databases when in sqlite mode");
         }
 
-        if(!$database) {
-            $database = pathinfo($filename,PATHINFO_FILENAME);
+        if (!$database) {
+            $database = pathinfo($filename, PATHINFO_FILENAME);
         }
 
         $query = "ATTACH DATABASE '" . $filename . "' AS " . $this->quoteTable($database);
         $result = $this->query($query);
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
         $this->attached[$database] = $filename;
 
         return $result;
-
     }
 
 
     /**
      * Get the database that should be used for this table
      */
-    protected function getTableDatabase($name) {
-
-        if(!array_key_exists($name,$this->tables)) {
+    protected function getTableDatabase($name)
+    {
+        if (!array_key_exists($name, $this->tables)) {
             return false;
         }
 
         $database = $this->tables[$name];
 
         # If this table's database depends on the mode
-        if(is_array($database)) {
-            if(array_key_exists($this->mode,$database)) {
+        if (is_array($database)) {
+            if (array_key_exists($this->mode, $database)) {
                 $database = $database[$this->mode];
             } else {
                 $database = $database["default"];
@@ -318,7 +310,6 @@ class Sql {
         }
 
         return $database;
-
     }
 
 
@@ -326,41 +317,35 @@ class Sql {
      * Get the full table name (including database)
      * If the database isn't passed then look it up first
      */
-    protected function getTableName($name,$database=false) {
-
-        if(!$database) {
+    protected function getTableName($name, $database = null)
+    {
+        if (!$database) {
             $database = $this->getTableDatabase($name);
         }
 
-        if($database) {
-            switch($this->mode) {
-                case "mssql":
-                    $table = $this->quoteField($database) . ".dbo." . $this->quoteField($name);
-                break;
-                default:
-                    $table = $this->quoteField($database) . "." . $this->quoteField($name);
-                break;
+        if ($database) {
+            if ($this->mode == "mssql") {
+                $table = $this->quoteField($database) . ".dbo." . $this->quoteField($name);
+            } else {
+                $table = $this->quoteField($database) . "." . $this->quoteField($name);
             }
-
         } else {
             $table = $name;
-
         }
 
         return $table;
-
     }
 
 
     /**
      * Execute an sql query
      */
-    public function query($query,$params=false) {
-
+    public function query($query, $params = null)
+    {
         # If the next query should be cached then run the cache function instead
-        if($this->cacheNext) {
+        if ($this->cacheNext) {
             $this->cacheNext = false;
-            return $this->cache($query,$params);
+            return $this->cache($query, $params);
         }
 
         # Ensure we have a connection to run this query on
@@ -370,7 +355,7 @@ class Sql {
         $this->params = false;
         $this->preparedQuery = false;
 
-        if(is_array($params)) {
+        if (is_array($params)) {
             $this->params = $params;
         }
 
@@ -378,173 +363,171 @@ class Sql {
         $this->functions($query);
         $this->limit($query);
         $this->tableNames($query);
-        $this->namedParams($query,$params);
-        $this->paramArrays($query,$params);
+        $this->namedParams($query, $params);
+        $this->paramArrays($query, $params);
         $this->convertNulls($params);
 
-        $preparedQuery = $this->prepareQuery($query,$params);
+        $preparedQuery = $this->prepareQuery($query, $params);
         $this->preparedQuery = $preparedQuery;
 
-        if($this->output) {
-            if($this->htmlMode) {
+        if ($this->output) {
+            if ($this->htmlMode) {
                 echo "<pre>";
             }
 
             echo $preparedQuery;
 
-            if($this->htmlMode) {
+            if ($this->htmlMode) {
                 echo "<hr>";
             } else {
                 echo "\n";
             }
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
-                if(!$result = $this->server->query($preparedQuery)) {
+                if (!$result = $this->server->query($preparedQuery)) {
                     $this->error();
-                $noParams = false;
-                if($this->mode == "redshift" && count($params) > 32767) {
-                    $noParams = true;
                 }
-
-                }
-            break;
+                break;
 
             case "postgres":
             case "redshift":
                 $tmpQuery = $query;
                 $query = "";
 
+                $noParams = false;
+                if ($this->mode == "redshift" && count($params) > 32767) {
+                    $noParams = true;
+                }
+
                 $i = 1;
                 reset($params);
-                while($pos = strpos($tmpQuery,"?")) {
-                    if($noParams) {
-                        $query .= substr($tmpQuery,0,$pos) . "'" . pg_escape_string(current($params)) . "'";
+                while ($pos = strpos($tmpQuery, "?")) {
+                    if ($noParams) {
+                        $query .= substr($tmpQuery, 0, $pos) . "'" . pg_escape_string(current($params)) . "'";
                         next($params);
                     } else {
-                        $query .= substr($tmpQuery,0,$pos) . "\$" . $i++;
+                        $query .= substr($tmpQuery, 0, $pos) . "\$" . $i++;
                     }
-                    $tmpQuery = substr($tmpQuery,$pos + 1);
+                    $tmpQuery = substr($tmpQuery, $pos + 1);
                 }
                 $query .= $tmpQuery;
 
                 $params = Helper::toArray($params);
-                if(!$result = pg_query_params($this->server,$query,$params)) {
+                if (!$result = pg_query_params($this->server, $query, $params)) {
                     $this->error();
                 }
-            break;
+                break;
 
             case "odbc":
-                if(!$result = odbc_prepare($this->server,$query)) {
+                if (!$result = odbc_prepare($this->server, $query)) {
                     $this->error();
                 }
                 $params = Helper::toArray($params);
-                if(!odbc_execute($result,$params)) {
+                if (!odbc_execute($result, $params)) {
                     $this->error();
                 }
-            break;
+                break;
 
             case "sqlite":
 
-                if(!is_array($params)) {
-                    if(!$result = $this->server->query($preparedQuery)) {
+                if (!is_array($params)) {
+                    if (!$result = $this->server->query($preparedQuery)) {
                         $this->error();
                     }
 
+                # If we have some parameters then we must convert them to the sqlite format
                 } else {
-
                     $newQuery = "";
-                    foreach($params as $key => $val) {
-                        $pos = strpos($query,"?");
-                        $newQuery .= substr($query,0,$pos);
-                        $query = substr($query,$pos + 1);
+                    foreach ($params as $key => $val) {
+                        $pos = strpos($query, "?");
+                        $newQuery .= substr($query, 0, $pos);
+                        $query = substr($query, $pos + 1);
 
                         $newQuery .= ":var" . $key;
                     }
                     $newQuery .= $query;
 
-                    if(!$result = $this->server->prepare($newQuery)) {
+                    if (!$result = $this->server->prepare($newQuery)) {
                         $this->error();
                     }
 
-                    foreach($params as $key => $val) {
-                        switch(gettype($val)) {
+                    foreach ($params as $key => $val) {
+                        switch (gettype($val)) {
+
                             case "boolean":
                             case "integer":
                                 $type = SQLITE3_INTEGER;
-                            break;
+                                break;
+
                             case "double":
                                 $type = SQLITE3_FLOAT;
-                            break;
+                                break;
+
                             case "NULL":
-                                if($this->allowNulls) {
+                                if ($this->allowNulls) {
                                     $type = SQLITE3_NULL;
                                 } else {
                                     $type = SQLITE3_TEXT;
                                     $val = "";
                                 }
-                            break;
+                                break;
+
                             default:
                                 $type = SQLITE3_TEXT;
-                            break;
                         }
 
                         $result->bindValue(":var" . $key, $val, $type);
                     }
 
-                    if(!$result = $result->execute()) {
+                    if (!$result = $result->execute()) {
                         $this->error();
                     }
-
                 }
-            break;
+                break;
 
             case "mssql":
-                if(!$result = mssql_query($preparedQuery,$this->server)) {
+                if (!$result = mssql_query($preparedQuery, $this->server)) {
                     $this->error();
                 }
-            break;
-
+                break;
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
-        return new Result($result,$this->mode);
-
+        return new Result($result, $this->mode);
     }
 
 
     /*
      * Allow a query to be modified without affecting quoted strings within it
      */
-    protected function modifyQuery(&$query,$callback) {
-
+    protected function modifyQuery(&$query, $callback)
+    {
         $regex = "/('[^']*')/";
-        if(!preg_match($regex,$query)) {
+        if (!preg_match($regex, $query)) {
             $query = $callback($query);
             return;
         }
 
-        $parts = preg_split($regex,$query,null,PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split($regex, $query, null, PREG_SPLIT_DELIM_CAPTURE);
 
         $query = "";
 
-        foreach($parts as $part) {
+        foreach ($parts as $part) {
 
             # If this part of the query isn't a string, then perform the replace on it
-            if($part[0] != "'") {
+            if ($part[0] != "'") {
                 $part = $callback($part);
             }
 
             # Append this part of the query onto the new query we are constructing
             $query .= $part;
-
         }
-
     }
 
 
@@ -552,12 +535,12 @@ class Sql {
      * Replace any quote characters used to the appropriate type for the current mode
      * This function attempts to ignore any instances that are surrounded by single quotes, as these should not be converted
      */
-    protected function quoteChars(&$query) {
-
+    protected function quoteChars(&$query)
+    {
         $checked = [];
 
         $chars = $this->quoteChars[$this->mode];
-        if(is_array($chars)) {
+        if (is_array($chars)) {
             $newFrom = $chars[0];
             $newTo = $chars[1];
         } else {
@@ -565,12 +548,12 @@ class Sql {
             $newTo = $chars;
         }
 
-        foreach($this->quoteChars as $mode => $chars) {
-            if($mode == $this->mode) {
+        foreach ($this->quoteChars as $mode => $chars) {
+            if ($mode == $this->mode) {
                 continue;
             }
 
-            if(is_array($chars)) {
+            if (is_array($chars)) {
                 $oldFrom = $chars[0];
                 $oldTo = $chars[1];
             } else {
@@ -578,7 +561,7 @@ class Sql {
                 $oldTo = $chars;
             }
 
-            if($oldFrom == $newFrom && $oldTo == $newTo) {
+            if ($oldFrom == $newFrom && $oldTo == $newTo) {
                 continue;
             }
 
@@ -586,69 +569,64 @@ class Sql {
             $match = preg_quote($oldFrom) . "([^" . preg_quote($oldTo) . "]*)" . preg_quote($oldTo);
 
             # If we've already checked this regex then don't check it again
-            if(in_array($match,$checked)) {
+            if (in_array($match, $checked)) {
                 continue;
             }
             $checked[] = $match;
 
-            $this->modifyQuery($query,function($part) use($match,$newFrom,$newTo) {
-                return preg_replace("/" . $match . "/","$newFrom$1$newTo",$part);
+            $this->modifyQuery($query, function($part) use($match, $newFrom, $newTo) {
+                return preg_replace("/" . $match . "/", $newFrom . "$1" . $newTo, $part);
             });
-
         }
-
     }
 
 
     /**
      * Replace any non-standard functions with the appropriate function for the current mode
      */
-    protected function functions(&$query) {
+    protected function functions(&$query)
+    {
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
             case "odbc":
             case "sqlite":
-                $query = preg_replace("/\bISNULL\(/","IFNULL(",$query);
-            break;
+                $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
+                break;
 
             case "postgres":
             case "redshift":
-                $query = preg_replace("/\bI[FS]NULL\(/","COALESCE(",$query);
-            break;
+                $query = preg_replace("/\bI[FS]NULL\(/", "COALESCE(", $query);
+                break;
 
             case "mssql":
-                $query = preg_replace("/\bIFNULL\(/","ISNULL(",$query);
-            break;
-
+                $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
+                break;
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
             case "postgres":
             case "redshift":
             case "odbc":
             case "mssql":
-                $query = preg_replace("/\bSUBSTR\(/","SUBSTRING(",$query);
-            break;
+                $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
+                break;
 
             case "sqlite":
-                $query = preg_replace("/\bSUBSTRING\(/","SUBSTR(",$query);
-            break;
-
+                $query = preg_replace("/\bSUBSTRING\(/", "SUBSTR(", $query);
+                break;
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
-                $query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/","TO_CHAR(ABSTIME($1),$3)",$query);
-            break;
-
+                $query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/", "TO_CHAR(ABSTIME($1), $3)", $query);
+                break;
         }
-
     }
 
 
@@ -656,23 +634,21 @@ class Sql {
      * Convert any limit usage
      * Doesn't work with the mssql variety
      */
-    protected function limit(&$query) {
-
-        switch($this->mode) {
+    protected function limit(&$query)
+    {
+        switch ($this->mode) {
 
             case "mysql":
             case "postgres":
             case "redshift":
             case "sqlite":
-                $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i","\nLIMIT $1\n",$query);
-            break;
+                $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
+                break;
 
             case "odbc":
-                $query = preg_replace("/\bLIMIT\s+([0-9]+)\b/i","\nFETCH FIRST $1 ROWS ONLY\n",$query);
-            break;
-
+                $query = preg_replace("/\bLIMIT\s+([0-9]+)\b/i", "\nFETCH FIRST $1 ROWS ONLY\n", $query);
+                break;
         }
-
     }
 
 
@@ -680,23 +656,22 @@ class Sql {
      * Convert table references to full database/table names
      * This allows tables to be surrounded in braces, without specifying the database
      */
-    protected function tableNames(&$query) {
-
-        $this->modifyQuery($query,function($part) {
-            return preg_replace_callback("/{([^}]+)}/",function($match) {
+    protected function tableNames(&$query)
+    {
+        $this->modifyQuery($query, function($part) {
+            return preg_replace_callback("/{([^}]+)}/", function($match) {
                 return $this->getTableName($match[1]);
-            },$part);
+            }, $part);
         });
-
     }
 
 
     /**
      * If any of the parameters are arrays, then convert the single marker from the query to handle them
      */
-    protected function paramArrays(&$query,&$params) {
-
-        if(!is_array($params)) {
+    protected function paramArrays(&$query, &$params)
+    {
+        if (!is_array($params)) {
             return;
         }
 
@@ -704,56 +679,54 @@ class Sql {
         $newQuery = "";
         $newParams = [];
 
-        foreach($params as $val) {
+        foreach ($params as $val) {
 
-            $pos = strpos($tmpQuery,"?");
+            $pos = strpos($tmpQuery, "?");
 
-            $newQuery .= substr($tmpQuery,0,$pos);
-            $tmpQuery = substr($tmpQuery,$pos+1);
+            $newQuery .= substr($tmpQuery, 0, $pos);
+            $tmpQuery = substr($tmpQuery, $pos + 1);
 
-            if(is_array($val)) {
-                if(count($val) > 1) {
+            if (is_array($val)) {
+                if (count($val) > 1) {
                     $markers = [];
-                    foreach($val as $v) {
+                    foreach ($val as $v) {
                         $markers[] = "?";
                         $newParams[] = $v;
                     }
-                    $newQuery .= "(" . implode(",",$markers) . ")";
+                    $newQuery .= "(" . implode(",", $markers) . ")";
 
+                # If the array is only 1 element long then convert it to an = (or <> for NOT IN)
                 } else {
-                    $newQuery = preg_replace("/\s*\bNOT\s+IN\s*$/i","<>",$newQuery);
-                    $newQuery = preg_replace("/\s*\bIN\s*$/i","=",$newQuery);
+                    $newQuery = preg_replace("/\s*\bNOT\s+IN\s*$/i", "<>", $newQuery);
+                    $newQuery = preg_replace("/\s*\bIN\s*$/i", "=", $newQuery);
                     $newQuery .= "?";
                     $newParams[] = reset($val);
-
                 }
 
+            # If this is just a straight value then don't do anything to it
             } else {
                 $newQuery .= "?";
                 $newParams[] = $val;
-
             }
-
         }
 
         $newQuery .= $tmpQuery;
 
         $query = $newQuery;
         $params = $newParams;
-
     }
 
 
     /**
      * If the params array uses named keys then convert them to the regular markers
      */
-    protected function namedParams(&$query,&$params) {
-
-        if(!is_array($params)) {
+    protected function namedParams(&$query, &$params)
+    {
+        if (!is_array($params)) {
             return;
         }
 
-        if(!preg_match("/\?([a-zA-Z0-9]+)/",$query)) {
+        if (!preg_match("/\?([a-zA-Z0-9]+)/", $query)) {
             return;
         }
 
@@ -761,260 +734,250 @@ class Sql {
         $params = [];
 
         reset($oldParams);
-        $this->modifyQuery($query,function($part) use(&$params,&$oldParams) {
-            return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/",function($match) use(&$params,&$oldParams) {
-                if($key = $match[1]) {
+        $this->modifyQuery($query, function($part) use(&$params, &$oldParams) {
+            return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/", function($match) use(&$params, &$oldParams) {
+                if ($key = $match[1]) {
                     $params[] = $oldParams[$key];
                 } else {
                     $params[] = current($oldParams);
                     next($oldParams);
                 }
                 return "?" . $match[2];
-            },$part);
+            }, $part);
         });
-
     }
 
 
-    protected function convertNulls(&$params) {
-
-        if($this->allowNulls) {
+    protected function convertNulls(&$params)
+    {
+        if ($this->allowNulls) {
             return;
         }
 
-        if(!is_array($params)) {
+        if (!is_array($params)) {
             return;
         }
 
-        foreach($params as &$val) {
-            if(gettype($val) == "NULL") {
+        foreach ($params as &$val) {
+            if (gettype($val) == "NULL") {
                 $val = "";
             }
         }
-
     }
 
 
-    protected function prepareQuery($query,$params) {
-
-        if(!is_array($params)) {
+    protected function prepareQuery($query, $params)
+    {
+        if (!is_array($params)) {
             return $query;
         }
 
         reset($params);
-        $this->modifyQuery($query,function($part) use(&$params) {
-            while($pos = strpos($part,"?")) {
-                $newPart .= substr($part,0,$pos);
-                $part = substr($part,$pos + 1);
+        $this->modifyQuery($query, function($part) use(&$params) {
+            while ($pos = strpos($part, "?")) {
+                $newPart .= substr($part, 0, $pos);
+                $part = substr($part, $pos + 1);
 
                 $value = current($params);
                 next($params);
 
-                switch(gettype($value)) {
+                switch (gettype($value)) {
+
                     case "boolean":
                         $value = (int)$value;
-                    break;
+                        break;
+
                     case "integer":
                     case "double":
-                    break;
+                        break;
 
                     case "NULL":
                         $value = "NULL";
-                    break;
+                        break;
 
                     default:
-                        switch($this->mode) {
+                        switch ($this->mode) {
                             case "mysql":
                                 $value = $this->server->real_escape_string($value);
-                            break;
+                                break;
                             case "postgres":
                             case "redshift":
-                                $value = pg_escape_literal($this->server,$value);
-                            break;
+                                $value = pg_escape_literal($this->server, $value);
+                                break;
                             case "sqlite":
                                 $value = $this->server->escapeString($value);
-                            break;
+                                break;
                             case "mssql":
                             case "odbc":
-                                $value = str_replace("'","''",$value);
-                            break;
+                                $value = str_replace("'", "''", $value);
+                                break;
                         }
 
                         # Postgres does it's own quoting
-                        if(!in_array($this->mode,["postgres","redshift"])) {
+                        if (!in_array($this->mode, ["postgres", "redshift"])) {
                             $value = "'" . $value . "'";
                         }
-
-                    break;
-
+                        break;
                 }
 
                 $newPart .= $value;
-
             }
 
             return $newPart . $part;
         });
 
         return $query;
-
     }
 
 
     /**
      * Convienience method to create a cached query instance
      */
-    public function cache($query,$params=false,$timeout=false) {
-
-        $options = array_merge($this->cacheOptions,[
+    public function cache($query, $params = null, $timeout = null)
+    {
+        $options = array_merge($this->cacheOptions, [
             "sql"     =>  $this,
             "query"   =>  $query,
             "params"  =>  $params,
         ]);
 
-        if($timeout) {
+        if ($timeout) {
             $options["timeout"] = $timeout;
         }
 
         return new Cache($options);
-
     }
 
 
-    protected function error() {
-
+    protected function error()
+    {
         # If logging is turned on then log the error details to the log directory
-        if($this->log) {
+        if ($this->log) {
             $this->logError();
         }
 
         throw new \Exception($this->getError());
-
     }
 
 
-    protected function logError() {
-
-        if(!$this->log) {
+    protected function logError()
+    {
+        if (!$this->log) {
             return;
         }
 
         # Ensure the log directory exists
-        if(!is_dir($this->logDir)) {
-            if(!mkdir($this->logDir,0775,true)) {
+        if (!is_dir($this->logDir)) {
+            if (!mkdir($this->logDir, 0775, true)) {
                 return;
             }
         }
 
         $logFile = date("Y-m-d_H-i-s") . ".log";
 
-        if(!$file = fopen($this->logDir . "/" . $logFile,"a")) {
+        if (!$file = fopen($this->logDir . "/" . $logFile, "a")) {
             return;
         }
 
-        fwrite($file,"Error: " . $this->getError() . "\n");
+        fwrite($file, "Error: " . $this->getError() . "\n");
 
-        fwrite($file,"SQL ERROR\n");
-        if($this->query) {
-            fwrite($file,"Query: " . $this->query . "\n");
+        fwrite($file, "SQL ERROR\n");
+        if ($this->query) {
+            fwrite($file, "Query: " . $this->query . "\n");
         }
-        if($this->params) {
-            fwrite($file,"Params: " . print_r($this->params,1) . "\n");
+        if ($this->params) {
+            fwrite($file, "Params: " . print_r($this->params, true) . "\n");
         }
-        if($this->preparedQuery) {
-            fwrite($file,"Prepared Query: " . $this->preparedQuery . "\n");
+        if ($this->preparedQuery) {
+            fwrite($file, "Prepared Query: " . $this->preparedQuery . "\n");
         }
-        fwrite($file,"\n");
+        fwrite($file, "\n");
 
-        fwrite($file,print_r(debug_backtrace(),1));
-        fwrite($file,"\n\n");
+        fwrite($file, print_r(debug_backtrace(), true));
+        fwrite($file, "\n\n");
 
-        fwrite($file,print_r($this,1));
-        fwrite($file,"\n\n");
+        fwrite($file, print_r($this, true));
+        fwrite($file, "\n\n");
 
-        fwrite($file,"-----------------------------------------------------------------------------\n");
-        fwrite($file,"-----------------------------------------------------------------------------\n");
-        fwrite($file,"\n\n");
+        fwrite($file, "-----------------------------------------------------------------------------\n");
+        fwrite($file, "-----------------------------------------------------------------------------\n");
+        fwrite($file, "\n\n");
 
         fclose($file);
 
         return $logFile;
-
     }
 
 
-    public function getError() {
-
+    public function getError()
+    {
         $errorMsg = "";
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
-                if($this->server->connect_error) {
+                if ($this->server->connect_error) {
                     $errorMsg = $this->server->connect_error . " (" . $this->server->connect_errno . ")";
                 } else {
                     $errorMsg = $this->server->error . " (" . $this->server->errno . ")";
                 }
-            break;
+                break;
 
             case "postgres":
             case "redshift":
                 $errorMsg = pg_last_error($this->server);
-            break;
+                break;
 
             case "odbc":
                 $errorMsg = odbc_errormsg($this->server);
-            break;
+                break;
 
             case "sqlite":
                 $errorMsg = $this->server->lastErrorMsg() . " (" . $this->server->lastErrorCode() . ")";
-            break;
+                break;
 
             case "mssql":
                 $errorMsg = mssql_get_last_message();
-            break;
-
+                break;
         }
 
         return $errorMsg;
-
     }
 
 
-    public function update($table,$set,$where) {
-
+    public function update($table, $set, $where)
+    {
         $tableName = $this->getTableName($table);
 
         $query = "UPDATE " . $tableName . " SET ";
 
         $params = [];
-        foreach($set as $key => $val) {
-            $query .= $this->quoteField($key) . "=?,";
+        foreach ($set as $key => $val) {
+            $query .= $this->quoteField($key) . "=?, ";
             $params[] = $val;
         }
 
-        $query = substr($query,0,-1) . " ";
+        $query = substr($query, 0, -1) . " ";
 
-        if($where != static::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where,$params);
+        if ($where != static::NO_WHERE_CLAUSE) {
+            $query .= "WHERE " . $this->where($where, $params);
         }
 
-        $result = $this->query($query,$params);
+        $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_UPDATE,$table,$set,$where);
+        $this->callTriggers(static::TRIGGER_UPDATE, $table, $set, $where);
 
         return $result;
-
     }
 
 
-    public function insert($table,$params,$extra=false) {
-
+    public function insert($table, $params, $extra = null)
+    {
         $tableName = $this->getTableName($table);
 
         $newParams = [];
-        foreach($params as $key => $val) {
-            if($fields) {
+        foreach ($params as $key => $val) {
+            if ($fields) {
                 $fields .= ",";
                 $values .= ",";
             }
@@ -1024,34 +987,33 @@ class Sql {
             $newParams[] = $val;
         }
 
-        if($extra == static::INSERT_REPLACE) {
+        if ($extra == static::INSERT_REPLACE) {
             $query = "REPLACE ";
-        } elseif($extra == static::INSERT_IGNORE) {
+        } elseif ($extra == static::INSERT_IGNORE) {
             $query = "INSERT IGNORE ";
         } else {
             $query = "INSERT ";
         }
         $query .= "INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
 
-        $result = $this->query($query,$newParams);
+        $result = $this->query($query, $newParams);
 
-        $this->callTriggers(static::TRIGGER_INSERT,$table,$params);
+        $this->callTriggers(static::TRIGGER_INSERT, $table, $params);
 
         return $result;
-
     }
 
-    public function bulkInsert($table,$params,$extra=false) {
-
+    public function bulkInsert($table, $params, $extra = null)
+    {
         # Ensure we have a connection to run this query on
         $this->connect();
 
-        if($output = $this->output) {
+        if ($output = $this->output) {
             $this->output = false;
             echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
             case "redshift":
@@ -1059,8 +1021,8 @@ class Sql {
 
                 $fields = "";
                 $first = reset($params);
-                foreach($first as $key => $val) {
-                    if($fields) {
+                foreach ($first as $key => $val) {
+                    if ($fields) {
                         $fields .= ",";
                     }
                     $fields .= $this->quoteField($key);
@@ -1068,25 +1030,25 @@ class Sql {
 
                 $newParams = [];
                 $noParams = false;
-                if($this->mode == "redshift" && (count($params) * count($first)) > 32767) {
+                if ($this->mode == "redshift" && (count($params) * count($first)) > 32767) {
                     $noParams = true;
                 }
                 $values = "";
 
-                foreach($params as $row) {
-                    if($values) {
+                foreach ($params as $row) {
+                    if ($values) {
                         $values .= ",";
                     }
                     $values .= "(";
                     $first = true;
 
-                    foreach($row as $key => $val) {
-                        if($first) {
+                    foreach ($row as $key => $val) {
+                        if ($first) {
                             $first = false;
                         } else {
                             $values .= ",";
                         }
-                        if($noParams) {
+                        if ($noParams) {
                             $values .= "'" . pg_escape_string($val) . "'";
                         } else {
                             $values .= "?";
@@ -1097,24 +1059,23 @@ class Sql {
                 }
 
                 $tableName = $this->getTableName($table);
-                if($extra == static::INSERT_REPLACE) {
+                if ($extra == static::INSERT_REPLACE) {
                     $query = "REPLACE ";
-                } elseif($extra == static::INSERT_IGNORE) {
+                } elseif ($extra == static::INSERT_IGNORE) {
                     $query = "INSERT IGNORE ";
                 } else {
                     $query = "INSERT ";
                 }
                 $query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
 
-                $result = $this->query($query,$newParams);
-
-            break;
+                $result = $this->query($query, $newParams);
+                break;
 
             case "postgres":
                 $fields = "";
                 $first = reset($params);
-                foreach($first as $key => $val) {
-                    if($fields) {
+                foreach ($first as $key => $val) {
+                    if ($fields) {
                         $fields .= ",";
                     }
                     $fields .= $this->quoteField($key);
@@ -1123,96 +1084,90 @@ class Sql {
                 $tableName = $this->getTableName($table);
                 $this->query("COPY " . $tableName . " (" . $fields . ") FROM STDIN");
 
-                foreach($params as $row) {
-                    if(!pg_put_line($this->server,implode("\t",$row) . "\n")) {
+                foreach ($params as $row) {
+                    if (!pg_put_line($this->server, implode("\t", $row) . "\n")) {
                         $this->error();
                     }
                 }
 
-                if(pg_put_line($this->server, "\\.\n")) {
+                if (pg_put_line($this->server, "\\.\n")) {
                     $this->error();
                 }
 
                 $result = pg_end_copy($this->server);
-
-            break;
+                break;
 
             default:
                 $result = true;
-                foreach($params as $newParams) {
-                    if(!$this->insert($table,$newParams)) {
+                foreach ($params as $newParams) {
+                    if (!$this->insert($table, $newParams)) {
                         $result = false;
                         break;
                     }
                 }
-            break;
-
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
-        if($output) {
+        if ($output) {
             $this->output = true;
         }
 
         return $result;
-
     }
 
 
-    public function getId($result) {
-
-        if(!$result) {
+    public function getId($result)
+    {
+        if (!$result) {
             return false;
         }
 
         $id = false;
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
                 $id = $this->server->insert_id;
-            break;
+                break;
 
             case "postgres":
                 $id = pg_last_oid($result);
-            break;
+                break;
 
             case "sqlite":
                 $query = "SELECT last_insert_rowid() `id`";
                 $result = $this->query($query);
                 $row = $this->fetch($result);
                 $id = $row["id"];
-            break;
-
+                break;
         }
 
-        if(!$id) {
+        if (!$id) {
             throw new \Exception("Failed to retrieve the last inserted row id");
         }
 
         return $id;
-
     }
 
 
     /**
      * Convert an array of parameters into a valid where clause
      */
-    public function where($where,&$params) {
-
+    public function where($where, &$params)
+    {
         $params = Helper::toArray($params);
 
         $query = "";
 
         $andFlag = false;
 
-        foreach($where as $key => $val) {
+        foreach ($where as $key => $val) {
 
             # Add the and flag if this isn't the first field
-            if($andFlag) {
+            if ($andFlag) {
                 $query .= "AND ";
             } else {
                 $andFlag = true;
@@ -1222,7 +1177,7 @@ class Sql {
             $query .= $this->quoteField($key);
 
             # If the value is not an array then use a standard comparison
-            if(!is_array($val)) {
+            if (!is_array($val)) {
                 $query .= "=? ";
                 $params[] = $val;
 
@@ -1232,76 +1187,68 @@ class Sql {
                 $second = next($val);
 
                 # If the array is only one element (or no elements) then just use it as a regular value
-                if(count($val) < 2) {
+                if (count($val) < 2) {
                     $query .= "=? ";
                     $params[] = $first;
 
                 # If the array is only two elements long and the first element is a valid comparison operator then use it as such
-                } elseif(count($val) == 2 && in_array($first,["<","<=",">",">=","=","<>"],true)) {
+                } elseif (count($val) == 2 && in_array($first, ["<", "<=", ">", ">=", "=", "<>"], true)) {
                     $query .= $first . "? ";
                     $params[] = $second;
 
                 # Otherwise treat the array as a set of values for an IN()
                 } else {
                     $markers = [];
-                    foreach($val as $v) {
+                    foreach ($val as $v) {
                         $markers[] = "?";
                         $params[] = $v;
                     }
-                    $query .= " IN(" . implode(",",$markers) . ") ";
-
+                    $query .= " IN(" . implode(",", $markers) . ") ";
                 }
-
             }
-
         }
 
         return $query;
-
     }
 
 
     /**
      * Convert an array/string of fields into a valid select clause
      */
-    public function selectFields($fields) {
-
+    public function selectFields($fields)
+    {
         # By default just select an empty string
         $select = "''";
 
         # If an array of fields have been passed
-        if(is_array($fields)) {
+        if (is_array($fields)) {
 
             # If we have some fields, then add them to the query, ensuring they are quoted appropriately
-            if(count($fields) > 0) {
+            if (count($fields) > 0) {
                 $select = "";
 
-                foreach($fields as $field) {
-                    if($select) {
+                foreach ($fields as $field) {
+                    if ($select) {
                         $select .= ", ";
                     }
                     $select .= $this->quoteField($field);
                 }
-
             }
 
         # if the fields isn't an array
-        } elseif(!is_bool($fields)) {
+        } elseif (!is_bool($fields)) {
             # Otherwise assume it is a string of fields to select and add them to the query
-            if(strlen($fields) > 0) {
+            if (strlen($fields) > 0) {
                 $select = $fields;
-
             }
-
         }
 
         return $select;
-
     }
 
 
-    public function delete($table,$where) {
-
+    public function delete($table, $where)
+    {
         $tableName = $this->getTableName($table);
         $params = false;
 
@@ -1310,31 +1257,29 @@ class Sql {
          * Not all engines support this though, so we have to check which mode we are in
          * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
          */
-        if($where == static::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
+        if ($where == static::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
             $query = "TRUNCATE TABLE " . $tableName;
-
         } else {
             $query = "DELETE FROM " . $tableName . " ";
 
-            if($where != static::NO_WHERE_CLAUSE) {
-                $query .= "WHERE " . $this->where($where,$params);
+            if ($where != static::NO_WHERE_CLAUSE) {
+                $query .= "WHERE " . $this->where($where, $params);
             }
-
         }
 
-        $result = $this->query($query,$params);
+        $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_DELETE,$table,$where);
+        $this->callTriggers(static::TRIGGER_DELETE, $table, $where);
 
         return $result;
-
     }
 
 
     /**
      * Fetch the next row from the result set
      */
-    public function _fetch($result) {
+    public function _fetch($result)
+    {
         return $result->_fetch($indexed);
     }
 
@@ -1342,7 +1287,8 @@ class Sql {
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch($result,$indexed=false) {
+    public function fetch($result, $indexed = null)
+    {
         return $result->fetch($indexed);
     }
 
@@ -1350,15 +1296,17 @@ class Sql {
     /**
      * Fetch an indiviual value from the result set
      */
-    public function result($result,$row,$col) {
-        return $result->result($row,$col);
+    public function result($result, $row, $col)
+    {
+        return $result->result($row, $col);
     }
 
 
     /**
      * Seek to a specific record of the result set
      */
-    public function seek($result,$row) {
+    public function seek($result, $row)
+    {
         return $result->seek($row);
     }
 
@@ -1367,24 +1315,22 @@ class Sql {
      * Execute the query and fetch the first row from the result set
      * This is just a shorter way of doing a query() and then a fetch()
      */
-    public function queryFetch($query,$params=false,$indexed=false) {
+    public function queryFetch($query, $params = null, $indexed = null)
+    {
+        $result = $this->query($query, $params);
 
-        $result = $this->query($query,$params);
-
-        return $this->fetch($result,$indexed);
-
+        return $this->fetch($result, $indexed);
     }
 
 
     /**
      * Cached version of queryFetch()
      */
-    public function queryFetchC($query,$params=false,$indexed=false) {
-
+    public function queryFetchC($query, $params = null, $indexed = null)
+    {
         $this->cacheNext = true;
 
-        return $this->queryFetch($query,$params,$indexed);
-
+        return $this->queryFetch($query, $params, $indexed);
     }
 
 
@@ -1392,24 +1338,22 @@ class Sql {
      * Execute the query and get a specific value from the result set
      * This is just a shorter way of doing a query() and then a result()
      */
-    public function queryResult($query,$params,$row,$col) {
+    public function queryResult($query, $params, $row, $col)
+    {
+        $result = $this->query($query, $params);
 
-        $result = $this->query($query,$params);
-
-        return $this->result($result,$row,$col);
-
+        return $this->result($result, $row, $col);
     }
 
 
     /**
      * Cached version of queryResult()
      */
-    public function queryResultC($query,$params,$row,$col) {
-
+    public function queryResultC($query, $params, $row, $col)
+    {
         $this->cacheNext = true;
 
-        return $this->queryResult($query,$params,$row,$col);
-
+        return $this->queryResult($query, $params, $row, $col);
     }
 
 
@@ -1417,35 +1361,33 @@ class Sql {
      * Grab the first row from a table using the standard select statement
      * This is a convience method for a fieldSelect() where all fields are required
      */
-    public function select($table,$where,$orderBy=false) {
-
-        return $this->fieldSelect($table,"*",$where,$orderBy);
-
+    public function select($table, $where, $orderBy = null)
+    {
+        return $this->fieldSelect($table, "*", $where, $orderBy);
     }
 
 
     /**
      * Cached version of select()
      */
-    public function selectC($table,$where,$orderBy=false) {
-
+    public function selectC($table, $where, $orderBy = null)
+    {
         $this->cacheNext = true;
 
-        return $this->select($table,$where,$orderBy);
-
+        return $this->select($table, $where, $orderBy);
     }
 
 
     /**
      * Grab specific fields from the first row from a table using the standard select statement
      */
-    public function fieldSelect($table,$fields,$where,$orderBy=false) {
-
+    public function fieldSelect($table, $fields, $where, $orderBy = null)
+    {
         $table = $this->getTableName($table);
 
         $query = "SELECT ";
 
-        if($this->mode == "mssql") {
+        if ($this->mode == "mssql") {
             $query .= "TOP 1 ";
         }
 
@@ -1454,45 +1396,43 @@ class Sql {
         $query .= " FROM " . $table . " ";
 
         $params = false;
-        if($where != static::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where,$params);
+        if ($where != static::NO_WHERE_CLAUSE) {
+            $query .= "WHERE " . $this->where($where, $params);
         }
 
-        if($orderBy) {
+        if ($orderBy) {
             $query .= $this->orderBy($orderBy) . " ";
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
             case "postgres":
             case "redshift":
             case "sqlite":
                 $query .= "LIMIT 1";
-            break;
+                break;
 
             case "odbc":
                 $query .= "FETCH FIRST 1 ROW ONLY";
-            break;
-
+                break;
         }
 
-        $result = $this->query($query,$params);
+        $result = $this->query($query, $params);
 
         return $this->fetch($result);
-
     }
 
 
     /*
      * Cached version of fieldSelect()
      */
-    public function fieldSelectC($table,$fields,$where,$orderBy=false) {
+    public function fieldSelectC($table, $fields, $where, $orderBy = null)
+    {
 
         $this->cacheNext = true;
 
-        return $this->fieldSelect($table,$fields,$where,$orderBy);
-
+        return $this->fieldSelect($table, $fields, $where, $orderBy);
     }
 
 
@@ -1500,30 +1440,28 @@ class Sql {
      * Create a standard select statement and return the result
      * This is a convience method for a fieldSelectAll() where all fields are required
      */
-    public function selectAll($table,$where,$orderBy=false) {
-
-        return $this->fieldSelectAll($table,"*",$where,$orderBy);
-
+    public function selectAll($table, $where, $orderBy = null)
+    {
+        return $this->fieldSelectAll($table, "*", $where, $orderBy);
     }
 
 
     /*
      * Cached version of selectAll()
      */
-    public function selectAllC($table,$where,$orderBy=false) {
-
+    public function selectAllC($table, $where, $orderBy = null)
+    {
         $this->cacheNext = true;
 
-        return $this->selectAll($table,$where,$orderBy);
-
+        return $this->selectAll($table, $where, $orderBy);
     }
 
 
     /**
      * Create a standard select statement and return the result
      */
-    public function fieldSelectAll($table,$fields,$where,$orderBy=false) {
-
+    public function fieldSelectAll($table, $fields, $where, $orderBy = null)
+    {
         $table = $this->getTableName($table);
 
         $query = "SELECT ";
@@ -1533,82 +1471,76 @@ class Sql {
         $query .= " FROM " . $table . " ";
 
         $params = false;
-        if($where != static::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where,$params);
+        if ($where != static::NO_WHERE_CLAUSE) {
+            $query .= "WHERE " . $this->where($where, $params);
         }
 
-        if($orderBy) {
+        if ($orderBy) {
             $query .= $this->orderBy($orderBy) . " ";
         }
 
-        return $this->query($query,$params);
-
+        return $this->query($query, $params);
     }
 
 
     /*
      * Cached version of fieldSelectAll()
      */
-    public function fieldSelectAllC($table,$fields,$where,$orderBy=false) {
-
+    public function fieldSelectAllC($table, $fields, $where, $orderBy = null)
+    {
         $this->cacheNext = true;
 
-        return $this->fieldSelectAll($table,$fields,$where,$orderBy);
-
+        return $this->fieldSelectAll($table, $fields, $where, $orderBy);
     }
 
 
     /**
      * Insert a new record into a table, unless it already exists in which case update it
      */
-    public function insertOrUpdate($table,$set,$where) {
-
-        if($this->select($table,$where)) {
-            $result = $this->update($table,$set,$where);
-
+    public function insertOrUpdate($table, $set, $where)
+    {
+        if ($this->select($table, $where)) {
+            $result = $this->update($table, $set, $where);
         } else {
-            $params = array_merge($where,$set);
-            $result = $this->insert($table,$params);
-
+            $params = array_merge($where, $set);
+            $result = $this->insert($table, $params);
         }
 
         return $result;
-
     }
 
 
     /**
      * Synonym for insertOrUpdate()
      */
-    public function updateOrInsert($table,$set,$where) {
-
-        return $this->insertOrUpdate($table,$set,$where);
-
+    public function updateOrInsert($table, $set, $where)
+    {
+        return $this->insertOrUpdate($table, $set, $where);
     }
 
 
     /**
      * Create an order by clause from a string of fields or an array of fields
      */
-    public function orderBy($fields) {
-
-        if(!is_array($fields)) {
-            $fields = explode(",",$fields);
+    public function orderBy($fields)
+    {
+        if (!is_array($fields)) {
+            $fields = explode(",", $fields);
         }
 
         $orderBy = "";
 
-        foreach($fields as $field) {
-            if(!$field = trim($field)) {
+        foreach ($fields as $field) {
+            if (!$field = trim($field)) {
                 continue;
             }
-            if(!$orderBy) {
+            if (!$orderBy) {
                 $orderBy = "ORDER BY ";
             } else {
                 $orderBy .= ", ";
             }
 
-            if(strpos($field," ")) {
+            if (strpos($field, " ")) {
                 $orderBy .= $field;
             } else {
                 $orderBy .= $this->quoteField($field);
@@ -1616,17 +1548,16 @@ class Sql {
         }
 
         return $orderBy;
-
     }
 
 
     /**
      * Quote a field with the appropriate characters for this mode
      */
-    protected function quoteField($field) {
-
+    protected function quoteField($field)
+    {
         # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
-        if($this->mode == "odbc") {
+        if ($this->mode == "odbc") {
             return $field;
         }
 
@@ -1634,57 +1565,51 @@ class Sql {
 
         $chars = $this->quoteChars[$this->mode];
 
-        if(is_array($chars)) {
+        if (is_array($chars)) {
             $from = $chars[0];
             $to = $chars[1];
-
         } else {
             $from = $chars;
             $to = $chars;
-
         }
 
         $quoted = $from . $field . $to;
 
         return $quoted;
-
     }
 
 
     /**
      * Quote a table with the appropriate characters for this mode
      */
-    protected function quoteTable($table) {
-
+    protected function quoteTable($table)
+    {
         # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
-        if($this->mode == "odbc") {
+        if ($this->mode == "odbc") {
             return $table;
         }
 
         $table = trim($table);
 
         # There is a standard function for quoting postgres table names
-        if(in_array($this->mode,["postgres","redshift"])) {
+        if (in_array($this->mode, ["postgres", "redshift"])) {
             $this->connect();
-            return pg_escape_identifier($this->server,$table);
+            return pg_escape_identifier($this->server, $table);
         }
 
         $chars = $this->quoteChars[$this->mode];
 
-        if(is_array($chars)) {
+        if (is_array($chars)) {
             $from = $chars[0];
             $to = $chars[1];
-
         } else {
             $from = $chars;
             $to = $chars;
-
         }
 
         $quoted = $from . $table . $to;
 
         return $quoted;
-
     }
 
 
@@ -1694,23 +1619,23 @@ class Sql {
      * The third parameter is the string that is being searched for
      * The fourth parameter is an array of fields that should be searched for in the sql
      */
-    public function search(&$query,&$params,$search,$fields) {
-
+    public function search(&$query, &$params, $search, $fields)
+    {
         $query .= "( ";
 
-        $search = str_replace('"','',$search);
+        $search = str_replace('"', '', $search);
 
-        $words = explode(" ",$search);
+        $words = explode(" ", $search);
 
-        foreach($words as $key => $word) {
+        foreach ($words as $key => $word) {
 
-            if($key) {
+            if ($key) {
                 $query .= "AND ";
             }
 
             $query .= "( ";
-                foreach($fields as $key => $field) {
-                    if($key) {
+                foreach ($fields as $key => $field) {
+                    if ($key) {
                         $query .= "OR ";
                     }
                     $query .= "LOWER(" . $field . ") LIKE ? ";
@@ -1720,170 +1645,157 @@ class Sql {
         }
 
         $query .= ") ";
-
     }
 
 
     /**
      * Start a transaction by turning autocommit off
      */
-    public function startTransaction() {
-
+    public function startTransaction()
+    {
         # Ensure we have a connection to start the transaction on
         $this->connect();
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
                 $result = $this->server->autocommit(false);
-            break;
+                break;
 
             case "postgres":
                 $result = $this->query("SET AUTOCOMMIT = OFF");
-            break;
+                break;
 
             case "redshift":
                 $result = $this->query("START TRANSACTION");
-            break;
+                break;
 
             case "odbc":
-                $result = odbc_autocommit($this->server,false);
-            break;
+                $result = odbc_autocommit($this->server, false);
+                break;
 
             default:
                 throw new \Exception("startTransaction() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
         $this->transaction = true;
 
         return true;
-
     }
 
 
     /**
      * End a transaction by either committing changes made, or reverting them
      */
-    public function endTransaction($commit) {
-
-        if($commit) {
+    public function endTransaction($commit)
+    {
+        if ($commit) {
             $result = $this->commit();
         } else {
             $result = $this->rollback();
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
-                if(!$this->server->autocommit(true)) {
+                if (!$this->server->autocommit(true)) {
                     $result = false;
                 }
-            break;
+                break;
 
             case "postgres":
                 $result = $this->query("SET AUTOCOMMIT = ON");
-            break;
+                break;
 
             case "redshift":
                 # Do nothing, and use the result from the commit/rollback
-            break;
+                break;
 
             case "odbc":
-                if(!odbc_autocommit($this->server,true)) {
+                if (!odbc_autocommit($this->server, true)) {
                     $result = false;
                 }
-            break;
+                break;
 
             default:
                 throw new \Exception("endTransaction() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
         $this->transaction = false;
 
         return true;
-
     }
 
 
     /**
      * Commit queries without ending the transaction
      */
-    public function commit() {
-
-        switch($this->mode) {
+    public function commit()
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $result = $this->server->commit();
-            break;
+                break;
 
             case "postgres":
             case "redshift":
                 $result = $this->query("COMMIT");
-            break;
+                break;
 
             case "odbc":
                 $result = odbc_commit($this->server);
-            break;
+                break;
 
             default:
                 throw new \Exception("commit() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
         return true;
-
     }
 
 
     /**
      * Rollback queries without ending the transaction
      */
-    public function rollback() {
-
-        switch($this->mode) {
+    public function rollback()
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $result = $this->server->rollback();
-            break;
+                break;
 
             case "postgres":
             case "redshift":
                 $result = $this->query("ROLLBACK");
-            break;
+                break;
 
             case "odbc":
                 $result = odbc_rollback($this->server);
-            break;
+                break;
 
             default:
                 throw new \Exception("rollback() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
-        if(!$result) {
+        if (!$result) {
             $this->error();
         }
 
         return true;
-
     }
 
 
@@ -1891,8 +1803,8 @@ class Sql {
      * Lock some tables for exlusive write access
      * But allow read access to other processes
      */
-    public function lockTables($tables) {
-
+    public function lockTables($tables)
+    {
         /**
          * Unlock any previously locked tables
          * This is done to provide consistency across different modes, as mysql only allows one single lock over multiple tables
@@ -1902,8 +1814,8 @@ class Sql {
 
         $tables = Helper::toArray($tables);
 
-        if($this->mode == "odbc") {
-            foreach($tables as $table) {
+        if ($this->mode == "odbc") {
+            foreach ($tables as $table) {
                 $table = $this->getTableName($table);
                 $query = "LOCK TABLE " . $table . " IN EXCLUSIVE MODE ALLOW READ";
                 $this->query($query);
@@ -1913,80 +1825,75 @@ class Sql {
             return true;
         }
 
-        foreach($tables as &$table) {
+        foreach ($tables as &$table) {
             $table = $this->getTableName($table);
         }
         unset($table);
 
-        if($this->mode == "mysql") {
-            $query = "LOCK TABLES " . implode(",",$tables) . " WRITE";
+        if ($this->mode == "mysql") {
+            $query = "LOCK TABLES " . implode(",", $tables) . " WRITE";
             return $this->query($query);
         }
 
-        if(in_array($this->mode,["postgres","redshift"])) {
-            $query = "LOCK TABLE " . implode(",",$tables) . " IN EXCLUSIVE MODE";
+        if (in_array($this->mode, ["postgres", "redshift"])) {
+            $query = "LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE";
             return $this->query($query);
         }
 
         throw new \Exception("lockTables() not supported in this mode (" . $this->mode . ")");
-
     }
 
 
     /**
      * Unlock all tables previously locked
      */
-    public function unlockTables() {
-
-        switch($this->mode) {
+    public function unlockTables()
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $query = "UNLOCK TABLES";
-            break;
+                break;
 
             case "postgres":
             case "redshift":
             case "odbc":
                 $query = "COMMIT";
-            break;
+                break;
 
             default:
                 throw new \Exception("unlockTables() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
         return $this->query($query);
-
     }
 
 
     /**
      * Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)
      */
-    public function addTrigger($type,$table,$trigger) {
-
-        if(!array_key_exists($type,$this->triggers)) {
+    public function addTrigger($type, $table, $trigger)
+    {
+        if (!array_key_exists($type, $this->triggers)) {
             throw new \Exception("Invalid trigger type specified");
         }
 
         $this->triggers[$type][$table][] = $trigger;
-
     }
 
 
     /**
      * Call any triggers that were previously registered using addTrigger()
      */
-    protected function callTriggers($type,$table,$params1,$params2=false) {
-
+    protected function callTriggers($type, $table, $params1, $params2 = null)
+    {
         $triggers = $this->triggers[$type][$table];
 
-        if(!is_array($triggers)) {
+        if (!is_array($triggers)) {
             return true;
         }
 
-        foreach($triggers as $trigger) {
+        foreach ($triggers as $trigger) {
             $result = $trigger([
                 "sql"      =>  $this,
                 "type"     =>  $type,
@@ -1994,154 +1901,139 @@ class Sql {
                 "params1"  =>  $params1,
                 "params2"  =>  $params2,
             ]);
-            if(!$result) {
+            if (!$result) {
                 return false;
             }
         }
 
         return true;
-
     }
 
 
-    public function getDatabases() {
-
-        switch($this->mode) {
+    public function getDatabases()
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $query = "SHOW DATABASES";
-            break;
+                break;
 
             case "mssql":
                 $query = "SELECT name FROM master..sysdatabases";
-            break;
+                break;
 
             default:
                 throw new \Exception("getDatabases() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
         $databases = [];
         $result = $this->query($query);
-        while($row = $this->fetch($result,true)) {
+        while ($row = $this->fetch($result, true)) {
             $databases[] = $row[0];
         }
 
         return $databases;
-
     }
 
 
-    public function getTables($database) {
-
-        switch($this->mode) {
+    public function getTables($database)
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
-            break;
+                break;
 
             case "mssql":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
-            break;
+                break;
 
             default:
                 throw new \Exception("getTables() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
         $tables = [];
         $result = $this->query($query);
-        while($row = $this->fetch($result,true)) {
+        while ($row = $this->fetch($result, true)) {
             $tables[] = $row[0];
         }
 
         return $tables;
-
     }
 
 
-    public function getViews($database) {
-
-        switch($this->mode) {
+    public function getViews($database)
+    {
+        switch ($this->mode) {
 
             case "mysql":
                 $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
-            break;
+                break;
 
             case "mssql":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
-            break;
+                break;
 
             default:
                 throw new \Exception("getViews() not supported in this mode (" . $this->mode . ")");
-            break;
-
         }
 
         $views = [];
         $result = $this->query($query);
-        while($row = $this->fetch($result,true)) {
+        while ($row = $this->fetch($result, true)) {
             $views[] = $row[0];
         }
 
         return $views;
-
     }
 
 
     /**
      * Close the sql connection
      */
-    public function disconnect() {
-
-        if(!$this->server) {
+    public function disconnect()
+    {
+        if (!$this->server) {
             return false;
         }
 
-        switch($this->mode) {
+        switch ($this->mode) {
 
             case "mysql":
             case "sqlite":
                 $result = $this->server->close();
-            break;
+                break;
 
             case "postgres":
             case "redshift":
                 $result = pg_close($this->server);
-            break;
+                break;
 
             case "odbc":
                 odbc_close($this->server);
                 $result = true;
-            break;
+                break;
 
             case "mssql":
                 $result = mssql_close($this->server);
-            break;
-
+                break;
         }
 
         return $result;
-
     }
 
 
     /**
      * Automatically close the connection on destruction
      */
-    public function __destruct() {
-
+    public function __destruct()
+    {
         /**
          * Don't automatically close odbc connections, as odbc_connect() re-uses connections with the same credentials
          * So closing here could affect another instance of the sql class
          */
-        if($this->mode != "odbc") {
+        if ($this->mode != "odbc") {
             $this->disconnect();
         }
-
     }
-
-
 }

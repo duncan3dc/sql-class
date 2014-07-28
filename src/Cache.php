@@ -1,10 +1,12 @@
 <?php
 
 namespace duncan3dc\SqlClass;
+
 use duncan3dc\Helpers\Helper;
+use duncan3dc\Helpers\Json;
 
-class Cache {
-
+class Cache
+{
     const   MINUTE = 60;
     const   HOUR = 3600;
     const   DAY = 86400;
@@ -27,9 +29,9 @@ class Cache {
     public  $indexMap;      # An array that maps the row index to it's position in the sorted array
 
 
-    public function __construct($options=false) {
-
-        $options = Helper::getOptions($options,[
+    public function __construct($options = null)
+    {
+        $options = Helper::getOptions($options, [
             "dir"           =>  "/tmp/query_cache",
             "sql"           =>  false,
             "query"         =>  false,
@@ -46,7 +48,7 @@ class Cache {
         $this->params = $options["params"];
 
         # Create the hash of the query to use as an identifier
-        $this->hash = sha1($this->query . print_r($this->params,1));
+        $this->hash = sha1($this->query . print_r($this->params, true));
 
         /**
          * Create the path to the cache directory
@@ -55,7 +57,7 @@ class Cache {
          * so this reduces that problem by spliting the cache directories into subdirectories
          */
         $this->dir = $options["dir"] . "/";
-        for($i = 0; $i < $options["directories"]; $i++) {
+        for ($i = 0; $i < $options["directories"]; $i++) {
             $this->dir .= $this->hash[$i] . "/";
         }
         $this->dir .= $this->hash;
@@ -64,12 +66,12 @@ class Cache {
         $this->rowLimit = round($options["limit"]);
 
         # Ensure a cache directory exists for this query
-        if(!is_dir($this->dir)) {
-            mkdir($this->dir,0775,true);
+        if (!is_dir($this->dir)) {
+            mkdir($this->dir, 0775, true);
         }
 
         # If cache doesn't exist for this query then create it now
-        if(!$this->isCached()) {
+        if (!$this->isCached()) {
             $this->createCache();
         }
 
@@ -77,20 +79,19 @@ class Cache {
         $this->nextRow = 0;
 
         $this->indexMap = false;
-
     }
 
 
-    public function isCached() {
-
-        if($this->sql->output) {
+    public function isCached()
+    {
+        if ($this->sql->output) {
             echo "checking the cache (" . $this->dir . ")";
             echo ($this->sql->htmlMode) ? "<br>" : "\n";
         }
 
         # If no status file exists for this cache then presume there isn't any valid data
-        if(!file_exists($this->dir . "/.status")) {
-            if($this->sql->output) {
+        if (!file_exists($this->dir . "/.status")) {
+            if ($this->sql->output) {
                 echo "no status file found";
                 echo ($this->sql->htmlMode) ? "<hr>" : "\n";
             }
@@ -99,96 +100,87 @@ class Cache {
 
         # If the status file is older than the specified timeout then force a refresh
         $this->cacheTime = filectime($this->dir . "/.status");
-        if($this->sql->output) {
-            echo "cache found (" . date("d/m/y H:i:s",$this->cacheTime) . ")";
+        if ($this->sql->output) {
+            echo "cache found (" . date("Y-m-d H:i:s", $this->cacheTime) . ")";
         }
 
-        if($this->cacheTime < (time() - $this->timeout)) {
-            if($this->sql->output) {
+        if ($this->cacheTime < (time() - $this->timeout)) {
+            if ($this->sql->output) {
                 echo ($this->sql->htmlMode) ? "<br>" : "\n";
                 echo "cache is too old to use";
             }
             return false;
         }
 
-        if($this->sql->output) {
+        if ($this->sql->output) {
             echo ($this->sql->htmlMode) ? "<hr>" : "\n";
         }
 
         return true;
-
     }
 
 
-    public function createCache() {
-
-        $this->result = $this->sql->query($this->query,$this->params);
+    public function createCache()
+    {
+        $this->result = $this->sql->query($this->query, $this->params);
 
         $this->cacheTime = time();
 
-        file_put_contents($this->dir . "/.status","0");
-        file_put_contents($this->dir . "/.sorted","{}");
+        file_put_contents($this->dir . "/.status", "0");
+        file_put_contents($this->dir . "/.sorted", "{}");
 
         $rowNum = 0;
-        while($row = $this->sql->fetch($this->result)) {
+        while ($row = $this->sql->fetch($this->result)) {
 
-            $json = json_encode($row);
-
-            file_put_contents($this->dir . "/" . $rowNum . ".row",$json);
+            Json::encodeToFile($this->dir . "/" . $rowNum . ".row", $row);
 
             $rowNum++;
 
-            if($this->rowLimit && $rowNum > $this->rowLimit) {
+            if ($this->rowLimit && $rowNum > $this->rowLimit) {
                 break;
             }
-
         }
 
-        file_put_contents($this->dir . "/.status",$rowNum);
-
+        file_put_contents($this->dir . "/.status", $rowNum);
     }
 
 
-    public function fetch($indexed=false) {
-
-        if($this->nextRow >= $this->totalRows) {
+    public function fetch($indexed = null)
+    {
+        if ($this->nextRow >= $this->totalRows) {
             return false;
         }
 
-        if($this->indexMap) {
+        if ($this->indexMap) {
             $rowIndex = $this->indexMap[$this->nextRow];
         } else {
             $rowIndex = $this->nextRow;
         }
 
-        $json = file_get_contents($this->dir . "/" . $rowIndex . ".row");
-
-        $row = json_decode($json,true);
+        $row = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
 
         $this->nextRow++;
 
-        if($indexed) {
+        if ($indexed) {
             $new = [];
-            foreach($row as $val) {
+            foreach ($row as $val) {
                 $new[] = $val;
             }
             $row = $new;
         }
 
         return $row;
-
     }
 
 
-    public function seek($row) {
-
+    public function seek($row)
+    {
         $this->nextRow = $row;
-
     }
 
 
-    public function result($row,$col) {
-
+    public function result($row, $col)
+    {
         $this->seek($row);
 
         $row = $this->fetch(true);
@@ -196,24 +188,22 @@ class Cache {
         $val = $row[$col];
 
         return $val;
-
     }
 
 
-    public function orderBy($col,$desc=false) {
-
+    public function orderBy($col, $desc = null)
+    {
         # Check if the data has already been sorted by this column
-        $json = file_get_contents($this->dir . "/.sorted");
-        $sorted = json_decode($json);
+        $sorted = Json::decodeFromFile($this->dir . "/.sorted");
         $this->indexMap = $sorted[$col];
 
         # If the data hasn't already been sorted then create an index map for it now
-        if(!is_array($this->indexMap)) {
+        if (!is_array($this->indexMap)) {
 
             $sort = [];
             $pos = 0;
             $this->seek(0);
-            while($row = $this->fetch()) {
+            while ($row = $this->fetch()) {
                 $sort[$pos] = $row[$col];
                 $pos++;
             }
@@ -223,18 +213,13 @@ class Cache {
             $this->indexMap = array_keys($sort);
 
             $sorted[$col] = $this->indexMap;
-            $json = json_encode($sorted);
-            file_put_contents($this->dir . "/.sorted",$json);
-
+            Json::encodeToFile($this->dir . "/.sorted", $sorted);
         }
 
-        if($desc) {
+        if ($desc) {
             $this->indexMap = array_reverse($this->indexMap);
         }
 
         return true;
-
     }
-
-
 }
