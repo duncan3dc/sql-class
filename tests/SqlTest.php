@@ -17,6 +17,7 @@ class SqlTest extends PHPUnit_Framework_TestCase {
             "table2"    =>  "test2",
         ]);
 
+        $this->sql->connect();
     }
 
 
