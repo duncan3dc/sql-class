@@ -14,6 +14,9 @@ class Sql {
     const   TRIGGER_UPDATE   = 106;     # A trigger to be run after a successful update
     const   TRIGGER_DELETE   = 107;     # A trigger to be run after a successful delete
 
+    protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
+    protected $options;                 # An array of all the options this object was created with
+
     public  $mode;                      # The type of database we're connected to
     public  $server;                    # The connection to the server
 
@@ -136,6 +139,8 @@ class Sql {
             "definitions"   =>  [],
         ]);
 
+        $this->options = $options;
+
         $this->mode = $options["mode"];
 
         $this->quoteChars = [
@@ -168,55 +173,6 @@ class Sql {
         $this->log = false;
         $this->logDir = "/tmp/sql-class-logs";
 
-        switch($this->mode) {
-
-            case "mysql":
-                if(!$this->server = new \mysqli($options["hostname"],$options["username"],$options["password"])) {
-                    $this->error();
-                }
-                if($options["charset"]) {
-                    $this->server->set_charset($options["charset"]);
-                }
-                if($timezone = $options["timezone"]) {
-                    if($timezone == static::USE_PHP_TIMEZONE) {
-                        $timezone = ini_get("date.timezone");
-                    }
-                    $this->query("SET time_zone='" . $timezone . "'");
-                }
-                if($database = $options["database"]) {
-                    if(!$this->server->select_db($database)) {
-                        $this->error();
-                    }
-                }
-            break;
-
-            case "postgres":
-            case "redshift":
-                $connect = "host=" . $options["hostname"] . " ";
-                $connect .= "user=" . $options["username"] . " ";
-                $connect .= "password=" . $options["password"] . " ";
-                $connect .= "dbname= " . $options["database"] . " ";
-                $this->server = pg_connect($connect,PGSQL_CONNECT_FORCE_NEW);
-            break;
-
-            case "odbc":
-                $this->server = odbc_connect($options["hostname"], $options["username"], $options["password"]);
-            break;
-
-            case "sqlite":
-                $this->server = new \Sqlite3($options["database"]);
-            break;
-
-            case "mssql":
-                $this->server = mssql_connect($options["hostname"],$options["username"],$options["password"]);
-            break;
-
-        }
-
-        if(!$this->server) {
-            $this->error();
-        }
-
         $this->attached = [];
 
         $this->tables = [];
@@ -227,6 +183,69 @@ class Sql {
 
         $this->cacheOptions = [];
         $this->cacheNext = false;
+
+    }
+
+
+    /**
+     * If we have not already connected then connect to the database now
+     */
+    protected function connect() {
+
+        if($this->connected) {
+            return;
+        }
+
+        switch($this->mode) {
+
+            case "mysql":
+                if(!$this->server = new \mysqli($this->options["hostname"], $this->options["username"], $this->options["password"])) {
+                    $this->error();
+                }
+                if($this->options["charset"]) {
+                    $this->server->set_charset($this->options["charset"]);
+                }
+                if($timezone = $this->options["timezone"]) {
+                    if($timezone == static::USE_PHP_TIMEZONE) {
+                        $timezone = ini_get("date.timezone");
+                    }
+                    $this->query("SET time_zone='" . $timezone . "'");
+                }
+                if($database = $this->options["database"]) {
+                    if(!$this->server->select_db($database)) {
+                        $this->error();
+                    }
+                }
+            break;
+
+            case "postgres":
+            case "redshift":
+                $connect = "host=" . $this->options["hostname"] . " ";
+                $connect .= "user=" . $this->options["username"] . " ";
+                $connect .= "password=" . $this->options["password"] . " ";
+                $connect .= "dbname= " . $this->options["database"] . " ";
+                $this->server = pg_connect($connect,PGSQL_CONNECT_FORCE_NEW);
+            break;
+
+            case "odbc":
+                $this->server = odbc_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
+            break;
+
+            case "sqlite":
+                $this->server = new \Sqlite3($this->options["database"]);
+            break;
+
+            case "mssql":
+                $this->server = mssql_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
+            break;
+
+        }
+
+        if(!$this->server) {
+            $this->error();
+        }
+
+        $this->connected = true;
 
     }
 
@@ -343,6 +362,9 @@ class Sql {
             $this->cacheNext = false;
             return $this->cache($query,$params);
         }
+
+        # Ensure we have a connection to run this query on
+        $this->connect();
 
         $this->query = $query;
         $this->params = false;
@@ -1021,6 +1043,9 @@ class Sql {
 
     public function bulkInsert($table,$params,$extra=false) {
 
+        # Ensure we have a connection to run this query on
+        $this->connect();
+
         if($output = $this->output) {
             $this->output = false;
             echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
@@ -1640,6 +1665,7 @@ class Sql {
 
         # There is a standard function for quoting postgres table names
         if(in_array($this->mode,["postgres","redshift"])) {
+            $this->connect();
             return pg_escape_identifier($this->server,$table);
         }
 
@@ -1702,6 +1728,9 @@ class Sql {
      * Start a transaction by turning autocommit off
      */
     public function startTransaction() {
+
+        # Ensure we have a connection to start the transaction on
+        $this->connect();
 
         switch($this->mode) {
 
