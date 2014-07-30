@@ -953,7 +953,7 @@ class Sql
 
         $params = [];
         foreach ($set as $key => $val) {
-            $query .= $this->quoteField($key) . "=?, ";
+            $query .= $this->quoteField($key) . "=?,";
             $params[] = $val;
         }
 
