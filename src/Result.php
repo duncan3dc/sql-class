@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class Result
+class Result implements ResultInterface
 {
     public  $result;    # The result resource
     public  $mode;      # The type of database this result set is for

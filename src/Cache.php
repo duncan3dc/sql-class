@@ -5,23 +5,24 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Helpers\Json;
 
-class Cache
+class Cache implements ResultInterface
 {
-    const   MINUTE = 60;
-    const   HOUR = 3600;
-    const   DAY = 86400;
+    const MINUTE = 60;
+    const HOUR = 3600;
+    const DAY = 86400;
 
-    public  $sql;           # A reference to an sql class instance to execute the query over
+    public $sql;            # A reference to an sql class instance to execute the query over
 
-    public  $query;         # The query to be executed
-    public  $params;        # The parameters to be used in the query
-    public  $hash;          # The hash key of the query
+    public $query;          # The query to be executed
+    public $params;         # The parameters to be used in the query
+    public $hash;           # The hash key of the query
 
-    public  $dir;           # The location of the cache storage
+    public $dir;            # The location of the cache storage
 
-    public  $totalRows;     # The total number of rows
-    public  $nextRow;       # The number of the next row to fetch
-    public  $rowLimit;      # The maximum number of rows that we permit to cache
+    protected $totalRows;   # The total number of rows
+    protected $columnCount; # The number of columns in each row
+    protected $nextRow;     # The number of the next row to fetch
+    protected $rowLimit;    # The maximum number of rows that we permit to cache
 
     public  $timeout;       # How long the data should be cached for
     public  $cacheTime;     # The time that the data was cached at
@@ -75,7 +76,9 @@ class Cache
             $this->createCache();
         }
 
-        $this->totalRows = file_get_contents($this->dir . "/.status");
+        $data = Json::decodeFromFile($this->dir . "/.data");
+        $this->totalRows = $data["totalRows"];
+        $this->columnCount = $data["columnCount"];
         $this->nextRow = 0;
 
         $this->indexMap = false;
@@ -90,7 +93,7 @@ class Cache
         }
 
         # If no status file exists for this cache then presume there isn't any valid data
-        if (!file_exists($this->dir . "/.status")) {
+        if (!file_exists($this->dir . "/.data")) {
             if ($this->sql->output) {
                 echo "no status file found";
                 echo ($this->sql->htmlMode) ? "<hr>" : "\n";
@@ -99,7 +102,7 @@ class Cache
         }
 
         # If the status file is older than the specified timeout then force a refresh
-        $this->cacheTime = filectime($this->dir . "/.status");
+        $this->cacheTime = filectime($this->dir . "/.data");
         if ($this->sql->output) {
             echo "cache found (" . date("Y-m-d H:i:s", $this->cacheTime) . ")";
         }
@@ -126,11 +129,15 @@ class Cache
 
         $this->cacheTime = time();
 
-        file_put_contents($this->dir . "/.status", "0");
+        file_put_contents($this->dir . "/.data", "{}");
         file_put_contents($this->dir . "/.sorted", "{}");
 
         $rowNum = 0;
+        $columnCount = 0;
         while ($row = $this->sql->fetch($this->result)) {
+            if (!$rowNum) {
+                $columnCount = count($row);
+            }
 
             Json::encodeToFile($this->dir . "/" . $rowNum . ".row", $row);
 
@@ -141,7 +148,10 @@ class Cache
             }
         }
 
-        file_put_contents($this->dir . "/.status", $rowNum);
+        Json::encodeToFile($this->dir . "/.data", [
+            "totalRows"     =>  $rowNum,
+            "columnCount"   =>  $columnCount,
+        ]);
     }
 
 
@@ -170,6 +180,18 @@ class Cache
         }
 
         return $row;
+    }
+
+
+    public function rowCount()
+    {
+        return $this->totalRows;
+    }
+
+
+    public function columnCount()
+    {
+        return $this->columnCount;
     }
 
 
