@@ -193,6 +193,9 @@ class Sql
             return;
         }
 
+        # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
+        $this->connected = true;
+
         switch ($this->mode) {
 
             case "mysql":
@@ -240,8 +243,6 @@ class Sql
         if (!$this->server) {
             $this->error();
         }
-
-        $this->connected = true;
     }
 
 
