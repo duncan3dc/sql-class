@@ -199,7 +199,8 @@ class Sql
         switch ($this->mode) {
 
             case "mysql":
-                if (!$this->server = new \mysqli($this->options["hostname"], $this->options["username"], $this->options["password"])) {
+                $this->server = new \Mysqli($this->options["hostname"], $this->options["username"], $this->options["password"]);
+                if ($this->server->connect_error) {
                     $this->error();
                 }
                 if ($this->options["charset"]) {
