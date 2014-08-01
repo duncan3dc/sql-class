@@ -1995,7 +1995,7 @@ class Sql
      */
     public function disconnect()
     {
-        if (!$this->server) {
+        if (!$this->connected || !$this->server || ($this->mode ==  "mysql" && $this->server->connect_error)) {
             return false;
         }
 
