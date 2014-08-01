@@ -28,9 +28,6 @@ class Result implements ResultInterface
         switch ($this->mode) {
 
             case "mysql":
-                if (!is_a($this->result, "MySQLi_Result")) {
-                    return false;
-                }
                 $row = $this->result->fetch_assoc();
                 break;
 
