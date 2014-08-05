@@ -776,6 +776,7 @@ class Sql
 
         reset($params);
         $this->modifyQuery($query, function($part) use(&$params) {
+            $newPart = "";
             while ($pos = strpos($part, "?")) {
                 $newPart .= substr($part, 0, $pos);
                 $part = substr($part, $pos + 1);
@@ -978,6 +979,8 @@ class Sql
         $tableName = $this->getTableName($table);
 
         $newParams = [];
+        $fields = "";
+        $values = "";
         foreach ($params as $key => $val) {
             if ($fields) {
                 $fields .= ",";
@@ -1889,6 +1892,10 @@ class Sql
      */
     protected function callTriggers($type, $table, $params1, $params2 = null)
     {
+        if (!isset($this->triggers[$type][$table])) {
+            return true;
+        }
+
         $triggers = $this->triggers[$type][$table];
 
         if (!is_array($triggers)) {
