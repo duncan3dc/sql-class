@@ -523,7 +523,7 @@ class Sql
         foreach ($parts as $part) {
 
             # If this part of the query isn't a string, then perform the replace on it
-            if ($part[0] != "'") {
+            if (substr($part, 0, 1) != "'") {
                 $part = $callback($part);
             }
 
@@ -2005,6 +2005,8 @@ class Sql
         if (!$this->connected || !$this->server || ($this->mode ==  "mysql" && $this->server->connect_error)) {
             return false;
         }
+
+        $result = false;
 
         switch ($this->mode) {
 
