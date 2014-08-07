@@ -1099,7 +1099,7 @@ class Sql
                     $this->error();
                 }
 
-                $result = pg_end_copy($this->server);
+                $result = new Result(pg_end_copy($this->server), $this->mode);
                 break;
 
             default:
