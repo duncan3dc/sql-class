@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class Result implements ResultInterface
+class Result extends Iterator
 {
     public  $result;    # The result resource
     public  $mode;      # The type of database this result set is for
@@ -10,6 +10,7 @@ class Result implements ResultInterface
 
     public function __construct($result, $mode)
     {
+        $this->position = 0;
         $this->result = $result;
         $this->mode = $mode;
     }
@@ -53,6 +54,8 @@ class Result implements ResultInterface
         if (!$row) {
             return false;
         }
+
+        $this->position++;
 
         return $row;
     }
@@ -103,6 +106,7 @@ class Result implements ResultInterface
                 $this->seek($row);
                 $data = $this->fetch(true);
                 $value = $data[$col];
+                $this->seek($this->position);
                 break;
 
             case "postgres":
@@ -159,6 +163,8 @@ class Result implements ResultInterface
                 mssql_data_seek($this->result, $row);
                 break;
         }
+
+        $this->position = $row;
     }
 
 

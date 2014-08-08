@@ -5,7 +5,7 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Helpers\Json;
 
-class Cache implements ResultInterface
+class Cache extends Iterator
 {
     const MINUTE = 60;
     const HOUR = 3600;
@@ -21,7 +21,6 @@ class Cache implements ResultInterface
 
     protected $totalRows;   # The total number of rows
     protected $columnCount; # The number of columns in each row
-    protected $nextRow;     # The number of the next row to fetch
     protected $rowLimit;    # The maximum number of rows that we permit to cache
 
     public  $timeout;       # How long the data should be cached for
@@ -79,7 +78,7 @@ class Cache implements ResultInterface
         $data = Json::decodeFromFile($this->dir . "/.data");
         $this->totalRows = $data["totalRows"];
         $this->columnCount = $data["columnCount"];
-        $this->nextRow = 0;
+        $this->position = 0;
 
         $this->indexMap = false;
     }
@@ -157,19 +156,19 @@ class Cache implements ResultInterface
 
     public function fetch($indexed = null)
     {
-        if ($this->nextRow >= $this->totalRows) {
+        if ($this->position >= $this->totalRows) {
             return false;
         }
 
         if ($this->indexMap) {
-            $rowIndex = $this->indexMap[$this->nextRow];
+            $rowIndex = $this->indexMap[$this->position];
         } else {
-            $rowIndex = $this->nextRow;
+            $rowIndex = $this->position;
         }
 
         $row = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
 
-        $this->nextRow++;
+        $this->position++;
 
         if ($indexed) {
             $new = [];
@@ -197,7 +196,7 @@ class Cache implements ResultInterface
 
     public function seek($row)
     {
-        $this->nextRow = $row;
+        $this->position = $row;
     }
 
 
