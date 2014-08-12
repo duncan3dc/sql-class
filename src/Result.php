@@ -188,7 +188,7 @@ class Result extends Iterator
 
             case "sqlite":
                 $rows = 0;
-                while ($this->fetch) {
+                while ($this->fetch()) {
                     $rows++;
                 }
                 $this->result->reset();
@@ -226,7 +226,7 @@ class Result extends Iterator
                 break;
 
             case "sqlite":
-                $columns = $this->result->numColumns;
+                $columns = $this->result->numColumns();
                 break;
 
             case "mssql":
