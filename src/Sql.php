@@ -1262,7 +1262,7 @@ class Sql
          * Not all engines support this though, so we have to check which mode we are in
          * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
          */
-        if ($where == static::NO_WHERE_CLAUSE && !$this->transaction && $this->mode != "odbc") {
+        if ($where == static::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"])) {
             $query = "TRUNCATE TABLE " . $tableName;
         } else {
             $query = "DELETE FROM " . $tableName . " ";
