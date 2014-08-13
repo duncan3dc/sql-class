@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-abstract class Iterator implements \Iterator
+abstract class Iterator implements \Iterator, \Countable
 {
     protected $position;
     protected $fetchStyle = Sql::FETCH_ASSOC;
@@ -34,15 +34,9 @@ abstract class Iterator implements \Iterator
     abstract public function seek($row);
 
     /**
-     * Get the number of rows returned by the query
-     */
-    abstract public function rowCount();
-
-    /**
      * Get the number of columns in the result set
      */
     abstract public function columnCount();
-
 
     final public function current()
     {

@@ -40,13 +40,13 @@ class CacheTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testRowCount()
+    public function testCount()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
         $this->sql->insert("table1", ["field1" => "row2"]);
 
         $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame(2, $result->rowCount());
+        $this->assertSame(2, $result->count());
     }
 
     public function testColumnCount()

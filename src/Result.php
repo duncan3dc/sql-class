@@ -172,7 +172,7 @@ class Result extends Iterator
     }
 
 
-    public function rowCount()
+    public function count()
     {
 
         switch ($this->mode) {

@@ -187,7 +187,7 @@ class Cache extends Iterator
     }
 
 
-    public function rowCount()
+    public function count()
     {
         return $this->totalRows;
     }
