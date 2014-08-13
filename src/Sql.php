@@ -8,11 +8,16 @@ class Sql
 {
     const   NO_WHERE_CLAUSE  = 101;     # Allow queries to be created without a where cluase
     const   USE_PHP_TIMEZONE = 102;     # Set the database timezone to be the same as the php one
+
     const   INSERT_REPLACE   = 103;     # Mysql extension to replace any existing records with a unique key match
     const   INSERT_IGNORE    = 104;     # Mysql extension to ignore any existing records with a unique key match
+
     const   TRIGGER_INSERT   = 105;     # A trigger to be run after a successful insert
     const   TRIGGER_UPDATE   = 106;     # A trigger to be run after a successful update
     const   TRIGGER_DELETE   = 107;     # A trigger to be run after a successful delete
+
+    const   FETCH_ROW        = 108;     # Return rows as an enumerated array (using column numbers)
+    const   FETCH_ASSOC      = 109;     # Return rows as an associative array (using field names)
 
     protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
     protected $options;                 # An array of all the options this object was created with

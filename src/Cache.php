@@ -154,7 +154,7 @@ class Cache extends Iterator
     }
 
 
-    public function fetch($indexed = null)
+    public function fetch($style = null)
     {
         if ($this->position >= $this->totalRows) {
             return false;
@@ -170,7 +170,12 @@ class Cache extends Iterator
 
         $this->position++;
 
-        if ($indexed) {
+        # If no style was specified then use the current setting
+        if (!$style) {
+            $style = $this->fetchStyle;
+        }
+
+        if ($style !== Sql::FETCH_ASSOC) {
             $new = [];
             foreach ($row as $val) {
                 $new[] = $val;

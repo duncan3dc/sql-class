@@ -64,7 +64,7 @@ class Result extends Iterator
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch($indexed = null)
+    public function fetch($style = null)
     {
         # If the fetch fails then there are no rows left to retrieve
         if (!$data = $this->_fetch($this->result)) {
@@ -73,16 +73,20 @@ class Result extends Iterator
 
         $row = [];
 
+        # If no style was specified then use the current setting
+        if (!$style) {
+            $style = $this->fetchStyle;
+        }
+
         foreach ($data as $key => $val) {
 
             $val = rtrim($val);
 
-            # If the data should be returned as an enumerated array then ignore the key
-            if ($indexed) {
-                $row[] = $val;
-            } else {
+            if ($style === Sql::FETCH_ASSOC) {
                 $key = strtolower($key);
                 $row[$key] = $val;
+            } else {
+                $row[] = $val;
             }
         }
 

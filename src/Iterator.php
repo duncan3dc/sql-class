@@ -5,11 +5,23 @@ namespace duncan3dc\SqlClass;
 abstract class Iterator implements \Iterator
 {
     protected $position;
+    protected $fetchStyle = Sql::FETCH_ASSOC;
 
     /**
      * Fetch the next row from the result set and clean it up
      */
-    abstract public function fetch($indexed = null);
+    public function fetchStyle($style)
+    {
+        if (!in_array($style, [Sql::FETCH_ROW, Sql::FETCH_ASSOC], true)) {
+            throw new \Exception("Invalid fetch style specified");
+        }
+        $this->fetchStyle = $style;
+    }
+
+    /**
+     * Fetch the next row from the result set and clean it up
+     */
+    abstract public function fetch($style = null);
 
     /**
      * Fetch an indiviual value from the result set

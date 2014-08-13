@@ -5,13 +5,14 @@ namespace duncan3dc\SqlClass;
 class CacheTest extends \PHPUnit_Framework_TestCase
 {
     private $sql;
+    private $database;
 
 
     public function __construct()
     {
-        $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
-        if (file_exists($database)) {
-            unlink($database);
+        $this->database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
+        if (file_exists($this->database)) {
+            unlink($this->database);
         }
 
         $this->sql = new \duncan3dc\SqlClass\Sql([
@@ -19,7 +20,7 @@ class CacheTest extends \PHPUnit_Framework_TestCase
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);
 
-        $this->sql->attachDatabase($database, "test1");
+        $this->sql->attachDatabase($this->database, "test1");
 
         $this->sql->definitions([
             "table1"    =>  "test1",
@@ -34,8 +35,8 @@ class CacheTest extends \PHPUnit_Framework_TestCase
 
     public function __destruct()
     {
-
         unset($this->sql);
+        unlink($this->database);
     }
 
 
@@ -61,6 +62,21 @@ class CacheTest extends \PHPUnit_Framework_TestCase
         $this->assertSame("row1", $result->fetch()["field1"]);
     }
 
+    public function testFetchAssoc2()
+    {
+        $this->sql->insert("table1", ["field1" => "row1"]);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
+        $this->assertSame("row1", $result->fetch(Sql::FETCH_ASSOC)["field1"]);
+    }
+
+    public function testFetchAssoc3()
+    {
+        $this->sql->insert("table1", ["field1" => "row1"]);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
+        $result->fetchStyle(Sql::FETCH_ASSOC);
+        $this->assertSame("row1", $result->fetch()["field1"]);
+    }
+
     public function testFetchRow1()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
@@ -73,5 +89,20 @@ class CacheTest extends \PHPUnit_Framework_TestCase
         $this->sql->insert("table1", ["field1" => "testFetchRow2", "field2" => "ok"]);
         $result = $this->sql->selectAllC("table1", ["field1" => "testFetchRow2"]);
         $this->assertSame("ok", $result->fetch(1)[1]);
+    }
+
+    public function testFetchRow3()
+    {
+        $this->sql->insert("table1", ["field1" => "testFetchRow3", "field2" => "ok"]);
+        $result = $this->sql->selectAllC("table1", ["field1" => "testFetchRow3"]);
+        $this->assertSame("ok", $result->fetch(Sql::FETCH_ROW)[1]);
+    }
+
+    public function testFetchRow4()
+    {
+        $this->sql->insert("table1", ["field1" => "testFetchRow4", "field2" => "ok"]);
+        $result = $this->sql->selectAllC("table1", ["field1" => "testFetchRow4"]);
+        $result->fetchStyle(Sql::FETCH_ROW);
+        $this->assertSame("ok", $result->fetch()[1]);
     }
 }
