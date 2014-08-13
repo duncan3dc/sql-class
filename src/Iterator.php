@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-abstract class Iterator implements \Iterator, \Countable
+abstract class Iterator implements \SeekableIterator, \Countable
 {
     protected $position;
     protected $fetchStyle = Sql::FETCH_ASSOC;
