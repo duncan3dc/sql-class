@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class ResultTest extends \PHPUnit_Framework_TestCase
+class CacheTest extends \PHPUnit_Framework_TestCase
 {
     private $sql;
 
@@ -44,34 +44,34 @@ class ResultTest extends \PHPUnit_Framework_TestCase
         $this->sql->insert("table1", ["field1" => "row1"]);
         $this->sql->insert("table1", ["field1" => "row2"]);
 
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame(2, $result->rowCount());
     }
 
     public function testColumnCount()
     {
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame(2, $result->columnCount());
     }
 
     public function testFetchAssoc1()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame("row1", $result->fetch()["field1"]);
     }
 
     public function testFetchRow1()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $result = $this->sql->selectAllC("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame("row1", $result->fetch(true)[0]);
     }
 
     public function testFetchRow2()
     {
-        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $this->sql->insert("table1", ["field1" => "testFetchRow2", "field2" => "ok"]);
+        $result = $this->sql->selectAllC("table1", ["field1" => "testFetchRow2"]);
         $this->assertSame("ok", $result->fetch(1)[1]);
     }
 }
