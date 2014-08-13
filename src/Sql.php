@@ -1,4 +1,7 @@
 <?php
+/**
+ * Main class that manages connections to SQL servers
+ */
 
 namespace duncan3dc\SqlClass;
 

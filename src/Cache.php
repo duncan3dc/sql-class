@@ -1,4 +1,7 @@
 <?php
+/**
+ * Cache results on disk to make future queries faster
+ */
 
 namespace duncan3dc\SqlClass;
 
@@ -154,10 +157,20 @@ class Cache extends Iterator
     }
 
 
+    /**
+     * Fetch the next row from the result set and clean it up
+     *
+     * All field values have rtrim() called on them to remove trailing space
+     * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
+     *
+     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW or Sql::FETCH_ASSOC)
+     *
+     * @return array|null
+     */
     public function fetch($style = null)
     {
         if ($this->position >= $this->totalRows) {
-            return false;
+            return;
         }
 
         if ($this->indexMap) {
@@ -187,24 +200,14 @@ class Cache extends Iterator
     }
 
 
-    public function count()
-    {
-        return $this->totalRows;
-    }
-
-
-    public function columnCount()
-    {
-        return $this->columnCount;
-    }
-
-
-    public function seek($row)
-    {
-        $this->position = $row;
-    }
-
-
+    /**
+     * Fetch an indiviual value from the result set
+     *
+     * @param int $row The index of the row to fetch (zero-based)
+     * @param int $col The index of the column to fetch (zero-based)
+     *
+     * @return string
+     */
     public function result($row, $col)
     {
         $this->seek($row);
@@ -214,6 +217,41 @@ class Cache extends Iterator
         $val = $row[$col];
 
         return $val;
+    }
+
+
+    /**
+     * Seek to a specific record of the result set
+     *
+     * @param int $row The index of the row to position to (zero-based)
+     *
+     * @return void
+     */
+    public function seek($row)
+    {
+        $this->position = $row;
+    }
+
+
+    /**
+     * Get the number of rows in the result set
+     *
+     * @return int
+     */
+    public function count()
+    {
+        return $this->totalRows;
+    }
+
+
+    /**
+     * Get the number of columns in the result set
+     *
+     * @return int
+     */
+    public function columnCount()
+    {
+        return $this->columnCount;
     }
 
 
