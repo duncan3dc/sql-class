@@ -5,7 +5,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class Result extends Iterator
+class Result extends ResultInterface
 {
     public  $result;    # The result resource
     public  $mode;      # The type of database this result set is for

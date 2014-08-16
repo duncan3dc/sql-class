@@ -8,7 +8,7 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Helpers\Json;
 
-class Cache extends Iterator
+class Cache extends ResultInterface
 {
     const MINUTE = 60;
     const HOUR = 3600;
