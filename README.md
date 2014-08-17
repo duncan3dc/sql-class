@@ -1,4 +1,38 @@
 sql-class
 =========
 
-A pair of PHP classes that provide a simple database abstraction layer, and an on disk caching facility
+A simple database abstraction layer, with an on disk caching facility.  
+
+Class documentation available at http://duncan3dc.github.io/sql-class/  
+
+
+Examples
+--------
+
+The classes use a namespace of duncan3dc\SqlClass
+```php
+use duncan3dc\SqlClass\Sql;
+```
+
+-------------------
+
+```php
+$sql = new Sql([
+    "mode"      =>  "mysql",
+    "hostname"  =>  "localhost",
+    "username"  =>  "root",
+    "password"  =>  "password",
+]);
+
+$row = $sql->select("table_1",[
+    "field1"    =>  "one",
+    "field2"    =>  "two",
+]);
+
+$sql->update("table_1",[
+    "field3"    =>  "three",
+],[
+    "field1"    =>  $row["field1"],
+    "field2"    =>  $row["field2"],
+])
+```
