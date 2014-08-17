@@ -1164,6 +1164,10 @@ class Sql
      */
     public function where($where, &$params)
     {
+        if (!is_array($where)) {
+            throw new \Exception("Invalid where clause specified, must be an array");
+        }
+
         $params = Helper::toArray($params);
 
         $query = "";
