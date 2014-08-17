@@ -1290,6 +1290,7 @@ class Sql
      */
     public function _fetch(ResultInterface $result)
     {
+        trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->_fetch()', E_USER_DEPRECATED);
         return $result->_fetch();
     }
 
@@ -1299,6 +1300,7 @@ class Sql
      */
     public function fetch(ResultInterface $result, $style = null)
     {
+        trigger_error('Sql::fetch() is deprecated in favour of using the Result class, eg $result->fetch()', E_USER_DEPRECATED);
         return $result->fetch($style);
     }
 
@@ -1308,6 +1310,7 @@ class Sql
      */
     public function result(ResultInterface $result, $row, $col)
     {
+        trigger_error('Sql::result() is deprecated in favour of using the Result class, eg $result->result(0, 0)', E_USER_DEPRECATED);
         return $result->result($row, $col);
     }
 
@@ -1317,6 +1320,7 @@ class Sql
      */
     public function seek(ResultInterface $result, $row)
     {
+        trigger_error('Sql::seek() is deprecated in favour of using the Result class, eg $result->seek(0)', E_USER_DEPRECATED);
         return $result->seek($row);
     }
 
@@ -1327,6 +1331,7 @@ class Sql
      */
     public function queryFetch($query, $params = null, $style = null)
     {
+        trigger_error('queryFetch() is deprecated in favour of method chaining, eg $sql->query($query, $params)->fetch()', E_USER_DEPRECATED);
         return $this->query($query, $params)->fetch($style);
     }
 
@@ -1336,6 +1341,7 @@ class Sql
      */
     public function queryFetchC($query, $params = null, $style = null)
     {
+        trigger_error('queryFetchC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->fetch()', E_USER_DEPRECATED);
         return $this->cache($query, $params)->fetch($style);
     }
 
@@ -1346,6 +1352,7 @@ class Sql
      */
     public function queryResult($query, $params, $row, $col)
     {
+        trigger_error('queryResult() is deprecated in favour of method chaining, eg $sql->query($query, $params)->result(0, 0)', E_USER_DEPRECATED);
         return $this->query($query, $params)->result($row, $col);
     }
 
@@ -1355,6 +1362,7 @@ class Sql
      */
     public function queryResultC($query, $params, $row, $col)
     {
+        trigger_error('queryResultC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->result(0, 0)', E_USER_DEPRECATED);
         return $this->cache($query, $params)->result($row, $col);
     }
 
