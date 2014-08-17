@@ -1147,10 +1147,7 @@ class Sql
                 break;
 
             case "sqlite":
-                $query = "SELECT last_insert_rowid() `id`";
-                $result = $this->query($query);
-                $row = $this->fetch($result);
-                $id = $row["id"];
+                $id = $this->query("SELECT last_insert_rowid()")->fetch(self::FETCH_ROW)[0];
                 break;
         }
 
@@ -1289,16 +1286,16 @@ class Sql
      */
     public function _fetch(ResultInterface $result)
     {
-        return $result->_fetch($indexed);
+        return $result->_fetch();
     }
 
 
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch(ResultInterface $result, $indexed = null)
+    public function fetch(ResultInterface $result, $style = null)
     {
-        return $result->fetch($indexed);
+        return $result->fetch($style);
     }
 
 
@@ -1324,22 +1321,18 @@ class Sql
      * Execute the query and fetch the first row from the result set
      * This is just a shorter way of doing a query() and then a fetch()
      */
-    public function queryFetch($query, $params = null, $indexed = null)
+    public function queryFetch($query, $params = null, $style = null)
     {
-        $result = $this->query($query, $params);
-
-        return $this->fetch($result, $indexed);
+        return $this->query($query, $params)->fetch($style);
     }
 
 
     /**
      * Cached version of queryFetch()
      */
-    public function queryFetchC($query, $params = null, $indexed = null)
+    public function queryFetchC($query, $params = null, $style = null)
     {
-        $this->cacheNext = true;
-
-        return $this->queryFetch($query, $params, $indexed);
+        return $this->cache($query, $params)->fetch($style);
     }
 
 
@@ -1349,9 +1342,7 @@ class Sql
      */
     public function queryResult($query, $params, $row, $col)
     {
-        $result = $this->query($query, $params);
-
-        return $this->result($result, $row, $col);
+        return $this->query($query, $params)->result($row, $col);
     }
 
 
@@ -1360,9 +1351,7 @@ class Sql
      */
     public function queryResultC($query, $params, $row, $col)
     {
-        $this->cacheNext = true;
-
-        return $this->queryResult($query, $params, $row, $col);
+        return $this->cache($query, $params)->result($row, $col);
     }
 
 
@@ -1427,9 +1416,7 @@ class Sql
                 break;
         }
 
-        $result = $this->query($query, $params);
-
-        return $this->fetch($result);
+        return $this->query($query, $params)->fetch();
     }
 
 
@@ -1941,7 +1928,8 @@ class Sql
 
         $databases = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $databases[] = $row[0];
         }
 
@@ -1967,7 +1955,8 @@ class Sql
 
         $tables = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $tables[] = $row[0];
         }
 
@@ -1993,7 +1982,8 @@ class Sql
 
         $views = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $views[] = $row[0];
         }
 
