@@ -1,4 +1,7 @@
 <?php
+/**
+ * Main class that manages connections to SQL servers
+ */
 
 namespace duncan3dc\SqlClass;
 
@@ -129,7 +132,7 @@ class Sql
     }
 
 
-    public function __construct($options = null)
+    public function __construct(array $options = null)
     {
         $options = Helper::getOptions($options, [
             "mode"          =>  "mysql",
@@ -347,7 +350,7 @@ class Sql
     /**
      * Execute an sql query
      */
-    public function query($query, $params = null)
+    public function query($query, array $params = null)
     {
         # If the next query should be cached then run the cache function instead
         if ($this->cacheNext) {
@@ -359,7 +362,7 @@ class Sql
         $this->connect();
 
         $this->query = $query;
-        $this->params = false;
+        $this->params = null;
         $this->preparedQuery = false;
 
         if (is_array($params)) {
@@ -513,7 +516,7 @@ class Sql
     /*
      * Allow a query to be modified without affecting quoted strings within it
      */
-    protected function modifyQuery(&$query, $callback)
+    protected function modifyQuery(&$query, callable $callback)
     {
         $regex = "/('[^']*')/";
         if (!preg_match($regex, $query)) {
@@ -841,7 +844,7 @@ class Sql
     /**
      * Convienience method to create a cached query instance
      */
-    public function cache($query, $params = null, $timeout = null)
+    public function cache($query, array $params = null, $timeout = null)
     {
         $options = array_merge($this->cacheOptions, [
             "sql"     =>  $this,
@@ -953,7 +956,7 @@ class Sql
     }
 
 
-    public function update($table, $set, $where)
+    public function update($table, array $set, $where)
     {
         $tableName = $this->getTableName($table);
 
@@ -979,7 +982,7 @@ class Sql
     }
 
 
-    public function insert($table, $params, $extra = null)
+    public function insert($table, array $params, $extra = null)
     {
         $tableName = $this->getTableName($table);
 
@@ -1013,7 +1016,7 @@ class Sql
         return $result;
     }
 
-    public function bulkInsert($table, $params, $extra = null)
+    public function bulkInsert($table, array $params, $extra = null)
     {
         # Ensure we have a connection to run this query on
         $this->connect();
@@ -1129,12 +1132,8 @@ class Sql
     }
 
 
-    public function getId($result)
+    public function getId(ResultInterface $result)
     {
-        if (!$result) {
-            return false;
-        }
-
         $id = false;
 
         switch ($this->mode) {
@@ -1148,10 +1147,7 @@ class Sql
                 break;
 
             case "sqlite":
-                $query = "SELECT last_insert_rowid() `id`";
-                $result = $this->query($query);
-                $row = $this->fetch($result);
-                $id = $row["id"];
+                $id = $this->query("SELECT last_insert_rowid()")->fetch(self::FETCH_ROW)[0];
                 break;
         }
 
@@ -1168,6 +1164,10 @@ class Sql
      */
     public function where($where, &$params)
     {
+        if (!is_array($where)) {
+            throw new \Exception("Invalid where clause specified, must be an array");
+        }
+
         $params = Helper::toArray($params);
 
         $query = "";
@@ -1260,7 +1260,7 @@ class Sql
     public function delete($table, $where)
     {
         $tableName = $this->getTableName($table);
-        $params = false;
+        $params = null;
 
         /**
          * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
@@ -1288,26 +1288,29 @@ class Sql
     /**
      * Fetch the next row from the result set
      */
-    public function _fetch($result)
+    public function _fetch(ResultInterface $result)
     {
-        return $result->_fetch($indexed);
+        trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->_fetch()', E_USER_DEPRECATED);
+        return $result->_fetch();
     }
 
 
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch($result, $indexed = null)
+    public function fetch(ResultInterface $result, $style = null)
     {
-        return $result->fetch($indexed);
+        trigger_error('Sql::fetch() is deprecated in favour of using the Result class, eg $result->fetch()', E_USER_DEPRECATED);
+        return $result->fetch($style);
     }
 
 
     /**
      * Fetch an indiviual value from the result set
      */
-    public function result($result, $row, $col)
+    public function result(ResultInterface $result, $row, $col)
     {
+        trigger_error('Sql::result() is deprecated in favour of using the Result class, eg $result->result(0, 0)', E_USER_DEPRECATED);
         return $result->result($row, $col);
     }
 
@@ -1315,8 +1318,9 @@ class Sql
     /**
      * Seek to a specific record of the result set
      */
-    public function seek($result, $row)
+    public function seek(ResultInterface $result, $row)
     {
+        trigger_error('Sql::seek() is deprecated in favour of using the Result class, eg $result->seek(0)', E_USER_DEPRECATED);
         return $result->seek($row);
     }
 
@@ -1325,22 +1329,20 @@ class Sql
      * Execute the query and fetch the first row from the result set
      * This is just a shorter way of doing a query() and then a fetch()
      */
-    public function queryFetch($query, $params = null, $indexed = null)
+    public function queryFetch($query, $params = null, $style = null)
     {
-        $result = $this->query($query, $params);
-
-        return $this->fetch($result, $indexed);
+        trigger_error('queryFetch() is deprecated in favour of method chaining, eg $sql->query($query, $params)->fetch()', E_USER_DEPRECATED);
+        return $this->query($query, $params)->fetch($style);
     }
 
 
     /**
      * Cached version of queryFetch()
      */
-    public function queryFetchC($query, $params = null, $indexed = null)
+    public function queryFetchC($query, $params = null, $style = null)
     {
-        $this->cacheNext = true;
-
-        return $this->queryFetch($query, $params, $indexed);
+        trigger_error('queryFetchC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->fetch()', E_USER_DEPRECATED);
+        return $this->cache($query, $params)->fetch($style);
     }
 
 
@@ -1350,9 +1352,8 @@ class Sql
      */
     public function queryResult($query, $params, $row, $col)
     {
-        $result = $this->query($query, $params);
-
-        return $this->result($result, $row, $col);
+        trigger_error('queryResult() is deprecated in favour of method chaining, eg $sql->query($query, $params)->result(0, 0)', E_USER_DEPRECATED);
+        return $this->query($query, $params)->result($row, $col);
     }
 
 
@@ -1361,9 +1362,8 @@ class Sql
      */
     public function queryResultC($query, $params, $row, $col)
     {
-        $this->cacheNext = true;
-
-        return $this->queryResult($query, $params, $row, $col);
+        trigger_error('queryResultC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->result(0, 0)', E_USER_DEPRECATED);
+        return $this->cache($query, $params)->result($row, $col);
     }
 
 
@@ -1405,7 +1405,7 @@ class Sql
 
         $query .= " FROM " . $table . " ";
 
-        $params = false;
+        $params = null;
         if ($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
@@ -1428,9 +1428,7 @@ class Sql
                 break;
         }
 
-        $result = $this->query($query, $params);
-
-        return $this->fetch($result);
+        return $this->query($query, $params)->fetch();
     }
 
 
@@ -1480,7 +1478,7 @@ class Sql
 
         $query .= " FROM " . $table . " ";
 
-        $params = false;
+        $params = null;
         if ($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
@@ -1507,7 +1505,7 @@ class Sql
     /**
      * Insert a new record into a table, unless it already exists in which case update it
      */
-    public function insertOrUpdate($table, $set, $where)
+    public function insertOrUpdate($table, array $set, array $where)
     {
         if ($this->select($table, $where)) {
             $result = $this->update($table, $set, $where);
@@ -1523,7 +1521,7 @@ class Sql
     /**
      * Synonym for insertOrUpdate()
      */
-    public function updateOrInsert($table, $set, $where)
+    public function updateOrInsert($table, array $set, array $where)
     {
         return $this->insertOrUpdate($table, $set, $where);
     }
@@ -1629,7 +1627,7 @@ class Sql
      * The third parameter is the string that is being searched for
      * The fourth parameter is an array of fields that should be searched for in the sql
      */
-    public function search(&$query, &$params, $search, $fields)
+    public function search(&$query, array &$params, $search, array $fields)
     {
         $query .= "( ";
 
@@ -1882,7 +1880,7 @@ class Sql
     /**
      * Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)
      */
-    public function addTrigger($type, $table, $trigger)
+    public function addTrigger($type, $table, callable $trigger)
     {
         if (!array_key_exists($type, $this->triggers)) {
             throw new \Exception("Invalid trigger type specified");
@@ -1942,7 +1940,8 @@ class Sql
 
         $databases = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $databases[] = $row[0];
         }
 
@@ -1968,7 +1967,8 @@ class Sql
 
         $tables = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $tables[] = $row[0];
         }
 
@@ -1994,7 +1994,8 @@ class Sql
 
         $views = [];
         $result = $this->query($query);
-        while ($row = $this->fetch($result, true)) {
+        $result->fetchStyle(self::FETCH_ROW);
+        foreach ($result as $row) {
             $views[] = $row[0];
         }
 

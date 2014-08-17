@@ -114,7 +114,7 @@
                         <ul class="dropdown-menu">
                             <li>
                                 <a href="../reports/errors.html">
-                                                                                                                                                                                                                                                                                                                                                                                                                            <i class="icon-list-alt"></i>&#160;Errors <span class="label label-info pull-right">85</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                            <i class="icon-list-alt"></i>&#160;Errors <span class="label label-info pull-right">66</span>
                                 </a>
                             </li>
                             <li>
@@ -144,35 +144,35 @@
                                 <div class="accordion" style="margin-bottom: 0">
         <div class="accordion-group">
             <div class="accordion-heading">
-                                    <a class="accordion-toggle " data-toggle="collapse" data-target="#namespace-430173317"></a>
+                                    <a class="accordion-toggle " data-toggle="collapse" data-target="#namespace-391745677"></a>
                                 <a href="../namespaces/default.html" style="margin-left: 30px; padding-left: 0">\</a>
             </div>
-            <div id="namespace-430173317" class="accordion-body collapse in">
+            <div id="namespace-391745677" class="accordion-body collapse in">
                 <div class="accordion-inner">
 
                                                     <div class="accordion" style="margin-bottom: 0">
         <div class="accordion-group">
             <div class="accordion-heading">
-                                    <a class="accordion-toggle collapsed" data-toggle="collapse" data-target="#namespace-1302404299"></a>
+                                    <a class="accordion-toggle collapsed" data-toggle="collapse" data-target="#namespace-112757531"></a>
                                 <a href="../namespaces/duncan3dc.html" style="margin-left: 30px; padding-left: 0">duncan3dc</a>
             </div>
-            <div id="namespace-1302404299" class="accordion-body collapse ">
+            <div id="namespace-112757531" class="accordion-body collapse ">
                 <div class="accordion-inner">
 
                                                     <div class="accordion" style="margin-bottom: 0">
         <div class="accordion-group">
             <div class="accordion-heading">
-                                    <a class="accordion-toggle collapsed" data-toggle="collapse" data-target="#namespace-692631304"></a>
+                                    <a class="accordion-toggle collapsed" data-toggle="collapse" data-target="#namespace-295642718"></a>
                                 <a href="../namespaces/duncan3dc.SqlClass.html" style="margin-left: 30px; padding-left: 0">SqlClass</a>
             </div>
-            <div id="namespace-692631304" class="accordion-body collapse ">
+            <div id="namespace-295642718" class="accordion-body collapse ">
                 <div class="accordion-inner">
 
                     
                     <ul>
                                                                                                     <li class="class"><a href="../classes/duncan3dc.SqlClass.Cache.html">Cache</a></li>
-                                                    <li class="class"><a href="../classes/duncan3dc.SqlClass.Iterator.html">Iterator</a></li>
                                                     <li class="class"><a href="../classes/duncan3dc.SqlClass.Result.html">Result</a></li>
+                                                    <li class="class"><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">ResultInterface</a></li>
                                                     <li class="class"><a href="../classes/duncan3dc.SqlClass.Sql.html">Sql</a></li>
                                             </ul>
                 </div>
@@ -1203,14 +1203,14 @@
             <article class="method">
                 <h3 class="public ">__construct()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">__construct( <span class="argument">$options</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">__construct(array <span class="argument">$options</span>)</pre>
                 <p><em></em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$options </td>
                                 <td></td>
                             </tr>
@@ -1332,7 +1332,7 @@
             <article class="method">
                 <h3 class="public ">query()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">query( <span class="argument">$query</span>,  <span class="argument">$params</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">query( <span class="argument">$query</span>, array <span class="argument">$params</span>)</pre>
                 <p><em>Execute an sql query</em></p>
                 
 
@@ -1344,7 +1344,7 @@
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$params </td>
                                 <td></td>
                             </tr>
@@ -1370,7 +1370,7 @@
             <article class="method">
                 <h3 class="public ">cache()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">cache( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$timeout</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">cache( <span class="argument">$query</span>, array <span class="argument">$params</span>,  <span class="argument">$timeout</span>)</pre>
                 <p><em>Convienience method to create a cached query instance</em></p>
                 
 
@@ -1382,7 +1382,7 @@
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$params </td>
                                 <td></td>
                             </tr>
@@ -1438,7 +1438,7 @@
             <article class="method">
                 <h3 class="public ">update()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">update( <span class="argument">$table</span>,  <span class="argument">$set</span>,  <span class="argument">$where</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">update( <span class="argument">$table</span>, array <span class="argument">$set</span>,  <span class="argument">$where</span>)</pre>
                 <p><em></em></p>
                 
 
@@ -1450,7 +1450,7 @@
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$set </td>
                                 <td></td>
                             </tr>
@@ -1481,7 +1481,7 @@
             <article class="method">
                 <h3 class="public ">insert()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">insert( <span class="argument">$table</span>,  <span class="argument">$params</span>,  <span class="argument">$extra</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">insert( <span class="argument">$table</span>, array <span class="argument">$params</span>,  <span class="argument">$extra</span>)</pre>
                 <p><em></em></p>
                 
 
@@ -1493,7 +1493,7 @@
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$params </td>
                                 <td></td>
                             </tr>
@@ -1524,7 +1524,7 @@
             <article class="method">
                 <h3 class="public ">bulkInsert()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">bulkInsert( <span class="argument">$table</span>,  <span class="argument">$params</span>,  <span class="argument">$extra</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">bulkInsert( <span class="argument">$table</span>, array <span class="argument">$params</span>,  <span class="argument">$extra</span>)</pre>
                 <p><em></em></p>
                 
 
@@ -1536,7 +1536,7 @@
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$params </td>
                                 <td></td>
                             </tr>
@@ -1567,14 +1567,14 @@
             <article class="method">
                 <h3 class="public ">getId()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">getId( <span class="argument">$result</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">getId(\duncan3dc\SqlClass\ResultInterface <span class="argument">$result</span>)</pre>
                 <p><em></em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">\duncan3dc\SqlClass\ResultInterface</a></td>
                                 <td>$result </td>
                                 <td></td>
                             </tr>
@@ -1709,14 +1709,14 @@
             <article class="method">
                 <h3 class="public ">_fetch()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">_fetch( <span class="argument">$result</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">_fetch(\duncan3dc\SqlClass\ResultInterface <span class="argument">$result</span>)</pre>
                 <p><em>Fetch the next row from the result set</em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">\duncan3dc\SqlClass\ResultInterface</a></td>
                                 <td>$result </td>
                                 <td></td>
                             </tr>
@@ -1742,20 +1742,20 @@
             <article class="method">
                 <h3 class="public ">fetch()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">fetch( <span class="argument">$result</span>,  <span class="argument">$indexed</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">fetch(\duncan3dc\SqlClass\ResultInterface <span class="argument">$result</span>,  <span class="argument">$style</span>)</pre>
                 <p><em>Fetch the next row from the result set and clean it up</em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">\duncan3dc\SqlClass\ResultInterface</a></td>
                                 <td>$result </td>
                                 <td></td>
                             </tr>
                                                     <tr>
                                 <td></td>
-                                <td>$indexed </td>
+                                <td>$style </td>
                                 <td></td>
                             </tr>
                                             </table>
@@ -1780,14 +1780,14 @@
             <article class="method">
                 <h3 class="public ">result()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">result( <span class="argument">$result</span>,  <span class="argument">$row</span>,  <span class="argument">$col</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">result(\duncan3dc\SqlClass\ResultInterface <span class="argument">$result</span>,  <span class="argument">$row</span>,  <span class="argument">$col</span>)</pre>
                 <p><em>Fetch an indiviual value from the result set</em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">\duncan3dc\SqlClass\ResultInterface</a></td>
                                 <td>$result </td>
                                 <td></td>
                             </tr>
@@ -1823,14 +1823,14 @@
             <article class="method">
                 <h3 class="public ">seek()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">seek( <span class="argument">$result</span>,  <span class="argument">$row</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">seek(\duncan3dc\SqlClass\ResultInterface <span class="argument">$result</span>,  <span class="argument">$row</span>)</pre>
                 <p><em>Seek to a specific record of the result set</em></p>
                 
 
                                     <h4>Parameters</h4>
                     <table class="table table-condensed table-hover">
                                                     <tr>
-                                <td></td>
+                                <td><a href="../classes/duncan3dc.SqlClass.ResultInterface.html">\duncan3dc\SqlClass\ResultInterface</a></td>
                                 <td>$result </td>
                                 <td></td>
                             </tr>
@@ -1861,7 +1861,7 @@
             <article class="method">
                 <h3 class="public ">queryFetch()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">queryFetch( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$indexed</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">queryFetch( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$style</span>)</pre>
                 <p><em>Execute the query and fetch the first row from the result set
 This is just a shorter way of doing a query() and then a fetch()</em></p>
                 
@@ -1880,7 +1880,7 @@ This is just a shorter way of doing a query() and then a fetch()</em></p>
                             </tr>
                                                     <tr>
                                 <td></td>
-                                <td>$indexed </td>
+                                <td>$style </td>
                                 <td></td>
                             </tr>
                                             </table>
@@ -1905,7 +1905,7 @@ This is just a shorter way of doing a query() and then a fetch()</em></p>
             <article class="method">
                 <h3 class="public ">queryFetchC()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">queryFetchC( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$indexed</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">queryFetchC( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$style</span>)</pre>
                 <p><em>Cached version of queryFetch()</em></p>
                 
 
@@ -1923,7 +1923,7 @@ This is just a shorter way of doing a query() and then a fetch()</em></p>
                             </tr>
                                                     <tr>
                                 <td></td>
-                                <td>$indexed </td>
+                                <td>$style </td>
                                 <td></td>
                             </tr>
                                             </table>
@@ -2411,7 +2411,7 @@ This is a convience method for a fieldSelectAll() where all fields are required<
             <article class="method">
                 <h3 class="public ">insertOrUpdate()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">insertOrUpdate( <span class="argument">$table</span>,  <span class="argument">$set</span>,  <span class="argument">$where</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">insertOrUpdate( <span class="argument">$table</span>, array <span class="argument">$set</span>, array <span class="argument">$where</span>)</pre>
                 <p><em>Insert a new record into a table, unless it already exists in which case update it</em></p>
                 
 
@@ -2423,12 +2423,12 @@ This is a convience method for a fieldSelectAll() where all fields are required<
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$set </td>
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$where </td>
                                 <td></td>
                             </tr>
@@ -2454,7 +2454,7 @@ This is a convience method for a fieldSelectAll() where all fields are required<
             <article class="method">
                 <h3 class="public ">updateOrInsert()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">updateOrInsert( <span class="argument">$table</span>,  <span class="argument">$set</span>,  <span class="argument">$where</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">updateOrInsert( <span class="argument">$table</span>, array <span class="argument">$set</span>, array <span class="argument">$where</span>)</pre>
                 <p><em>Synonym for insertOrUpdate()</em></p>
                 
 
@@ -2466,12 +2466,12 @@ This is a convience method for a fieldSelectAll() where all fields are required<
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$set </td>
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$where </td>
                                 <td></td>
                             </tr>
@@ -2530,7 +2530,7 @@ This is a convience method for a fieldSelectAll() where all fields are required<
             <article class="method">
                 <h3 class="public ">search()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">search( <span class="argument">$query</span>,  <span class="argument">$params</span>,  <span class="argument">$search</span>,  <span class="argument">$fields</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">search( <span class="argument">$query</span>, array <span class="argument">$params</span>,  <span class="argument">$search</span>, array <span class="argument">$fields</span>)</pre>
                 <p><em>This method allows easy appending of search criteria to queries
 It takes existing query/params to be edited as the first 2 parameters
 The third parameter is the string that is being searched for
@@ -2545,7 +2545,7 @@ The fourth parameter is an array of fields that should be searched for in the sq
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$params </td>
                                 <td></td>
                             </tr>
@@ -2555,7 +2555,7 @@ The fourth parameter is an array of fields that should be searched for in the sq
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>array</td>
                                 <td>$fields </td>
                                 <td></td>
                             </tr>
@@ -2748,7 +2748,7 @@ But allow read access to other processes</em></p>
             <article class="method">
                 <h3 class="public ">addTrigger()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">addTrigger( <span class="argument">$type</span>,  <span class="argument">$table</span>,  <span class="argument">$trigger</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">addTrigger( <span class="argument">$type</span>,  <span class="argument">$table</span>, callable <span class="argument">$trigger</span>)</pre>
                 <p><em>Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)</em></p>
                 
 
@@ -2765,7 +2765,7 @@ But allow read access to other processes</em></p>
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>callable</td>
                                 <td>$trigger </td>
                                 <td></td>
                             </tr>
@@ -3004,7 +3004,7 @@ If the database isn&#039;t passed then look it up first</em></p>
             <article class="method">
                 <h3 class="protected ">modifyQuery()</h3>
                 <a href="#source-view" role="button" class="pull-right btn" data-toggle="modal" style="font-size: 1.1em; padding: 9px 14px"><i class="icon-code"></i></a>
-                <pre class="signature" style="margin-right: 54px;">modifyQuery( <span class="argument">$query</span>,  <span class="argument">$callback</span>)</pre>
+                <pre class="signature" style="margin-right: 54px;">modifyQuery( <span class="argument">$query</span>, callable <span class="argument">$callback</span>)</pre>
                 <p><em></em></p>
                 
 
@@ -3016,7 +3016,7 @@ If the database isn&#039;t passed then look it up first</em></p>
                                 <td></td>
                             </tr>
                                                     <tr>
-                                <td></td>
+                                <td>callable</td>
                                 <td>$callback </td>
                                 <td></td>
                             </tr>
@@ -3532,7 +3532,7 @@ This allows tables to be surrounded in braces, without specifying the database</
                 <section class="span10 offset1">
                     <hr />
                     Documentation is powered by <a href="http://www.phpdoc.org/">phpDocumentor </a> and authored
-                    on August 13th, 2014 at 19:22.
+                    on August 17th, 2014 at 20:23.
                 </section>
             </section>
         </section>
