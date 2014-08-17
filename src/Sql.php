@@ -132,7 +132,7 @@ class Sql
     }
 
 
-    public function __construct($options = null)
+    public function __construct(array $options = null)
     {
         $options = Helper::getOptions($options, [
             "mode"          =>  "mysql",
@@ -350,7 +350,7 @@ class Sql
     /**
      * Execute an sql query
      */
-    public function query($query, $params = null)
+    public function query($query, array $params = null)
     {
         # If the next query should be cached then run the cache function instead
         if ($this->cacheNext) {
@@ -362,7 +362,7 @@ class Sql
         $this->connect();
 
         $this->query = $query;
-        $this->params = false;
+        $this->params = null;
         $this->preparedQuery = false;
 
         if (is_array($params)) {
@@ -516,7 +516,7 @@ class Sql
     /*
      * Allow a query to be modified without affecting quoted strings within it
      */
-    protected function modifyQuery(&$query, $callback)
+    protected function modifyQuery(&$query, callable $callback)
     {
         $regex = "/('[^']*')/";
         if (!preg_match($regex, $query)) {
@@ -844,7 +844,7 @@ class Sql
     /**
      * Convienience method to create a cached query instance
      */
-    public function cache($query, $params = null, $timeout = null)
+    public function cache($query, array $params = null, $timeout = null)
     {
         $options = array_merge($this->cacheOptions, [
             "sql"     =>  $this,
@@ -956,7 +956,7 @@ class Sql
     }
 
 
-    public function update($table, $set, $where)
+    public function update($table, array $set, $where)
     {
         $tableName = $this->getTableName($table);
 
@@ -982,7 +982,7 @@ class Sql
     }
 
 
-    public function insert($table, $params, $extra = null)
+    public function insert($table, array $params, $extra = null)
     {
         $tableName = $this->getTableName($table);
 
@@ -1016,7 +1016,7 @@ class Sql
         return $result;
     }
 
-    public function bulkInsert($table, $params, $extra = null)
+    public function bulkInsert($table, array $params, $extra = null)
     {
         # Ensure we have a connection to run this query on
         $this->connect();
@@ -1132,12 +1132,8 @@ class Sql
     }
 
 
-    public function getId($result)
+    public function getId(ResultInterface $result)
     {
-        if (!$result) {
-            return false;
-        }
-
         $id = false;
 
         switch ($this->mode) {
@@ -1263,7 +1259,7 @@ class Sql
     public function delete($table, $where)
     {
         $tableName = $this->getTableName($table);
-        $params = false;
+        $params = null;
 
         /**
          * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
@@ -1291,7 +1287,7 @@ class Sql
     /**
      * Fetch the next row from the result set
      */
-    public function _fetch($result)
+    public function _fetch(ResultInterface $result)
     {
         return $result->_fetch($indexed);
     }
@@ -1300,7 +1296,7 @@ class Sql
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch($result, $indexed = null)
+    public function fetch(ResultInterface $result, $indexed = null)
     {
         return $result->fetch($indexed);
     }
@@ -1309,7 +1305,7 @@ class Sql
     /**
      * Fetch an indiviual value from the result set
      */
-    public function result($result, $row, $col)
+    public function result(ResultInterface $result, $row, $col)
     {
         return $result->result($row, $col);
     }
@@ -1318,7 +1314,7 @@ class Sql
     /**
      * Seek to a specific record of the result set
      */
-    public function seek($result, $row)
+    public function seek(ResultInterface $result, $row)
     {
         return $result->seek($row);
     }
@@ -1408,7 +1404,7 @@ class Sql
 
         $query .= " FROM " . $table . " ";
 
-        $params = false;
+        $params = null;
         if ($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
@@ -1483,7 +1479,7 @@ class Sql
 
         $query .= " FROM " . $table . " ";
 
-        $params = false;
+        $params = null;
         if ($where != static::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
@@ -1510,7 +1506,7 @@ class Sql
     /**
      * Insert a new record into a table, unless it already exists in which case update it
      */
-    public function insertOrUpdate($table, $set, $where)
+    public function insertOrUpdate($table, array $set, array $where)
     {
         if ($this->select($table, $where)) {
             $result = $this->update($table, $set, $where);
@@ -1526,7 +1522,7 @@ class Sql
     /**
      * Synonym for insertOrUpdate()
      */
-    public function updateOrInsert($table, $set, $where)
+    public function updateOrInsert($table, array $set, array $where)
     {
         return $this->insertOrUpdate($table, $set, $where);
     }
@@ -1632,7 +1628,7 @@ class Sql
      * The third parameter is the string that is being searched for
      * The fourth parameter is an array of fields that should be searched for in the sql
      */
-    public function search(&$query, &$params, $search, $fields)
+    public function search(&$query, array &$params, $search, array $fields)
     {
         $query .= "( ";
 
@@ -1885,7 +1881,7 @@ class Sql
     /**
      * Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)
      */
-    public function addTrigger($type, $table, $trigger)
+    public function addTrigger($type, $table, callable $trigger)
     {
         if (!array_key_exists($type, $this->triggers)) {
             throw new \Exception("Invalid trigger type specified");

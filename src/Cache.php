@@ -32,7 +32,7 @@ class Cache extends ResultInterface
     public  $indexMap;      # An array that maps the row index to it's position in the sorted array
 
 
-    public function __construct($options = null)
+    public function __construct(array $options = null)
     {
         $options = Helper::getOptions($options, [
             "dir"           =>  "/tmp/query_cache",
