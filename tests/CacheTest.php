@@ -5,43 +5,8 @@ namespace duncan3dc\SqlClassTests;
 use duncan3dc\SqlClass\Cache;
 use duncan3dc\SqlClass\Sql;
 
-class CacheTest extends \PHPUnit_Framework_TestCase
+class CacheTest extends AbstractTest
 {
-    private $sql;
-    private $database;
-
-
-    public function __construct()
-    {
-        $this->database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
-        if (file_exists($this->database)) {
-            unlink($this->database);
-        }
-
-        $this->sql = new Sql([
-            "mode"      =>  "sqlite",
-            "database"  =>  "/tmp/phpunit.sqlite",
-        ]);
-
-        $this->sql->attachDatabase($this->database, "test1");
-
-        $this->sql->definitions([
-            "table1"    =>  "test1",
-            "table2"    =>  "test1",
-        ]);
-
-        $this->sql->connect();
-
-        $this->sql->query("CREATE TABLE test1.table1 (field1 VARCHAR(10), field2 INT)");
-    }
-
-
-    public function __destruct()
-    {
-        unset($this->sql);
-        unlink($this->database);
-    }
-
 
     public function testCount()
     {

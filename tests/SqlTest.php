@@ -4,59 +4,8 @@ namespace duncan3dc\SqlClassTests;
 
 use duncan3dc\SqlClass\Sql;
 
-class SqlTest extends \PHPUnit_Framework_TestCase
+class SqlTest extends AbstractTest
 {
-    protected $sql;
-
-
-    public function __construct()
-    {
-        $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
-        if (file_exists($database)) {
-            unlink($database);
-        }
-
-        $this->sql = new Sql([
-            "mode"      =>  "sqlite",
-            "database"  =>  "/tmp/phpunit.sqlite",
-        ]);
-
-        $this->sql->attachDatabase($database, "test1");
-
-        $this->sql->definitions([
-            "table1"    =>  "test1",
-            "table2"    =>  "test2",
-        ]);
-
-        $this->sql->connect();
-
-        $this->sql->query("CREATE TABLE test1.table1 (field1 VARCHAR(10), field2 INT)");
-    }
-
-
-    public function __destruct()
-    {
-        $this->sql->mode = false;
-    }
-
-
-    protected function callProtectedMethod($methodName, &$params)
-    {
-        $class = new \ReflectionClass(Sql::class);
-
-        $method = $class->getMethod($methodName);
-
-        $method->setAccessible(true);
-
-        if (is_array($params)) {
-            return $method->invokeArgs($this->sql, $params);
-        } elseif ($params) {
-            return $method->invokeArgs($this->sql, [&$params]);
-        } else {
-            return $method->invokeArgs($this->sql);
-        }
-    }
-
 
     public function testQuoteChars()
     {
@@ -69,7 +18,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             "sqlite"   =>  "SELECT field1 `field2` FROM table1",
         ];
         foreach ($modes as $mode => $check) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $this->callProtectedMethod("quoteChars", $query);
             $this->assertEquals($check, $query);
         }
@@ -78,7 +27,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testQuoteCharsBackcheck()
     {
-        $this->sql->mode = "mssql";
+        $this->setMode("mssql");
 
         $check = "SELECT a.field1, SUM(b.field2) [field2], SUM(c.field3) [field3], 'field4' [field4] FROM {table1} a
                 JOIN {table2} b ON b.field1=a.field1 AND b.field5='10'
@@ -126,7 +75,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             "sqlite"   =>  "`table-with_extra+characters=in`",
         ];
         foreach ($modes as $mode => $check) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $result = $this->callProtectedMethod("getTableName", $table);
             $this->assertEquals($check, $result);
         }
@@ -137,7 +86,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
         $modes = ["mssql", "mysql", "odbc", "sqlite"];
         foreach ($modes as $mode) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $result = $this->callProtectedMethod("getTableName", $table);
             $this->assertEquals($table, $result);
         }
@@ -155,7 +104,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             "mysql"    =>  "SELECT IFNULL(field1,0), SUBSTRING(field1,5,3) FROM table1",
         ];
         foreach ($modes as $mode => $check) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $this->callProtectedMethod("functions", $query);
             $this->assertEquals($check, $query);
         }
@@ -172,7 +121,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             "odbc"     =>  ["SELECT * FROM table1 LIMIT 1", "SELECT * FROM table1 \nFETCH FIRST 1 ROWS ONLY\n"],
         ];
         foreach ($modes as $mode => list($query, $check)) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $this->callProtectedMethod("limit", $query);
             $this->assertEquals($check, $query);
         }
@@ -192,7 +141,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
                             LEFT OUTER JOIN `nosuchtable` ON field2a=field1a"],
         ];
         foreach ($modes as $mode => list($query, $check)) {
-            $this->sql->mode = $mode;
+            $this->setMode($mode);
             $this->callProtectedMethod("tableNames", $query);
             $this->assertEquals($check, $query);
         }
@@ -257,7 +206,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testPrepareQuery()
     {
-        $this->sql->mode = "mssql";
+        $this->setMode("mssql");
 
         $query = "SELECT * FROM test WHERE field1=? ORDER BY field2";
         $params = [
@@ -274,7 +223,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testPrepareQueryTypes()
     {
-        $this->sql->mode = "odbc";
+        $this->setMode("odbc");
         $this->sql->allowNulls = false;
 
         $check = "SELECT * FROM test
@@ -321,7 +270,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testPrepareQueryNulls()
     {
-        $this->sql->mode = "odbc";
+        $this->setMode("odbc");
         $this->sql->allowNulls = true;
 
         $check = "SELECT * FROM test
@@ -376,12 +325,12 @@ class SqlTest extends \PHPUnit_Framework_TestCase
         $result = $this->sql->selectFields([]);
         $this->assertEquals($check, $result);
 
-        $this->sql->mode = "mysql";
+        $this->setMode("mysql");
         $check = "`field1`, `field2`";
         $result = $this->sql->selectFields(["field1", "field2"]);
         $this->assertEquals($check, $result);
 
-        $this->sql->mode = "mssql";
+        $this->setMode("mssql");
         $check = "[field1]";
         $result = $this->sql->selectFields(["field1"]);
         $this->assertEquals($check, $result);
@@ -434,7 +383,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testModifyQuery()
     {
-        $this->sql->mode = "mssql";
+        $this->setMode("mssql");
 
         $check = "ORDER BY 'basic `protection` against {special} [characters] withing strings', [field1]";
         $query = "ORDER BY 'basic `protection` against {special} [characters] withing strings', `field1`";
@@ -449,7 +398,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testNamedParams()
     {
-        $this->sql->mode = "sqlite";
+        $this->setMode("sqlite");
 
         $check = "SELECT field1 FROM table1 a
                 JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3='three' AND b.field4='four'
@@ -483,7 +432,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testEmptyStrings()
     {
-        $this->sql->mode = "sqlite";
+        $this->setMode("sqlite");
         $this->sql->definitions([
             "table1"    =>  "database1",
             "table2"    =>  "database2",
@@ -508,7 +457,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testStrictWhere()
     {
-        $this->sql->mode = "mysql";
+        $this->setMode("mysql");
 
         $check = "`field1` IN (?, ?) ";
         $params = [0, 1];
@@ -526,7 +475,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testExists1()
     {
-        $this->sql->mode = "sqlite";
+        $this->setMode("sqlite");
 
         $table = "table1";
         $params = ["field1" => "row1"];
@@ -539,7 +488,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function testExists2()
     {
-        $this->sql->mode = "sqlite";
+        $this->setMode("sqlite");
 
         $table = "table1";
         $params = ["field1" => "row1"];
