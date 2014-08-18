@@ -64,6 +64,12 @@ class Sql extends AbstractSql
     }
 
 
+    public function quoteTable($table)
+    {
+        return "`" . $table . "`";
+    }
+
+
     public function quoteValue($string)
     {
         return "'" . $this->server->real_escape_string($string) . "'";
