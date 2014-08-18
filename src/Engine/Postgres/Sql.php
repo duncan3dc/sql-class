@@ -51,14 +51,20 @@ class Sql extends AbstractSql
     }
 
 
-    protected function quoteTable($table)
+    public function quoteTable($table)
     {
         $this->connect();
         return pg_escape_identifier($this->server, $table);
     }
 
 
-    public function quoteValue($string)
+    public function quoteField($field)
+    {
+        return "`" . $field . "`";
+    }
+
+
+    public function quoteValue($value)
     {
         return pg_escape_literal($this->server, $value);
     }
@@ -141,48 +147,19 @@ class Sql extends AbstractSql
 
     public function getDatabases()
     {
-        $databases = [];
-
-        $result = $this->query("SHOW DATABASES");
-
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $databases[] = $row[0];
-        }
-
-        return $databases;
+        throw new \Exception("getDatabases() not available in this mode");
     }
 
 
     public function getTables($database)
     {
-        $tables = [];
-
-        $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
-        $result = $this->query($query);
-
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $tables[] = $row[0];
-        }
-
-        return $tables;
+        throw new \Exception("getTables() not available in this mode");
     }
 
 
     public function getViews($database)
     {
-        $views = [];
-
-        $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
-        $result = $this->query($query);
-
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $views[] = $row[0];
-        }
-
-        return $views;
+        throw new \Exception("getViews() not available in this mode");
     }
 
 

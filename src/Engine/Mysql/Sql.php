@@ -9,9 +9,6 @@ use duncan3dc\SqlClass\Sql as SqlClass;
 
 class Sql extends AbstractSql
 {
-    /**
-     * If we have not already connected then connect to the database now
-     */
     public function connect(array $options)
     {
         $server = new \Mysqli($options["hostname"], $options["username"], $options["password"]);
@@ -37,27 +34,19 @@ class Sql extends AbstractSql
     }
 
 
-    /**
-     * Execute an sql query
-     */
     public function query($query, array $params = null, $preparedQuery)
     {
         return $this->server->query($preparedQuery);
     }
 
 
-    /**
-     * Replace any non-standard functions with the appropriate function for the current mode
-     */
     public function functions(&$query)
     {
         $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
         $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
     }
 
-    /**
-     * Convert any limit usage
-     */
+
     public function limit(&$query)
     {
         $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
@@ -70,9 +59,15 @@ class Sql extends AbstractSql
     }
 
 
-    public function quoteValue($string)
+    public function quoteField($field)
     {
-        return "'" . $this->server->real_escape_string($string) . "'";
+        return "`" . $field . "`";
+    }
+
+
+    public function quoteValue($value)
+    {
+        return "'" . $this->server->real_escape_string($value) . "'";
     }
 
 
@@ -138,55 +133,36 @@ class Sql extends AbstractSql
     }
 
 
-    /**
-     * Start a transaction by turning autocommit off
-     */
     public function startTransaction()
     {
         return $this->server->autocommit(false);
     }
 
 
-    /**
-     * End a transaction by either committing changes made, or reverting them
-     */
     public function endTransaction()
     {
         return $this->server->autocommit(true);
     }
 
 
-    /**
-     * Commit queries without ending the transaction
-     */
     public function commit()
     {
         return $this->server->commit();
     }
 
 
-    /**
-     * Rollback queries without ending the transaction
-     */
     public function rollback()
     {
         return $this->server->rollback();
     }
 
 
-    /**
-     * Lock some tables for exlusive write access
-     * But allow read access to other processes
-     */
     public function lockTables(array $tables)
     {
         return $this->query("LOCK TABLES " . implode(",", $tables) . " WRITE");
     }
 
 
-    /**
-     * Unlock all tables previously locked
-     */
     public function unlockTables()
     {
         return $this->query("UNLOCK TABLES");
@@ -240,12 +216,9 @@ class Sql extends AbstractSql
     }
 
 
-    /**
-     * Close the sql connection
-     */
     public function disconnect()
     {
-        if ($this->server->connect_error) {
+        if (!$this->server || $this->server->connect_error) {
             return;
         }
 
