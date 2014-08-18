@@ -65,6 +65,11 @@ class Sql
     const FETCH_RAW = 111;
 
     /**
+     * @var duncan3dc\SqlClass\Engine\AbstractSql The instance of the engine class handling the abstraction
+     */
+    protected $engine;
+
+    /**
      * @var boolean Flag to indicate whether we are connected to the server yet
      */
     protected $connected;
@@ -304,6 +309,12 @@ class Sql
 
         $this->cacheOptions = [];
         $this->cacheNext = false;
+
+        if ($this->mode == "mysql") {
+            $this->engine = new Engine\Mysql\Sql();
+        } else {
+            $this->engine = null;
+        }
     }
 
 
@@ -321,28 +332,12 @@ class Sql
         # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
         $this->connected = true;
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $this->server = $this->engine->connect($this->options);
+            $this->engine->setServer($this->server);
+        }
 
-            case "mysql":
-                $this->server = new \Mysqli($this->options["hostname"], $this->options["username"], $this->options["password"]);
-                if ($this->server->connect_error) {
-                    $this->error();
-                }
-                if ($this->options["charset"]) {
-                    $this->server->set_charset($this->options["charset"]);
-                }
-                if ($timezone = $this->options["timezone"]) {
-                    if ($timezone === self::USE_PHP_TIMEZONE) {
-                        $timezone = ini_get("date.timezone");
-                    }
-                    $this->query("SET time_zone='" . $timezone . "'");
-                }
-                if ($database = $this->options["database"]) {
-                    if (!$this->server->select_db($database)) {
-                        $this->error();
-                    }
-                }
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -517,13 +512,11 @@ class Sql
             }
         }
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $result = $this->engine->query($query, $params, $preparedQuery);
+        }
 
-            case "mysql":
-                if (!$result = $this->server->query($preparedQuery)) {
-                    $this->error();
-                }
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -719,10 +712,12 @@ class Sql
      */
     protected function functions(&$query)
     {
+        if ($this->engine) {
+            $this->engine->functions($query);
+        }
 
         switch ($this->mode) {
 
-            case "mysql":
             case "odbc":
             case "sqlite":
                 $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
@@ -740,7 +735,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "mysql":
             case "postgres":
             case "redshift":
             case "odbc":
@@ -769,9 +763,13 @@ class Sql
      */
     protected function limit(&$query)
     {
+        if ($this->engine) {
+            $this->engine->limit($query);
+            return;
+        }
+
         switch ($this->mode) {
 
-            case "mysql":
             case "postgres":
             case "redshift":
             case "sqlite":
@@ -932,27 +930,23 @@ class Sql
                         break;
 
                     default:
+                        if ($this->engine) {
+                            $value = $this->engine->quoteValue($query);
+                        }
                         switch ($this->mode) {
-                            case "mysql":
-                                $value = $this->server->real_escape_string($value);
-                                break;
                             case "postgres":
                             case "redshift":
                                 $value = pg_escape_literal($this->server, $value);
                                 break;
                             case "sqlite":
-                                $value = $this->server->escapeString($value);
+                                $value = "'" . $this->server->escapeString($value) . "'";
                                 break;
                             case "mssql":
                             case "odbc":
-                                $value = str_replace("'", "''", $value);
+                                $value = "'" . str_replace("'", "''", $value) . "'";
                                 break;
                         }
 
-                        # Postgres does it's own quoting
-                        if (!in_array($this->mode, ["postgres", "redshift"], true)) {
-                            $value = "'" . $value . "'";
-                        }
                         break;
                 }
 
@@ -1049,15 +1043,11 @@ class Sql
     {
         $errorMsg = "";
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $errorMsg = $this->engine->getError();
+        }
 
-            case "mysql":
-                if ($this->server->connect_error) {
-                    $errorMsg = $this->server->connect_error . " (" . $this->server->connect_errno . ")";
-                } else {
-                    $errorMsg = $this->server->error . " (" . $this->server->errno . ")";
-                }
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -1155,9 +1145,12 @@ class Sql
             echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
         }
 
+        if ($this->engine) {
+            $result = $this->engine->bulkInsert($table, $params, $extra);
+        }
+
         switch ($this->mode) {
 
-            case "mysql":
             case "redshift":
             case "odbc":
 
@@ -1261,15 +1254,15 @@ class Sql
     }
 
 
-    public function getId(AbstractResult $result)
+    public function getId(Result $result)
     {
         $id = false;
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $id = $this->engine->getId($result);
+        }
 
-            case "mysql":
-                $id = $this->server->insert_id;
-                break;
+        switch ($this->mode) {
 
             case "postgres":
                 $id = pg_last_oid($result);
@@ -1807,11 +1800,11 @@ class Sql
         # Ensure we have a connection to start the transaction on
         $this->connect();
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $result = $this->engine->startTransaction();
+        }
 
-            case "mysql":
-                $result = $this->server->autocommit(false);
-                break;
+        switch ($this->mode) {
 
             case "postgres":
                 $result = $this->query("SET AUTOCOMMIT = OFF");
@@ -1824,9 +1817,6 @@ class Sql
             case "odbc":
                 $result = odbc_autocommit($this->server, false);
                 break;
-
-            default:
-                throw new \Exception("startTransaction() not supported in this mode (" . $this->mode . ")");
         }
 
         if (!$result) {
@@ -1850,13 +1840,11 @@ class Sql
             $result = $this->rollback();
         }
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $result = $this->engine->endTransaction();
+        }
 
-            case "mysql":
-                if (!$this->server->autocommit(true)) {
-                    $result = false;
-                }
-                break;
+        switch ($this->mode) {
 
             case "postgres":
                 $result = $this->query("SET AUTOCOMMIT = ON");
@@ -1871,9 +1859,6 @@ class Sql
                     $result = false;
                 }
                 break;
-
-            default:
-                throw new \Exception("endTransaction() not supported in this mode (" . $this->mode . ")");
         }
 
         if (!$result) {
@@ -1891,11 +1876,11 @@ class Sql
      */
     public function commit()
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            $result = $this->engine->commit();
+        }
 
-            case "mysql":
-                $result = $this->server->commit();
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -1905,9 +1890,6 @@ class Sql
             case "odbc":
                 $result = odbc_commit($this->server);
                 break;
-
-            default:
-                throw new \Exception("commit() not supported in this mode (" . $this->mode . ")");
         }
 
         if (!$result) {
@@ -1923,11 +1905,11 @@ class Sql
      */
     public function rollback()
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            $result = $this->engine->rollback();
+        }
 
-            case "mysql":
-                $result = $this->server->rollback();
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -1937,9 +1919,6 @@ class Sql
             case "odbc":
                 $result = odbc_rollback($this->server);
                 break;
-
-            default:
-                throw new \Exception("rollback() not supported in this mode (" . $this->mode . ")");
         }
 
         if (!$result) {
@@ -1965,9 +1944,17 @@ class Sql
 
         $tables = Helper::toArray($tables);
 
+        foreach ($tables as &$table) {
+            $table = $this->getTableName($table);
+        }
+        unset($table);
+
+        if ($this->engine) {
+            return $this->engine->lockTables($tables);
+        }
+
         if ($this->mode == "odbc") {
             foreach ($tables as $table) {
-                $table = $this->getTableName($table);
                 $query = "LOCK TABLE " . $table . " IN EXCLUSIVE MODE ALLOW READ";
                 $this->query($query);
             }
@@ -1976,22 +1963,10 @@ class Sql
             return true;
         }
 
-        foreach ($tables as &$table) {
-            $table = $this->getTableName($table);
-        }
-        unset($table);
-
-        if ($this->mode == "mysql") {
-            $query = "LOCK TABLES " . implode(",", $tables) . " WRITE";
-            return $this->query($query);
-        }
-
         if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $query = "LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE";
             return $this->query($query);
         }
-
-        throw new \Exception("lockTables() not supported in this mode (" . $this->mode . ")");
     }
 
 
@@ -2000,20 +1975,17 @@ class Sql
      */
     public function unlockTables()
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            return $this->engine->unlockTables();
+        }
 
-            case "mysql":
-                $query = "UNLOCK TABLES";
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
             case "odbc":
                 $query = "COMMIT";
                 break;
-
-            default:
-                throw new \Exception("unlockTables() not supported in this mode (" . $this->mode . ")");
         }
 
         return $this->query($query);
@@ -2067,11 +2039,11 @@ class Sql
 
     public function getDatabases()
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            return $this->engine->getDatabases();
+        }
 
-            case "mysql":
-                $query = "SHOW DATABASES";
-                break;
+        switch ($this->mode) {
 
             case "mssql":
                 $query = "SELECT name FROM master..sysdatabases";
@@ -2094,11 +2066,11 @@ class Sql
 
     public function getTables($database)
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            return $this->engine->getTables();
+        }
 
-            case "mysql":
-                $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
-                break;
+        switch ($this->mode) {
 
             case "mssql":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
@@ -2121,11 +2093,11 @@ class Sql
 
     public function getViews($database)
     {
-        switch ($this->mode) {
+        if ($this->engine) {
+            return $this->engine->getViews();
+        }
 
-            case "mysql":
-                $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
-                break;
+        switch ($this->mode) {
 
             case "mssql":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
@@ -2160,15 +2132,18 @@ class Sql
      */
     public function disconnect()
     {
-        if (!$this->connected || !$this->server || ($this->mode ==  "mysql" && $this->server->connect_error)) {
+        if (!$this->connected || !$this->server) {
             return false;
+        }
+
+        if ($this->engine) {
+            return $this->engine->disconnect();
         }
 
         $result = false;
 
         switch ($this->mode) {
 
-            case "mysql":
             case "sqlite":
                 $result = $this->server->close();
                 break;
