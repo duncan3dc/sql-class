@@ -33,7 +33,7 @@ abstract class AbstractSql
 
     abstract public function startTransaction();
 
-    abstract public function endTransaction($commit);
+    abstract public function endTransaction();
 
     abstract public function commit();
 
