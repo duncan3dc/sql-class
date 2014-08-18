@@ -142,9 +142,6 @@ class Sql extends AbstractSql
      */
     public function startTransaction()
     {
-        # Ensure we have a connection to start the transaction on
-        $this->connect();
-
         return $this->server->autocommit(false);
     }
 
@@ -152,7 +149,7 @@ class Sql extends AbstractSql
     /**
      * End a transaction by either committing changes made, or reverting them
      */
-    public function endTransaction($commit)
+    public function endTransaction()
     {
         return $this->server->autocommit(true);
     }

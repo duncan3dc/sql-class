@@ -17,6 +17,10 @@ class Result extends AbstractResult
      */
     public  $mode;
 
+    /**
+     * @var duncan3dc\SqlClass\Engine\AbstractResult $engine The instance of the engine class handling the abstraction
+     */
+    protected $engine;
 
     /**
      * Create a Result instance to provide extra functionality
@@ -31,6 +35,12 @@ class Result extends AbstractResult
         $this->position = 0;
         $this->result = $result;
         $this->mode = $mode;
+
+        if ($this->mode == "mysql") {
+            $this->engine = new Engine\Mysql\Result($result);
+        } else {
+            $this->engine = null;
+        }
     }
 
 
@@ -46,11 +56,11 @@ class Result extends AbstractResult
             return;
         }
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $row = $this->engine->getNextRow();
+        }
 
-            case "mysql":
-                $row = $this->result->fetch_assoc();
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -107,9 +117,12 @@ class Result extends AbstractResult
             return false;
         }
 
+        if ($this->engine) {
+            return $this->engine->result($row, $col);
+        }
+
         switch ($this->mode) {
 
-            case "mysql":
             case "sqlite":
                 $this->seek($row);
                 $data = $this->fetch(true);
@@ -147,12 +160,11 @@ class Result extends AbstractResult
      */
     public function seek($row)
     {
+        if ($this->engine) {
+            return $this->engine->seek($row);
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $this->result->data_seek($row);
-                break;
 
             case "postgres":
             case "redshift":
@@ -186,12 +198,11 @@ class Result extends AbstractResult
      */
     public function count()
     {
+        if ($this->engine) {
+            return $this->engine->count();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $rows = $this->result->num_rows;
-                break;
 
             case "postgres":
             case "redshift":
@@ -230,12 +241,11 @@ class Result extends AbstractResult
      */
     public function columnCount()
     {
+        if ($this->engine) {
+            return $this->engine->columnCount();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $columns = $this->result->field_count;
-                break;
 
             case "postgres":
             case "redshift":
@@ -270,12 +280,11 @@ class Result extends AbstractResult
      */
     public function free()
     {
+        if ($this->engine) {
+            return $this->engine->free();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $this->result->free();
-                break;
 
             case "postgres":
             case "redshift":
