@@ -1,42 +1,11 @@
 <?php
 
-namespace duncan3dc\SqlClass;
+namespace duncan3dc\SqlClassTest;
 
-class IteratorTest extends \PHPUnit_Framework_TestCase
+use duncan3dc\SqlClass\Sql;
+
+class IteratorTest extends AbstractTest
 {
-    private $sql;
-
-
-    public function __construct()
-    {
-        $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
-        if (file_exists($database)) {
-            unlink($database);
-        }
-
-        $this->sql = new \duncan3dc\SqlClass\Sql([
-            "mode"      =>  "sqlite",
-            "database"  =>  "/tmp/phpunit.sqlite",
-        ]);
-
-        $this->sql->attachDatabase($database, "test1");
-
-        $this->sql->definitions([
-            "table1"    =>  "test1",
-            "table2"    =>  "test1",
-        ]);
-
-        $this->sql->connect();
-
-        $this->sql->query("CREATE TABLE test1.table1 (field1 VARCHAR(10), field2 INT)");
-    }
-
-
-    public function __destruct()
-    {
-        unset($this->sql);
-    }
-
 
     public function testWithOneRow()
     {
