@@ -310,8 +310,8 @@ class Sql
         $this->cacheOptions = [];
         $this->cacheNext = false;
 
-        if (in_array($this->mode, ["mysql", "postgres", "redshift"])) {
-            $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
+        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
+        if (class_exists($class)) {
             $this->engine = new $class;
         } else {
             $this->engine = null;
@@ -339,10 +339,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "odbc":
-                $this->server = odbc_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
-                break;
 
             case "sqlite":
                 $this->server = new \Sqlite3($this->options["database"]);
@@ -512,16 +508,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "odbc":
-                if (!$result = odbc_prepare($this->server, $query)) {
-                    $this->error();
-                }
-                $params = Helper::toArray($params);
-                if (!odbc_execute($result, $params)) {
-                    $this->error();
-                }
-                break;
-
             case "sqlite":
 
                 if (!is_array($params)) {
@@ -683,7 +669,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "odbc":
             case "sqlite":
                 $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
                 break;
@@ -695,7 +680,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "odbc":
             case "mssql":
                 $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
                 break;
@@ -722,10 +706,6 @@ class Sql
 
             case "sqlite":
                 $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
-                break;
-
-            case "odbc":
-                $query = preg_replace("/\bLIMIT\s+([0-9]+)\b/i", "\nFETCH FIRST $1 ROWS ONLY\n", $query);
                 break;
         }
     }
@@ -882,14 +862,13 @@ class Sql
 
                     default:
                         if ($this->engine) {
-                            $value = $this->engine->quoteValue($query);
+                            $value = $this->engine->quoteValue($value);
                         }
                         switch ($this->mode) {
                             case "sqlite":
                                 $value = "'" . $this->server->escapeString($value) . "'";
                                 break;
                             case "mssql":
-                            case "odbc":
                                 $value = "'" . str_replace("'", "''", $value) . "'";
                                 break;
                         }
@@ -996,14 +975,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "odbc":
-                if ($this->server) {
-                    $errorMsg = odbc_errormsg($this->server);
-                } else {
-                    $errorMsg = odbc_errormsg();
-                }
-                break;
-
             case "sqlite":
                 $errorMsg = $this->server->lastErrorMsg() . " (" . $this->server->lastErrorCode() . ")";
                 break;
@@ -1102,57 +1073,13 @@ class Sql
             echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
         }
 
+        $table = $this->getTableName($table);
+
         if ($this->engine) {
             $result = $this->engine->bulkInsert($table, $params, $extra);
         }
 
         switch ($this->mode) {
-
-            case "odbc":
-
-                $fields = "";
-                $first = reset($params);
-                foreach ($first as $key => $val) {
-                    if ($fields) {
-                        $fields .= ",";
-                    }
-                    $fields .= $this->quoteField($key);
-                }
-
-                $newParams = [];
-                $values = "";
-
-                foreach ($params as $row) {
-                    if ($values) {
-                        $values .= ",";
-                    }
-                    $values .= "(";
-                    $first = true;
-
-                    foreach ($row as $key => $val) {
-                        if ($first) {
-                            $first = false;
-                        } else {
-                            $values .= ",";
-                        }
-                        $values .= "?";
-                        $newParams[] = $val;
-                    }
-                    $values .= ")";
-                }
-
-                $tableName = $this->getTableName($table);
-                if ($extra === self::INSERT_REPLACE) {
-                    $query = "REPLACE ";
-                } elseif ($extra === self::INSERT_IGNORE) {
-                    $query = "INSERT IGNORE ";
-                } else {
-                    $query = "INSERT ";
-                }
-                $query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
-
-                $result = $this->query($query, $newParams);
-                break;
 
             default:
                 $result = true;
@@ -1617,12 +1544,11 @@ class Sql
      */
     protected function quoteField($field)
     {
-        # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
-        if ($this->mode == "odbc") {
-            return $field;
-        }
-
         $field = trim($field);
+
+        if ($this->engine) {
+            return $this->engine->quoteField($field);
+        }
 
         $chars = $this->quoteChars[$this->mode];
 
@@ -1645,11 +1571,6 @@ class Sql
      */
     protected function quoteTable($table)
     {
-        # The odbc sql only uses it's quote strings for renaming fields, not for quoting table/field names
-        if ($this->mode == "odbc") {
-            return $table;
-        }
-
         $table = trim($table);
 
         if ($this->engine) {
@@ -1715,18 +1636,7 @@ class Sql
         # Ensure we have a connection to start the transaction on
         $this->connect();
 
-        if ($this->engine) {
-            $result = $this->engine->startTransaction();
-        }
-
-        switch ($this->mode) {
-
-            case "odbc":
-                $result = odbc_autocommit($this->server, false);
-                break;
-        }
-
-        if (!$result) {
+        if (!$result = $this->engine->startTransaction()) {
             $this->error();
         }
 
@@ -1747,20 +1657,7 @@ class Sql
             $result = $this->rollback();
         }
 
-        if ($this->engine) {
-            $result = $this->engine->endTransaction();
-        }
-
-        switch ($this->mode) {
-
-            case "odbc":
-                if (!odbc_autocommit($this->server, true)) {
-                    $result = false;
-                }
-                break;
-        }
-
-        if (!$result) {
+        if (!$result = $this->engine->endTransaction()) {
             $this->error();
         }
 
@@ -1775,18 +1672,7 @@ class Sql
      */
     public function commit()
     {
-        if ($this->engine) {
-            $result = $this->engine->commit();
-        }
-
-        switch ($this->mode) {
-
-            case "odbc":
-                $result = odbc_commit($this->server);
-                break;
-        }
-
-        if (!$result) {
+        if (!$result = $this->engine->commit()) {
             $this->error();
         }
 
@@ -1799,18 +1685,7 @@ class Sql
      */
     public function rollback()
     {
-        if ($this->engine) {
-            $result = $this->engine->rollback();
-        }
-
-        switch ($this->mode) {
-
-            case "odbc":
-                $result = odbc_rollback($this->server);
-                break;
-        }
-
-        if (!$result) {
+        if (!$result = $this->engine->rollback()) {
             $this->error();
         }
 
@@ -1838,19 +1713,7 @@ class Sql
         }
         unset($table);
 
-        if ($this->engine) {
-            return $this->engine->lockTables($tables);
-        }
-
-        if ($this->mode == "odbc") {
-            foreach ($tables as $table) {
-                $query = "LOCK TABLE " . $table . " IN EXCLUSIVE MODE ALLOW READ";
-                $this->query($query);
-            }
-
-            # If none of the locks failed then report success
-            return true;
-        }
+        return $this->engine->lockTables($tables);
     }
 
 
@@ -1859,18 +1722,7 @@ class Sql
      */
     public function unlockTables()
     {
-        if ($this->engine) {
-            return $this->engine->unlockTables();
-        }
-
-        switch ($this->mode) {
-
-            case "odbc":
-                $query = "COMMIT";
-                break;
-        }
-
-        return $this->query($query);
+        return $this->engine->unlockTables();
     }
 
 
@@ -2040,31 +1892,11 @@ class Sql
                 $result = $this->server->close();
                 break;
 
-            case "odbc":
-                odbc_close($this->server);
-                $result = true;
-                break;
-
             case "mssql":
                 $result = mssql_close($this->server);
                 break;
         }
 
         return $result;
-    }
-
-
-    /**
-     * Automatically close the connection on destruction
-     */
-    public function __destruct()
-    {
-        /**
-         * Don't automatically close odbc connections, as odbc_connect() re-uses connections with the same credentials
-         * So closing here could affect another instance of the sql class
-         */
-        if ($this->mode != "odbc") {
-            $this->disconnect();
-        }
     }
 }
