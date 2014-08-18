@@ -63,10 +63,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "odbc":
-                $row = odbc_fetch_array($this->result, $this->position + 1);
-                break;
-
             case "sqlite":
                 $row = $this->result->fetchArray(SQLITE3_ASSOC);
                 break;
@@ -126,11 +122,6 @@ class Result extends AbstractResult
                 $this->seek($this->position);
                 break;
 
-            case "odbc":
-                odbc_fetch_row($this->result, $row + 1);
-                $value = odbc_result($this->result, $col + 1);
-                break;
-
             case "mssql":
                 $value = mssql_result($this->result, $row, $col);
                 break;
@@ -156,10 +147,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "odbc":
-                # The odbc driver doesn't support seeking, so we fetch specific rows in getNextRow(), and here all we need to do is set the current position instance variable
-                break;
 
             case "sqlite":
                 $this->result->reset();
@@ -189,28 +176,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "odbc":
-                $rows = odbc_num_rows($this->result);
-
-                # The above function is unreliable, so if we got a zero count then double check it
-                if ($rows < 1) {
-                    $rows = 0;
-
-                    /**
-                     * If it is an update/delete then we just have to trust the odbc_num_rows() result,
-                     * however it is some kind of select, then we can manually count the rows returned.
-                     */
-                    if (odbc_num_fields($this->result) > 0) {
-                        $position = $this->position;
-                        $this->seek(0);
-                        while ($this->getNextRow()) {
-                            ++$rows;
-                        }
-                        $this->seek($position);
-                    }
-                }
-                break;
 
             case "sqlite":
                 $rows = 0;
@@ -246,10 +211,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "odbc":
-                $columns = odbc_num_fields($this->result);
-                break;
-
             case "sqlite":
                 $columns = $this->result->numColumns();
                 break;
@@ -279,10 +240,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "odbc":
-                odbc_free_result($this->result);
-                break;
 
             case "sqlite":
                 $this->result->finalize();
