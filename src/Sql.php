@@ -310,8 +310,9 @@ class Sql
         $this->cacheOptions = [];
         $this->cacheNext = false;
 
-        if ($this->mode == "mysql") {
-            $this->engine = new Engine\Mysql\Sql();
+        if (in_array($this->mode, ["mysql", "postgres", "redshift"])) {
+            $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
+            $this->engine = new $class;
         } else {
             $this->engine = null;
         }
@@ -338,15 +339,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $connect = "host=" . $this->options["hostname"] . " ";
-                $connect .= "user=" . $this->options["username"] . " ";
-                $connect .= "password=" . $this->options["password"] . " ";
-                $connect .= "dbname= " . $this->options["database"] . " ";
-                $this->server = pg_connect($connect, PGSQL_CONNECT_FORCE_NEW);
-                break;
 
             case "odbc":
                 $this->server = odbc_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
@@ -519,35 +511,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $tmpQuery = $query;
-                $query = "";
-
-                $noParams = false;
-                if ($this->mode == "redshift" && count($params) > 32767) {
-                    $noParams = true;
-                }
-
-                $i = 1;
-                reset($params);
-                while ($pos = strpos($tmpQuery, "?")) {
-                    if ($noParams) {
-                        $query .= substr($tmpQuery, 0, $pos) . "'" . pg_escape_string(current($params)) . "'";
-                        next($params);
-                    } else {
-                        $query .= substr($tmpQuery, 0, $pos) . "\$" . $i++;
-                    }
-                    $tmpQuery = substr($tmpQuery, $pos + 1);
-                }
-                $query .= $tmpQuery;
-
-                $params = Helper::toArray($params);
-                if (!$result = pg_query_params($this->server, $query, $params)) {
-                    $this->error();
-                }
-                break;
 
             case "odbc":
                 if (!$result = odbc_prepare($this->server, $query)) {
@@ -725,11 +688,6 @@ class Sql
                 $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
                 break;
 
-            case "postgres":
-            case "redshift":
-                $query = preg_replace("/\bI[FS]NULL\(/", "COALESCE(", $query);
-                break;
-
             case "mssql":
                 $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
                 break;
@@ -737,8 +695,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-            case "redshift":
             case "odbc":
             case "mssql":
                 $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
@@ -746,14 +702,6 @@ class Sql
 
             case "sqlite":
                 $query = preg_replace("/\bSUBSTRING\(/", "SUBSTR(", $query);
-                break;
-        }
-
-        switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/", "TO_CHAR(ABSTIME($1), $3)", $query);
                 break;
         }
     }
@@ -772,8 +720,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-            case "redshift":
             case "sqlite":
                 $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
                 break;
@@ -939,10 +885,6 @@ class Sql
                             $value = $this->engine->quoteValue($query);
                         }
                         switch ($this->mode) {
-                            case "postgres":
-                            case "redshift":
-                                $value = pg_escape_literal($this->server, $value);
-                                break;
                             case "sqlite":
                                 $value = "'" . $this->server->escapeString($value) . "'";
                                 break;
@@ -1053,11 +995,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $errorMsg = pg_last_error($this->server);
-                break;
 
             case "odbc":
                 if ($this->server) {
@@ -1171,7 +1108,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "redshift":
             case "odbc":
 
                 $fields = "";
@@ -1184,10 +1120,6 @@ class Sql
                 }
 
                 $newParams = [];
-                $noParams = false;
-                if ($this->mode == "redshift" && (count($params) * count($first)) > 32767) {
-                    $noParams = true;
-                }
                 $values = "";
 
                 foreach ($params as $row) {
@@ -1203,12 +1135,8 @@ class Sql
                         } else {
                             $values .= ",";
                         }
-                        if ($noParams) {
-                            $values .= "'" . pg_escape_string($val) . "'";
-                        } else {
-                            $values .= "?";
-                            $newParams[] = $val;
-                        }
+                        $values .= "?";
+                        $newParams[] = $val;
                     }
                     $values .= ")";
                 }
@@ -1224,32 +1152,6 @@ class Sql
                 $query .= "INTO " . $tableName . " (" . $fields . ") VALUES " . $values;
 
                 $result = $this->query($query, $newParams);
-                break;
-
-            case "postgres":
-                $fields = "";
-                $first = reset($params);
-                foreach ($first as $key => $val) {
-                    if ($fields) {
-                        $fields .= ",";
-                    }
-                    $fields .= $this->quoteField($key);
-                }
-
-                $tableName = $this->getTableName($table);
-                $this->query("COPY " . $tableName . " (" . $fields . ") FROM STDIN");
-
-                foreach ($params as $row) {
-                    if (!pg_put_line($this->server, implode("\t", $row) . "\n")) {
-                        $this->error();
-                    }
-                }
-
-                if (pg_put_line($this->server, "\\.\n")) {
-                    $this->error();
-                }
-
-                $result = new Result(pg_end_copy($this->server), $this->mode);
                 break;
 
             default:
@@ -1283,11 +1185,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-                $id = pg_last_oid($result);
-                break;
-
             case "sqlite":
                 $id = $this->query("SELECT last_insert_rowid()")->fetch(self::FETCH_ROW)[0];
                 break;
@@ -1759,12 +1656,6 @@ class Sql
             return $this->engine->quoteTable($table);
         }
 
-        # There is a standard function for quoting postgres table names
-        if (in_array($this->mode, ["postgres", "redshift"], true)) {
-            $this->connect();
-            return pg_escape_identifier($this->server, $table);
-        }
-
         $chars = $this->quoteChars[$this->mode];
 
         if (is_array($chars)) {
@@ -1830,14 +1721,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-                $result = $this->query("SET AUTOCOMMIT = OFF");
-                break;
-
-            case "redshift":
-                $result = $this->query("START TRANSACTION");
-                break;
-
             case "odbc":
                 $result = odbc_autocommit($this->server, false);
                 break;
@@ -1870,14 +1753,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-                $result = $this->query("SET AUTOCOMMIT = ON");
-                break;
-
-            case "redshift":
-                # Do nothing, and use the result from the commit/rollback
-                break;
-
             case "odbc":
                 if (!odbc_autocommit($this->server, true)) {
                     $result = false;
@@ -1906,11 +1781,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-            case "redshift":
-                $result = $this->query("COMMIT");
-                break;
-
             case "odbc":
                 $result = odbc_commit($this->server);
                 break;
@@ -1934,11 +1804,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $result = $this->query("ROLLBACK");
-                break;
 
             case "odbc":
                 $result = odbc_rollback($this->server);
@@ -1986,11 +1851,6 @@ class Sql
             # If none of the locks failed then report success
             return true;
         }
-
-        if (in_array($this->mode, ["postgres", "redshift"], true)) {
-            $query = "LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE";
-            return $this->query($query);
-        }
     }
 
 
@@ -2005,8 +1865,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "postgres":
-            case "redshift":
             case "odbc":
                 $query = "COMMIT";
                 break;
@@ -2180,11 +2038,6 @@ class Sql
 
             case "sqlite":
                 $result = $this->server->close();
-                break;
-
-            case "postgres":
-            case "redshift":
-                $result = pg_close($this->server);
                 break;
 
             case "odbc":
