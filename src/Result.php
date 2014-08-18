@@ -36,8 +36,9 @@ class Result extends AbstractResult
         $this->result = $result;
         $this->mode = $mode;
 
-        if ($this->mode == "mysql") {
-            $this->engine = new Engine\Mysql\Result($result);
+        if (in_array($this->mode, ["mysql", "postgres", "redshift"])) {
+            $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Result";
+            $this->engine = new $class($result);
         } else {
             $this->engine = null;
         }
@@ -61,11 +62,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $row = pg_fetch_assoc($this->result);
-                break;
 
             case "odbc":
                 $row = odbc_fetch_array($this->result, $this->position + 1);
@@ -130,11 +126,6 @@ class Result extends AbstractResult
                 $this->seek($this->position);
                 break;
 
-            case "postgres":
-            case "redshift":
-                $value = pg_fetch_result($this->result, $row, $col);
-                break;
-
             case "odbc":
                 odbc_fetch_row($this->result, $row + 1);
                 $value = odbc_result($this->result, $col + 1);
@@ -165,11 +156,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                pg_result_seek($this->result, $position);
-                break;
 
             case "odbc":
                 # The odbc driver doesn't support seeking, so we fetch specific rows in getNextRow(), and here all we need to do is set the current position instance variable
@@ -203,11 +189,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                $rows = pg_num_rows($this->result);
-                break;
 
             case "odbc":
                 $rows = odbc_num_rows($this->result);
@@ -265,11 +246,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "postgres":
-            case "redshift":
-                $columns = pg_num_fields($this->result);
-                break;
-
             case "odbc":
                 $columns = odbc_num_fields($this->result);
                 break;
@@ -303,11 +279,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "postgres":
-            case "redshift":
-                pg_free_result($this->result);
-                break;
 
             case "odbc":
                 odbc_free_result($this->result);
