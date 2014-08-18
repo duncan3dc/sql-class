@@ -1,14 +1,16 @@
 <?php
 
-namespace duncan3dc\SqlClass;
+namespace duncan3dc\SqlClassTest;
 
-class WhereTest extends SqlTest
+use duncan3dc\SqlClass\Sql;
+
+class WhereTest extends AbstractTest
 {
 
-    public function __construct()
+    public function setUp()
     {
-        parent::__construct();
-        $this->sql->mode = "mysql";
+        parent::setUp();
+        $this->setMode("mysql");
     }
 
 
