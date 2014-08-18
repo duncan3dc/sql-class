@@ -1740,6 +1740,10 @@ class Sql
 
         $table = trim($table);
 
+        if ($this->engine) {
+            return $this->engine->quoteTable($table);
+        }
+
         # There is a standard function for quoting postgres table names
         if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $this->connect();

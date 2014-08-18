@@ -21,6 +21,8 @@ abstract class AbstractSql
 
     abstract public function limit(&$query);
 
+    abstract public function quoteTable($table);
+
     abstract public function quoteValue($string);
 
     abstract public function getError();
