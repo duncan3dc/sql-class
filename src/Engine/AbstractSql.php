@@ -13,6 +13,14 @@ abstract class AbstractSql
         $this->server = $server;
     }
 
+    /**
+     * Automatically close the connection on destruction
+     */
+    public function __destruct()
+    {
+        $this->disconnect();
+    }
+
     abstract public function connect(array $options);
 
     abstract public function query($query, array $params, $preparedQuery);
