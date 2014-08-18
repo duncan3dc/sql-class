@@ -2,9 +2,9 @@
 
 namespace duncan3dc\SqlClass\Engine\Mysql;
 
-use duncan3dc\SqlClass\Sql as SqlClass;
+use duncan3dc\SqlClass\Engine\AbstractResult;
 
-class Result extends \duncan3dc\SqlClass\AbstractResult
+class Result extends AbstractResult
 {
 
     public function getNextRow()
@@ -33,6 +33,6 @@ class Result extends \duncan3dc\SqlClass\AbstractResult
 
     public function free()
     {
-        return$this->result->free();
+        return $this->result->free();
     }
 }
