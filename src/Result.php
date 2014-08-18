@@ -17,6 +17,10 @@ class Result extends AbstractResult
      */
     public  $mode;
 
+    /**
+     * @var duncan3dc\SqlClass\Engine\AbstractResult $engine The instance of the engine class handling the abstraction
+     */
+    protected $engine;
 
     /**
      * Create a Result instance to provide extra functionality
@@ -31,11 +35,17 @@ class Result extends AbstractResult
         $this->position = 0;
         $this->result = $result;
         $this->mode = $mode;
+
+        if ($this->mode == "mysql") {
+            $this->engine = new Engine\Mysql\Result($result);
+        } else {
+            $this->engine = null;
+        }
     }
 
 
     /**
-     * Internal method to fetch the next row from the result set
+     * Internal method to fetch the next row from the result set.
      *
      * @return array|null
      */
@@ -46,11 +56,11 @@ class Result extends AbstractResult
             return;
         }
 
-        switch ($this->mode) {
+        if ($this->engine) {
+            $row = $this->engine->getNextRow();
+        }
 
-            case "mysql":
-                $row = $this->result->fetch_assoc();
-                break;
+        switch ($this->mode) {
 
             case "postgres":
             case "redshift":
@@ -75,7 +85,7 @@ class Result extends AbstractResult
             return;
         }
 
-        $this->position++;
+        ++$this->position;
 
         return $row;
     }
@@ -107,9 +117,12 @@ class Result extends AbstractResult
             return false;
         }
 
+        if ($this->engine) {
+            return $this->engine->result($row, $col);
+        }
+
         switch ($this->mode) {
 
-            case "mysql":
             case "sqlite":
                 $this->seek($row);
                 $data = $this->fetch(true);
@@ -139,24 +152,23 @@ class Result extends AbstractResult
 
 
     /**
-     * Seek to a specific record of the result set
+     * Seek to a specific record of the result set.
      *
-     * @param int $row The index of the row to position to (zero-based)
+     * @param int $position The index of the row to position to (zero-based)
      *
      * @return void
      */
-    public function seek($row)
+    public function seek($position)
     {
+        if ($this->engine) {
+            return $this->engine->seek($position);
+        }
 
         switch ($this->mode) {
 
-            case "mysql":
-                $this->result->data_seek($row);
-                break;
-
             case "postgres":
             case "redshift":
-                pg_result_seek($this->result, $row);
+                pg_result_seek($this->result, $position);
                 break;
 
             case "odbc":
@@ -165,33 +177,32 @@ class Result extends AbstractResult
 
             case "sqlite":
                 $this->result->reset();
-                for ($i = 0; $i < $row; $i++) {
+                for ($i = 0; $i < $position; $i++) {
                     $this->result->fetchArray();
                 }
                 break;
 
             case "mssql":
-                mssql_data_seek($this->result, $row);
+                mssql_data_seek($this->result, $position);
                 break;
         }
 
-        $this->position = $row;
+        $this->position = $position;
     }
 
 
     /**
-     * Get the number of rows in the result set
+     * Get the number of rows in the result set.
      *
      * @return int
      */
     public function count()
     {
+        if ($this->engine) {
+            return $this->engine->count();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $rows = $this->result->num_rows;
-                break;
 
             case "postgres":
             case "redshift":
@@ -242,18 +253,17 @@ class Result extends AbstractResult
 
 
     /**
-     * Get the number of columns in the result set
+     * Get the number of columns in the result set.
      *
      * @return int
      */
     public function columnCount()
     {
+        if ($this->engine) {
+            return $this->engine->columnCount();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $columns = $this->result->field_count;
-                break;
 
             case "postgres":
             case "redshift":
@@ -282,18 +292,17 @@ class Result extends AbstractResult
 
 
     /**
-     * Free the memory used by the result resource
+     * Free the memory used by the result resource.
      *
      * @return void
      */
     public function free()
     {
+        if ($this->engine) {
+            return $this->engine->free();
+        }
 
         switch ($this->mode) {
-
-            case "mysql":
-                $this->result->free();
-                break;
 
             case "postgres":
             case "redshift":
