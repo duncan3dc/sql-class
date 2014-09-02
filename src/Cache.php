@@ -8,7 +8,7 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Helpers\Json;
 
-class Cache extends ResultInterface
+class Cache extends AbstractResult
 {
     const MINUTE = 60;
     const HOUR = 3600;
@@ -87,7 +87,7 @@ class Cache extends ResultInterface
     }
 
 
-    public function isCached()
+    protected function isCached()
     {
         if ($this->sql->output) {
             echo "checking the cache (" . $this->dir . ")";
@@ -125,7 +125,7 @@ class Cache extends ResultInterface
     }
 
 
-    public function createCache()
+    protected function createCache()
     {
         $this->result = $this->sql->query($this->query, $this->params);
 
@@ -159,16 +159,11 @@ class Cache extends ResultInterface
 
 
     /**
-     * Fetch the next row from the result set and clean it up
-     *
-     * All field values have rtrim() called on them to remove trailing space
-     * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
-     *
-     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW, Sql::FETCH_ASSOC or Sql::FETCH_RAW)
+     * Internal method to fetch the next row from the result set
      *
      * @return array|null
      */
-    public function fetch($style = null)
+    protected function getNextRow()
     {
         if ($this->position >= $this->totalRows) {
             return;
@@ -184,29 +179,7 @@ class Cache extends ResultInterface
 
         $this->position++;
 
-        # If no style was specified then use the current setting
-        if (!$style) {
-            $style = $this->fetchStyle;
-        }
-
-        if ($style === Sql::FETCH_RAW) {
-            return $data;
-        }
-
-        $row = [];
-
-        foreach ($data as $key => $val) {
-            $val = rtrim($val);
-
-            if ($style === Sql::FETCH_ASSOC) {
-                $key = strtolower($key);
-                $row[$key] = $val;
-            } else {
-                $row[] = $val;
-            }
-        }
-
-        return $row;
+        return $data;
     }
 
 

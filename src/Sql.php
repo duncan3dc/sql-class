@@ -9,20 +9,20 @@ use duncan3dc\Helpers\Helper;
 
 class Sql
 {
-    const   NO_WHERE_CLAUSE  = 101;     # Allow queries to be created without a where cluase
-    const   USE_PHP_TIMEZONE = 102;     # Set the database timezone to be the same as the php one
+    const NO_WHERE_CLAUSE   =   101;    # Allow queries to be created without a where cluase
+    const USE_PHP_TIMEZONE  =   102;    # Set the database timezone to be the same as the php one
 
-    const   INSERT_REPLACE   = 103;     # Mysql extension to replace any existing records with a unique key match
-    const   INSERT_IGNORE    = 104;     # Mysql extension to ignore any existing records with a unique key match
+    const INSERT_REPLACE    =   103;    # Mysql extension to replace any existing records with a unique key match
+    const INSERT_IGNORE     =   104;    # Mysql extension to ignore any existing records with a unique key match
 
-    const   TRIGGER_INSERT   = 105;     # A trigger to be run after a successful insert
-    const   TRIGGER_UPDATE   = 106;     # A trigger to be run after a successful update
-    const   TRIGGER_DELETE   = 107;     # A trigger to be run after a successful delete
+    const TRIGGER_INSERT    =   105;    # A trigger to be run after a successful insert
+    const TRIGGER_UPDATE    =   106;    # A trigger to be run after a successful update
+    const TRIGGER_DELETE    =   107;    # A trigger to be run after a successful delete
 
-    const   FETCH_ROW        = 108;     # Return rows as an enumerated array (using column numbers)
-    const   FETCH_ASSOC      = 109;     # Return rows as an associative array (using field names)
-    const   FETCH_GENERATOR  = 110;     # Return a generator of the first 1 or 2 columns
-    const   FETCH_RAW        = 111;     # Return the raw row from the database without performing cleanup
+    const FETCH_ROW         =   108;    # Return rows as an enumerated array (using column numbers)
+    const FETCH_ASSOC       =   109;    # Return rows as an associative array (using field names)
+    const FETCH_GENERATOR   =   110;    # Return a generator of the first 1 or 2 columns
+    const FETCH_RAW         =   111;    # Return the raw row from the database without performing cleanup
 
     protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
     protected $options;                 # An array of all the options this object was created with
@@ -1134,7 +1134,7 @@ class Sql
     }
 
 
-    public function getId(ResultInterface $result)
+    public function getId(AbstractResult $result)
     {
         $id = false;
 
@@ -1290,7 +1290,7 @@ class Sql
     /**
      * Fetch the next row from the result set
      */
-    public function _fetch(ResultInterface $result)
+    public function _fetch(AbstractResult $result)
     {
         trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
         return $result->_fetch();
@@ -1300,7 +1300,7 @@ class Sql
     /**
      * Fetch the next row from the result set and clean it up
      */
-    public function fetch(ResultInterface $result, $style = null)
+    public function fetch(AbstractResult $result, $style = null)
     {
         trigger_error('Sql::fetch() is deprecated in favour of using the Result class, eg $result->fetch()', E_USER_DEPRECATED);
         return $result->fetch($style);
@@ -1310,7 +1310,7 @@ class Sql
     /**
      * Fetch an indiviual value from the result set
      */
-    public function result(ResultInterface $result, $row, $col)
+    public function result(AbstractResult $result, $row, $col)
     {
         trigger_error('Sql::result() is deprecated in favour of using the Result class, eg $result->result(0, 0)', E_USER_DEPRECATED);
         return $result->result($row, $col);
@@ -1320,7 +1320,7 @@ class Sql
     /**
      * Seek to a specific record of the result set
      */
-    public function seek(ResultInterface $result, $row)
+    public function seek(AbstractResult $result, $row)
     {
         trigger_error('Sql::seek() is deprecated in favour of using the Result class, eg $result->seek(0)', E_USER_DEPRECATED);
         return $result->seek($row);

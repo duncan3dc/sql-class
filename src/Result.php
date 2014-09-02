@@ -5,7 +5,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class Result extends ResultInterface
+class Result extends AbstractResult
 {
     public  $result;    # The result resource
     public  $mode;      # The type of database this result set is for
@@ -32,7 +32,7 @@ class Result extends ResultInterface
      *
      * @return array|null
      */
-    protected function dbfetch()
+    protected function getNextRow()
     {
         # If the result resource is invalid then don't bother trying to fetch
         if (!$this->result) {
@@ -83,70 +83,6 @@ class Result extends ResultInterface
     {
         trigger_error('Result::_fetch() is deprecated in favour of using the raw style fetch, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
         return $this->fetch(FETCH_RAW);
-    }
-
-
-    /**
-     * Fetch the next row from the result set and clean it up
-     *
-     * All field values have rtrim() called on them to remove trailing space
-     * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
-     *
-     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW or Sql::FETCH_ASSOC)
-     *
-     * @return array|null
-     */
-    public function fetch($style = null)
-    {
-        # If no style was specified then use the current setting
-        if (!$style) {
-            $style = $this->fetchStyle;
-        }
-
-        if ($style === Sql::FETCH_GENERATOR) {
-            return $this->generator();
-        }
-
-        # If the fetch fails then there are no rows left to retrieve
-        if (!$data = $this->dbfetch()) {
-            return;
-        }
-
-        if ($style === Sql::FETCH_RAW) {
-            return $data;
-        }
-
-        $row = [];
-
-        foreach ($data as $key => $val) {
-            $val = rtrim($val);
-
-            if ($style === Sql::FETCH_ASSOC) {
-                $key = strtolower($key);
-                $row[$key] = $val;
-            } else {
-                $row[] = $val;
-            }
-        }
-
-        return $row;
-    }
-
-
-    /**
-     * Get a generator function to fetch from
-     */
-    public function generator()
-    {
-        while ($row = $this->dbfetch()) {
-            if ($this->columnCount() > 1) {
-                $key = rtrim(reset($row));
-                $val = rtrim(next($row));
-                yield $key => $val;
-            } else {
-                yield rtrim(reset($row));
-            }
-        }
     }
 
 
