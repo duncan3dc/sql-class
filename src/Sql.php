@@ -22,6 +22,7 @@ class Sql
     const   FETCH_ROW        = 108;     # Return rows as an enumerated array (using column numbers)
     const   FETCH_ASSOC      = 109;     # Return rows as an associative array (using field names)
     const   FETCH_GENERATOR  = 110;     # Return a generator of the first 1 or 2 columns
+    const   FETCH_RAW        = 111;     # Return the raw row from the database without performing cleanup
 
     protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
     protected $options;                 # An array of all the options this object was created with

@@ -102,10 +102,13 @@ class Result extends ResultInterface
             return;
         }
 
+        if ($style === Sql::FETCH_RAW) {
+            return $data;
+        }
+
         $row = [];
 
         foreach ($data as $key => $val) {
-
             $val = rtrim($val);
 
             if ($style === Sql::FETCH_ASSOC) {
