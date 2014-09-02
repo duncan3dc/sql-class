@@ -1292,7 +1292,7 @@ class Sql
      */
     public function _fetch(ResultInterface $result)
     {
-        trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->_fetch()', E_USER_DEPRECATED);
+        trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
         return $result->_fetch();
     }
 

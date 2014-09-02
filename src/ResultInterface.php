@@ -19,7 +19,7 @@ abstract class ResultInterface implements \SeekableIterator, \Countable
      */
     public function fetchStyle($style)
     {
-        if (!in_array($style, [Sql::FETCH_ROW, Sql::FETCH_ASSOC], true)) {
+        if (!in_array($style, [Sql::FETCH_ROW, Sql::FETCH_ASSOC, Sql::FETCH_RAW], true)) {
             throw new \Exception("Invalid fetch style specified");
         }
         $this->fetchStyle = $style;

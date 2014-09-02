@@ -28,13 +28,11 @@ class Result extends ResultInterface
 
 
     /**
-     * Fetch the next row from the result set
-     *
-     * This method can be used to fetch the raw array from the result set, rather than the extra processing done by the fetch() method
+     * Internal method to fetch the next row from the result set
      *
      * @return array|null
      */
-    public function _fetch()
+    protected function dbfetch()
     {
         # If the result resource is invalid then don't bother trying to fetch
         if (!$this->result) {
@@ -77,6 +75,18 @@ class Result extends ResultInterface
 
 
     /**
+     * Old method of a raw fetch
+     *
+     * @deprecated use fetch(Sql::FETCH_RAW) instead
+     */
+    public function _fetch()
+    {
+        trigger_error('Result::_fetch() is deprecated in favour of using the raw style fetch, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
+        return $this->fetch(FETCH_RAW);
+    }
+
+
+    /**
      * Fetch the next row from the result set and clean it up
      *
      * All field values have rtrim() called on them to remove trailing space
@@ -98,7 +108,7 @@ class Result extends ResultInterface
         }
 
         # If the fetch fails then there are no rows left to retrieve
-        if (!$data = $this->_fetch()) {
+        if (!$data = $this->dbfetch()) {
             return;
         }
 
@@ -128,7 +138,7 @@ class Result extends ResultInterface
      */
     public function generator()
     {
-        while ($row = $this->_fetch()) {
+        while ($row = $this->dbfetch()) {
             if ($this->columnCount() > 1) {
                 $key = rtrim(reset($row));
                 $val = rtrim(next($row));
