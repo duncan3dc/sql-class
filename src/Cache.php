@@ -136,7 +136,8 @@ class Cache extends ResultInterface
 
         $rowNum = 0;
         $columnCount = 0;
-        while ($row = $this->sql->fetch($this->result)) {
+        $this->result->fetchStyle(Sql::FETCH_RAW);
+        foreach ($this->result as $row) {
             if (!$rowNum) {
                 $columnCount = count($row);
             }
@@ -163,7 +164,7 @@ class Cache extends ResultInterface
      * All field values have rtrim() called on them to remove trailing space
      * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
      *
-     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW or Sql::FETCH_ASSOC)
+     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW, Sql::FETCH_ASSOC or Sql::FETCH_RAW)
      *
      * @return array|null
      */
@@ -179,7 +180,7 @@ class Cache extends ResultInterface
             $rowIndex = $this->position;
         }
 
-        $row = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
+        $data = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
 
         $this->position++;
 
@@ -188,12 +189,21 @@ class Cache extends ResultInterface
             $style = $this->fetchStyle;
         }
 
-        if ($style !== Sql::FETCH_ASSOC) {
-            $new = [];
-            foreach ($row as $val) {
-                $new[] = $val;
+        if ($style === Sql::FETCH_RAW) {
+            return $data;
+        }
+
+        $row = [];
+
+        foreach ($data as $key => $val) {
+            $val = rtrim($val);
+
+            if ($style === Sql::FETCH_ASSOC) {
+                $key = strtolower($key);
+                $row[$key] = $val;
+            } else {
+                $row[] = $val;
             }
-            $row = $new;
         }
 
         return $row;
@@ -212,7 +222,7 @@ class Cache extends ResultInterface
     {
         $this->seek($row);
 
-        $row = $this->fetch(true);
+        $row = $this->fetch(Sql::FETCH_ROW);
 
         $val = $row[$col];
 
