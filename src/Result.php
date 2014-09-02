@@ -88,17 +88,21 @@ class Result extends ResultInterface
      */
     public function fetch($style = null)
     {
-        # If the fetch fails then there are no rows left to retrieve
-        if (!$data = $this->_fetch($this->result)) {
-            return;
-        }
-
-        $row = [];
-
         # If no style was specified then use the current setting
         if (!$style) {
             $style = $this->fetchStyle;
         }
+
+        if ($style === Sql::FETCH_GENERATOR) {
+            return $this->generator();
+        }
+
+        # If the fetch fails then there are no rows left to retrieve
+        if (!$data = $this->_fetch()) {
+            return;
+        }
+
+        $row = [];
 
         foreach ($data as $key => $val) {
 
@@ -113,6 +117,23 @@ class Result extends ResultInterface
         }
 
         return $row;
+    }
+
+
+    /**
+     * Get a generator function to fetch from
+     */
+    public function generator()
+    {
+        while ($row = $this->_fetch()) {
+            if ($this->columnCount() > 1) {
+                $key = rtrim(reset($row));
+                $val = rtrim(next($row));
+                yield $key => $val;
+            } else {
+                yield rtrim(reset($row));
+            }
+        }
     }
 
 
