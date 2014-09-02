@@ -131,8 +131,8 @@ class Cache extends ResultInterface
 
         $this->cacheTime = time();
 
-        file_put_contents($this->dir . "/.data", "{}");
-        file_put_contents($this->dir . "/.sorted", "{}");
+        Json::encodeToFile($this->dir . "/.data", []);
+        Json::encodeToFile($this->dir . "/.sorted", []);
 
         $rowNum = 0;
         $columnCount = 0;
