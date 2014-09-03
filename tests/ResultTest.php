@@ -48,11 +48,13 @@ class ResultTest extends \PHPUnit_Framework_TestCase
         $this->assertSame(2, $result->count());
     }
 
+
     public function testColumnCount()
     {
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame(2, $result->columnCount());
     }
+
 
     public function testFetchAssoc1()
     {
@@ -76,6 +78,7 @@ class ResultTest extends \PHPUnit_Framework_TestCase
         $this->assertSame("row1", $result->fetch()["field1"]);
     }
 
+
     public function testFetchRow1()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
@@ -85,7 +88,7 @@ class ResultTest extends \PHPUnit_Framework_TestCase
 
     public function testFetchRow2()
     {
-        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok"]);
+        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok "]);
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
         $this->assertSame("ok", $result->fetch(1)[1]);
     }
@@ -103,5 +106,48 @@ class ResultTest extends \PHPUnit_Framework_TestCase
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
         $result->fetchStyle(Sql::FETCH_ROW);
         $this->assertSame("ok", $result->fetch()[1]);
+    }
+
+
+    public function testFetchRaw()
+    {
+        $this->sql->insert("table1", ["field1" => "row1 "]);
+        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $this->assertSame("row1 ", $result->fetch(Sql::FETCH_RAW)["field1"]);
+    }
+
+
+    public function testGenerator1()
+    {
+        $this->sql->insert("table1", ["field1" => "row1"]);
+        $this->sql->insert("table1", ["field1" => "row2"]);
+
+        $counter = 0;
+        $rows = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE)->fetch(Sql::FETCH_GENERATOR);
+        foreach ($rows as $null) {
+            $counter++;
+        }
+        $this->assertSame(2, $counter);
+    }
+
+    public function testGenerator2()
+    {
+        $this->sql->insert("table1", ["field1" => "row1"]);
+
+        $rows = $this->sql->fieldSelectAll("table1", "field1", Sql::NO_WHERE_CLAUSE)->fetch(Sql::FETCH_GENERATOR);
+        foreach ($rows as $val) {
+            $this->assertSame("row1", $val);
+        }
+    }
+
+    public function testGenerator3()
+    {
+        $this->sql->insert("table1", ["field1" => "key", "field2"  =>  "val"]);
+
+        $rows = $this->sql->fieldSelectAll("table1", ["field1", "field2"], Sql::NO_WHERE_CLAUSE)->fetch(Sql::FETCH_GENERATOR);
+        foreach ($rows as $key => $val) {
+            $this->assertSame("key", $key);
+            $this->assertSame("val", $val);
+        }
     }
 }
