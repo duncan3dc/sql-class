@@ -51,7 +51,7 @@ class Result extends AbstractResult
                 break;
 
             case "odbc":
-                $row = odbc_fetch_array($this->result);
+                $row = odbc_fetch_array($this->result, $this->position + 1);
                 break;
 
             case "sqlite":
@@ -153,8 +153,7 @@ class Result extends AbstractResult
                 break;
 
             case "odbc":
-                # This actually does a seek and fetch, so although the rows are numbered 1 higher than other databases, this will still work
-                odbc_fetch_row($this->result, $row);
+                # The odbc driver doesn't support seeking, so we fetch specific rows in getNextRow(), and here all we need to do is set the current position instance variable
                 break;
 
             case "sqlite":
