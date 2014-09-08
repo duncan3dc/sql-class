@@ -5,6 +5,8 @@ A simple database abstraction layer, with an on disk caching facility.
 
 Class documentation available at http://duncan3dc.github.io/sql-class/  
 
+[![Build Status](https://travis-ci.org/duncan3dc/sql-class.svg?branch=master)](https://travis-ci.org/duncan3dc/sql-class)
+
 
 Examples
 --------
