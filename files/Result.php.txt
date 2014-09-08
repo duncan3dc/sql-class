@@ -5,7 +5,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class Result extends ResultInterface
+class Result extends AbstractResult
 {
     public  $result;    # The result resource
     public  $mode;      # The type of database this result set is for
@@ -28,13 +28,11 @@ class Result extends ResultInterface
 
 
     /**
-     * Fetch the next row from the result set
-     *
-     * This method can be used to fetch the raw array from the result set, rather than the extra processing done by the fetch() method
+     * Internal method to fetch the next row from the result set
      *
      * @return array|null
      */
-    public function _fetch()
+    protected function getNextRow()
     {
         # If the result resource is invalid then don't bother trying to fetch
         if (!$this->result) {
@@ -53,7 +51,7 @@ class Result extends ResultInterface
                 break;
 
             case "odbc":
-                $row = odbc_fetch_array($this->result);
+                $row = odbc_fetch_array($this->result, $this->position + 1);
                 break;
 
             case "sqlite":
@@ -77,42 +75,14 @@ class Result extends ResultInterface
 
 
     /**
-     * Fetch the next row from the result set and clean it up
+     * Old method of a raw fetch
      *
-     * All field values have rtrim() called on them to remove trailing space
-     * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
-     *
-     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW or Sql::FETCH_ASSOC)
-     *
-     * @return array|null
+     * @deprecated use fetch(Sql::FETCH_RAW) instead
      */
-    public function fetch($style = null)
+    public function _fetch()
     {
-        # If the fetch fails then there are no rows left to retrieve
-        if (!$data = $this->_fetch($this->result)) {
-            return;
-        }
-
-        $row = [];
-
-        # If no style was specified then use the current setting
-        if (!$style) {
-            $style = $this->fetchStyle;
-        }
-
-        foreach ($data as $key => $val) {
-
-            $val = rtrim($val);
-
-            if ($style === Sql::FETCH_ASSOC) {
-                $key = strtolower($key);
-                $row[$key] = $val;
-            } else {
-                $row[] = $val;
-            }
-        }
-
-        return $row;
+        trigger_error('Result::_fetch() is deprecated in favour of using the raw style fetch, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
+        return $this->fetch(FETCH_RAW);
     }
 
 
@@ -183,8 +153,7 @@ class Result extends ResultInterface
                 break;
 
             case "odbc":
-                # This actually does a seek and fetch, so although the rows are numbered 1 higher than other databases, this will still work
-                odbc_fetch_row($this->result, $row);
+                # The odbc driver doesn't support seeking, so we fetch specific rows in getNextRow(), and here all we need to do is set the current position instance variable
                 break;
 
             case "sqlite":

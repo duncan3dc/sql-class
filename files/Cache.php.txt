@@ -8,7 +8,7 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Helpers\Json;
 
-class Cache extends ResultInterface
+class Cache extends AbstractResult
 {
     const MINUTE = 60;
     const HOUR = 3600;
@@ -87,7 +87,7 @@ class Cache extends ResultInterface
     }
 
 
-    public function isCached()
+    protected function isCached()
     {
         if ($this->sql->output) {
             echo "checking the cache (" . $this->dir . ")";
@@ -125,18 +125,19 @@ class Cache extends ResultInterface
     }
 
 
-    public function createCache()
+    protected function createCache()
     {
         $this->result = $this->sql->query($this->query, $this->params);
 
         $this->cacheTime = time();
 
-        file_put_contents($this->dir . "/.data", "{}");
-        file_put_contents($this->dir . "/.sorted", "{}");
+        Json::encodeToFile($this->dir . "/.data", []);
+        Json::encodeToFile($this->dir . "/.sorted", []);
 
         $rowNum = 0;
         $columnCount = 0;
-        while ($row = $this->sql->fetch($this->result)) {
+        $this->result->fetchStyle(Sql::FETCH_RAW);
+        foreach ($this->result as $row) {
             if (!$rowNum) {
                 $columnCount = count($row);
             }
@@ -158,16 +159,11 @@ class Cache extends ResultInterface
 
 
     /**
-     * Fetch the next row from the result set and clean it up
-     *
-     * All field values have rtrim() called on them to remove trailing space
-     * All column keys have strtolower() called on them to convert them to lowercase (for consistency across database engines)
-     *
-     * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW or Sql::FETCH_ASSOC)
+     * Internal method to fetch the next row from the result set
      *
      * @return array|null
      */
-    public function fetch($style = null)
+    protected function getNextRow()
     {
         if ($this->position >= $this->totalRows) {
             return;
@@ -179,24 +175,11 @@ class Cache extends ResultInterface
             $rowIndex = $this->position;
         }
 
-        $row = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
+        $data = Json::decodeFromFile($this->dir . "/" . $rowIndex . ".row");
 
         $this->position++;
 
-        # If no style was specified then use the current setting
-        if (!$style) {
-            $style = $this->fetchStyle;
-        }
-
-        if ($style !== Sql::FETCH_ASSOC) {
-            $new = [];
-            foreach ($row as $val) {
-                $new[] = $val;
-            }
-            $row = $new;
-        }
-
-        return $row;
+        return $data;
     }
 
 
@@ -212,7 +195,7 @@ class Cache extends ResultInterface
     {
         $this->seek($row);
 
-        $row = $this->fetch(true);
+        $row = $this->fetch(Sql::FETCH_ROW);
 
         $val = $row[$col];
 
