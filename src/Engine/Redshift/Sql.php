@@ -2,6 +2,8 @@
 
 namespace duncan3dc\SqlClass\Engine\Redshift;
 
+use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result;
 
 class Sql extends \duncan3dc\SqlClass\Engine\Postgres
@@ -85,7 +87,7 @@ class Sql extends \duncan3dc\SqlClass\Engine\Postgres
 
     public function getId(Result $result)
     {
-        throw new \Exception("getId() not available in this mode");
+        throw new NotImplementedException("getId() not available in this mode");
     }
 
 

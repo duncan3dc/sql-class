@@ -4,7 +4,7 @@ namespace duncan3dc\SqlClass\Engine\Odbc;
 
 use duncan3dc\Helpers\Helper;
 use duncan3dc\SqlClass\Engine\AbstractSql;
-use duncan3dc\SqlClass\NotImplementedException;
+use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result;
 
 class Sql extends AbstractSql
@@ -110,25 +110,25 @@ class Sql extends AbstractSql
 
     public function getId(Result $result)
     {
-        throw new \Exception("getId() not available in this mode");
+        throw new NotImplementedException("getId() not available in this mode");
     }
 
 
     public function getDatabases()
     {
-        throw new \Exception("getDatabases() not available in this mode");
+        throw new NotImplementedException("getDatabases() not available in this mode");
     }
 
 
     public function getTables($database)
     {
-        throw new \Exception("getTables() not available in this mode");
+        throw new NotImplementedException("getTables() not available in this mode");
     }
 
 
     public function getViews($database)
     {
-        throw new \Exception("getViews() not available in this mode");
+        throw new NotImplementedException("getViews() not available in this mode");
     }
 
 
