@@ -5,6 +5,7 @@ namespace duncan3dc\SqlClass\Engine\Mysql;
 use duncan3dc\SqlClass\Engine\AbstractSql;
 use duncan3dc\SqlClass\Result as ResultInterface;
 use duncan3dc\SqlClass\Sql as SqlClass;
+use duncan3dc\SqlClass\Result;
 
 class Sql extends AbstractSql
 {
