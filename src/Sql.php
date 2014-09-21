@@ -59,7 +59,7 @@ class Sql
     protected static $instances = [];
 
 
-    static function addServer($server, array $options)
+    public static function addServer($server, array $options)
     {
         if (!$server) {
             throw new \Exception("No name specified for the server to add");
@@ -73,7 +73,7 @@ class Sql
     }
 
 
-    static function getInstance($server = null)
+    public static function getInstance($server = null)
     {
 
         # If no server was specified then default to the first one defined
@@ -89,7 +89,7 @@ class Sql
     }
 
 
-    static function getNewInstance($server)
+    public static function getNewInstance($server)
     {
         if (!array_key_exists($server, static::$servers)) {
             throw new \Exception("Unknown SQL Server (" . $server . ")");
