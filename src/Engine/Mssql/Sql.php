@@ -2,9 +2,8 @@
 
 namespace duncan3dc\SqlClass\Engine\Mssql;
 
-use duncan3dc\Helpers\Helper;
 use duncan3dc\SqlClass\Engine\AbstractSql;
-use duncan3dc\SqlClass\NotImplementedException;
+use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result;
 
 class Sql extends AbstractSql
@@ -71,7 +70,7 @@ class Sql extends AbstractSql
 
     public function getId(Result $result)
     {
-        throw new \Exception("getId() not available in this mode");
+        throw new NotImplementedException("getId() not available in this mode");
     }
 
 
@@ -120,37 +119,37 @@ class Sql extends AbstractSql
 
     public function startTransaction()
     {
-        throw new \Exception("startTransaction() not available in this mode");
+        throw new NotImplementedException("startTransaction() not available in this mode");
     }
 
 
     public function endTransaction()
     {
-        throw new \Exception("endTransaction() not available in this mode");
+        throw new NotImplementedException("endTransaction() not available in this mode");
     }
 
 
     public function commit()
     {
-        throw new \Exception("commit() not available in this mode");
+        throw new NotImplementedException("commit() not available in this mode");
     }
 
 
     public function rollback()
     {
-        throw new \Exception("rollback() not available in this mode");
+        throw new NotImplementedException("rollback() not available in this mode");
     }
 
 
     public function lockTables(array $tables)
     {
-        throw new \Exception("lockTables() not available in this mode");
+        throw new NotImplementedException("lockTables() not available in this mode");
     }
 
 
     public function unlockTables()
     {
-        throw new \Exception("unlockTables() not available in this mode");
+        throw new NotImplementedException("unlockTables() not available in this mode");
     }
 
 
