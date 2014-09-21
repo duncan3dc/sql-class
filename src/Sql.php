@@ -338,13 +338,6 @@ class Sql
             $this->engine->setServer($this->server);
         }
 
-        switch ($this->mode) {
-
-            case "mssql":
-                $this->server = mssql_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
-                break;
-        }
-
         if (!$this->server) {
             $this->error();
         }
@@ -502,15 +495,6 @@ class Sql
             $result = $this->engine->query($query, $params, $preparedQuery);
         }
 
-        switch ($this->mode) {
-
-            case "mssql":
-                if (!$result = mssql_query($preparedQuery, $this->server)) {
-                    $this->error();
-                }
-                break;
-        }
-
         if (!$result) {
             $this->error();
         }
@@ -605,26 +589,11 @@ class Sql
         if ($this->engine) {
             $this->engine->functions($query);
         }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
-                break;
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
-                break;
-        }
     }
 
 
     /**
      * Convert any limit usage
-     * Doesn't work with the mssql variety
      */
     protected function limit(&$query)
     {
@@ -785,13 +754,6 @@ class Sql
                         if ($this->engine) {
                             $value = $this->engine->quoteValue($value);
                         }
-                        switch ($this->mode) {
-                            case "mssql":
-                                $value = "'" . str_replace("'", "''", $value) . "'";
-                                break;
-                        }
-
-                        break;
                 }
 
                 $newPart .= $value;
@@ -889,13 +851,6 @@ class Sql
 
         if ($this->engine) {
             $errorMsg = $this->engine->getError();
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $errorMsg = mssql_get_last_message();
-                break;
         }
 
         return $errorMsg;
@@ -1662,25 +1617,6 @@ class Sql
         if ($this->engine) {
             return $this->engine->getDatabases();
         }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $query = "SELECT name FROM master..sysdatabases";
-                break;
-
-            default:
-                throw new \Exception("getDatabases() not supported in this mode (" . $this->mode . ")");
-        }
-
-        $databases = [];
-        $result = $this->query($query);
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $databases[] = $row[0];
-        }
-
-        return $databases;
     }
 
 
@@ -1689,25 +1625,6 @@ class Sql
         if ($this->engine) {
             return $this->engine->getTables();
         }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
-                break;
-
-            default:
-                throw new \Exception("getTables() not supported in this mode (" . $this->mode . ")");
-        }
-
-        $tables = [];
-        $result = $this->query($query);
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $tables[] = $row[0];
-        }
-
-        return $tables;
     }
 
 
@@ -1716,25 +1633,6 @@ class Sql
         if ($this->engine) {
             return $this->engine->getViews();
         }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
-                break;
-
-            default:
-                throw new \Exception("getViews() not supported in this mode (" . $this->mode . ")");
-        }
-
-        $views = [];
-        $result = $this->query($query);
-        $result->fetchStyle(self::FETCH_ROW);
-        foreach ($result as $row) {
-            $views[] = $row[0];
-        }
-
-        return $views;
     }
 
 
@@ -1769,16 +1667,5 @@ class Sql
         if ($this->engine) {
             return $this->engine->disconnect();
         }
-
-        $result = false;
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $result = mssql_close($this->server);
-                break;
-        }
-
-        return $result;
     }
 }

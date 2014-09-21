@@ -57,19 +57,10 @@ class Result extends AbstractResult
             return;
         }
 
-        if ($this->engine) {
-            $row = $this->engine->getNextRow();
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $row = mssql_fetch_assoc($this->result);
-                break;
-        }
+        $row = $this->engine->getNextRow();
 
         # If the fetch fails then there are no rows left to retrieve
-        if (!$row) {
+        if (!is_array($row)) {
             return;
         }
 
@@ -105,16 +96,7 @@ class Result extends AbstractResult
             return false;
         }
 
-        if ($this->engine) {
-            return $this->engine->result($row, $col);
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                $value = mssql_result($this->result, $row, $col);
-                break;
-        }
+        $value = $this->engine->result($row, $col);
 
         $value = rtrim($value);
 
@@ -131,17 +113,7 @@ class Result extends AbstractResult
      */
     public function seek($position)
     {
-        if ($this->engine) {
-            return $this->engine->seek($position);
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                mssql_data_seek($this->result, $position);
-                break;
-        }
-
+        $this->engine->seek($position);
         $this->position = $position;
     }
 
@@ -153,18 +125,9 @@ class Result extends AbstractResult
      */
     public function count()
     {
-        if ($this->engine) {
-            return $this->engine->count();
-        }
+        $rows = $this->engine->count();
 
-        switch ($this->mode) {
-
-            case "mssql":
-                $rows = mssql_num_rows($this->result);
-                break;
-        }
-
-        if ($rows === false || $rows < 0) {
+        if (!is_int($rows) || $rows < 0) {
             throw new \Exception("Failed to get the row count from the result set");
         }
 
@@ -179,18 +142,9 @@ class Result extends AbstractResult
      */
     public function columnCount()
     {
-        if ($this->engine) {
-            return $this->engine->columnCount();
-        }
+        $columns = $this->engine->columnCount();
 
-        switch ($this->mode) {
-
-            case "mssql":
-                $columns = mssql_num_fields($this->result);
-                break;
-        }
-
-        if ($columns === false || $columns < 0) {
+        if (!is_int($columns) || $columns < 0) {
             throw new \Exception("Failed to get the column count from the result set");
         }
 
@@ -205,16 +159,7 @@ class Result extends AbstractResult
      */
     public function free()
     {
-        if ($this->engine) {
-            return $this->engine->free();
-        }
-
-        switch ($this->mode) {
-
-            case "mssql":
-                mssql_free_result($this->result);
-                break;
-        }
+        $this->engine->free();
     }
 
 
