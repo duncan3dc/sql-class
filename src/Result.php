@@ -36,8 +36,8 @@ class Result extends AbstractResult
         $this->result = $result;
         $this->mode = $mode;
 
-        if (in_array($this->mode, ["mysql", "postgres", "redshift"])) {
-            $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Result";
+        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Result";
+        if (class_exists($class)) {
             $this->engine = new $class($result);
         } else {
             $this->engine = null;
@@ -62,10 +62,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "sqlite":
-                $row = $this->result->fetchArray(SQLITE3_ASSOC);
-                break;
 
             case "mssql":
                 $row = mssql_fetch_assoc($this->result);
@@ -115,13 +111,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "sqlite":
-                $this->seek($row);
-                $data = $this->fetch(true);
-                $value = $data[$col];
-                $this->seek($this->position);
-                break;
-
             case "mssql":
                 $value = mssql_result($this->result, $row, $col);
                 break;
@@ -148,13 +137,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "sqlite":
-                $this->result->reset();
-                for ($i = 0; $i < $row; $i++) {
-                    $this->result->fetchArray();
-                }
-                break;
-
             case "mssql":
                 mssql_data_seek($this->result, $row);
                 break;
@@ -176,14 +158,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "sqlite":
-                $rows = 0;
-                while ($this->result->fetchArray()) {
-                    $rows++;
-                }
-                $this->seek($this->position);
-                break;
 
             case "mssql":
                 $rows = mssql_num_rows($this->result);
@@ -211,10 +185,6 @@ class Result extends AbstractResult
 
         switch ($this->mode) {
 
-            case "sqlite":
-                $columns = $this->result->numColumns();
-                break;
-
             case "mssql":
                 $columns = mssql_num_fields($this->result);
                 break;
@@ -240,10 +210,6 @@ class Result extends AbstractResult
         }
 
         switch ($this->mode) {
-
-            case "sqlite":
-                $this->result->finalize();
-                break;
 
             case "mssql":
                 mssql_free_result($this->result);

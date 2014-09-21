@@ -340,10 +340,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "sqlite":
-                $this->server = new \Sqlite3($this->options["database"]);
-                break;
-
             case "mssql":
                 $this->server = mssql_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
                 break;
@@ -506,63 +502,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "sqlite":
-
-                if (!is_array($params)) {
-                    if (!$result = $this->server->query($preparedQuery)) {
-                        $this->error();
-                    }
-
-                # If we have some parameters then we must convert them to the sqlite format
-                } else {
-                    $newQuery = "";
-                    foreach ($params as $key => $val) {
-                        $pos = strpos($query, "?");
-                        $newQuery .= substr($query, 0, $pos);
-                        $query = substr($query, $pos + 1);
-
-                        $newQuery .= ":var" . $key;
-                    }
-                    $newQuery .= $query;
-
-                    if (!$result = $this->server->prepare($newQuery)) {
-                        $this->error();
-                    }
-
-                    foreach ($params as $key => $val) {
-                        switch (gettype($val)) {
-
-                            case "boolean":
-                            case "integer":
-                                $type = SQLITE3_INTEGER;
-                                break;
-
-                            case "double":
-                                $type = SQLITE3_FLOAT;
-                                break;
-
-                            case "NULL":
-                                if ($this->allowNulls) {
-                                    $type = SQLITE3_NULL;
-                                } else {
-                                    $type = SQLITE3_TEXT;
-                                    $val = "";
-                                }
-                                break;
-
-                            default:
-                                $type = SQLITE3_TEXT;
-                        }
-
-                        $result->bindValue(":var" . $key, $val, $type);
-                    }
-
-                    if (!$result = $result->execute()) {
-                        $this->error();
-                    }
-                }
-                break;
-
             case "mssql":
                 if (!$result = mssql_query($preparedQuery, $this->server)) {
                     $this->error();
@@ -667,10 +606,6 @@ class Sql
 
         switch ($this->mode) {
 
-            case "sqlite":
-                $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
-                break;
-
             case "mssql":
                 $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
                 break;
@@ -680,10 +615,6 @@ class Sql
 
             case "mssql":
                 $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
-                break;
-
-            case "sqlite":
-                $query = preg_replace("/\bSUBSTRING\(/", "SUBSTR(", $query);
                 break;
         }
     }
@@ -695,17 +626,7 @@ class Sql
      */
     protected function limit(&$query)
     {
-        if ($this->engine) {
-            $this->engine->limit($query);
-            return;
-        }
-
-        switch ($this->mode) {
-
-            case "sqlite":
-                $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
-                break;
-        }
+        $this->engine->limit($query);
     }
 
 
@@ -860,9 +781,6 @@ class Sql
                             $value = $this->engine->quoteValue($value);
                         }
                         switch ($this->mode) {
-                            case "sqlite":
-                                $value = "'" . $this->server->escapeString($value) . "'";
-                                break;
                             case "mssql":
                                 $value = "'" . str_replace("'", "''", $value) . "'";
                                 break;
@@ -969,10 +887,6 @@ class Sql
         }
 
         switch ($this->mode) {
-
-            case "sqlite":
-                $errorMsg = $this->server->lastErrorMsg() . " (" . $this->server->lastErrorCode() . ")";
-                break;
 
             case "mssql":
                 $errorMsg = mssql_get_last_message();
@@ -1085,22 +999,9 @@ class Sql
 
     public function getId(Result $result)
     {
-        $id = false;
-
-        if ($this->engine) {
-            $id = $this->engine->getId($result);
-        }
-
-        switch ($this->mode) {
-            case "sqlite":
-                $id = $this->query("SELECT last_insert_rowid()")->fetch(self::FETCH_ROW)[0];
-                break;
-        }
-
-        if (!$id) {
+        if (!$id = $this->engine->getId($result)) {
             throw new \Exception("Failed to retrieve the last inserted row id");
         }
-
         return $id;
     }
 
@@ -1857,10 +1758,6 @@ class Sql
         $result = false;
 
         switch ($this->mode) {
-
-            case "sqlite":
-                $result = $this->server->close();
-                break;
 
             case "mssql":
                 $result = mssql_close($this->server);

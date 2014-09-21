@@ -398,7 +398,7 @@ class SqlTest extends AbstractTest
 
     public function testNamedParams()
     {
-        $this->setMode("sqlite");
+        $this->setMode("mssql");
 
         $check = "SELECT field1 FROM table1 a
                 JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3='three' AND b.field4='four'
