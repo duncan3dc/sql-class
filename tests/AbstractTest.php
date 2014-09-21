@@ -62,6 +62,9 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
             $engine = null;
         }
         $this->engine->setValue($this->sql, $engine);
+        if ($mode === "sqlite") {
+            $this->sql->connect();
+        }
     }
 
 
