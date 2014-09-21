@@ -311,11 +311,7 @@ class Sql
         $this->cacheNext = false;
 
         $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
-        if (class_exists($class)) {
-            $this->engine = new $class;
-        } else {
-            $this->engine = null;
-        }
+        $this->engine = new $class;
     }
 
 
@@ -333,14 +329,11 @@ class Sql
         # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
         $this->connected = true;
 
-        if ($this->engine) {
-            $this->server = $this->engine->connect($this->options);
-            $this->engine->setServer($this->server);
-        }
-
-        if (!$this->server) {
+        if (!$this->server = $this->engine->connect($this->options)) {
             $this->error();
         }
+
+        $this->engine->setServer($this->server);
 
         return $this;
     }
@@ -491,11 +484,7 @@ class Sql
             }
         }
 
-        if ($this->engine) {
-            $result = $this->engine->query($query, $params, $preparedQuery);
-        }
-
-        if (!$result) {
+        if (!$result = $this->engine->query($query, $params, $preparedQuery)) {
             $this->error();
         }
 
@@ -586,9 +575,7 @@ class Sql
      */
     protected function functions(&$query)
     {
-        if ($this->engine) {
-            $this->engine->functions($query);
-        }
+        $this->engine->functions($query);
     }
 
 
@@ -751,9 +738,8 @@ class Sql
                         break;
 
                     default:
-                        if ($this->engine) {
-                            $value = $this->engine->quoteValue($value);
-                        }
+                        $value = $this->engine->quoteValue($value);
+                        break;
                 }
 
                 $newPart .= $value;
@@ -847,13 +833,7 @@ class Sql
 
     public function getError()
     {
-        $errorMsg = "";
-
-        if ($this->engine) {
-            $errorMsg = $this->engine->getError();
-        }
-
-        return $errorMsg;
+        return $this->engine->getError();
     }
 
 
@@ -937,35 +917,21 @@ class Sql
         # Ensure we have a connection to run this query on
         $this->connect();
 
+        $table = $this->getTableName($table);
+
         if ($output = $this->output) {
             $this->output = false;
             echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
         }
 
-        $table = $this->getTableName($table);
+        $result = $this->engine->bulkInsert($table, $params, $extra);
 
-        if ($this->engine) {
-            $result = $this->engine->bulkInsert($table, $params, $extra);
-        }
-
-        switch ($this->mode) {
-
-            default:
-                $result = true;
-                foreach ($params as $newParams) {
-                    if (!$this->insert($table, $newParams)) {
-                        $result = false;
-                        break;
-                    }
-                }
+        if ($output) {
+            $this->output = true;
         }
 
         if (!$result) {
             $this->error();
-        }
-
-        if ($output) {
-            $this->output = true;
         }
 
         return $result;
@@ -1402,23 +1368,7 @@ class Sql
     {
         $field = trim($field);
 
-        if ($this->engine) {
-            return $this->engine->quoteField($field);
-        }
-
-        $chars = $this->quoteChars[$this->mode];
-
-        if (is_array($chars)) {
-            $from = $chars[0];
-            $to = $chars[1];
-        } else {
-            $from = $chars;
-            $to = $chars;
-        }
-
-        $quoted = $from . $field . $to;
-
-        return $quoted;
+        return $this->engine->quoteField($field);
     }
 
 
@@ -1429,23 +1379,7 @@ class Sql
     {
         $table = trim($table);
 
-        if ($this->engine) {
-            return $this->engine->quoteTable($table);
-        }
-
-        $chars = $this->quoteChars[$this->mode];
-
-        if (is_array($chars)) {
-            $from = $chars[0];
-            $to = $chars[1];
-        } else {
-            $from = $chars;
-            $to = $chars;
-        }
-
-        $quoted = $from . $table . $to;
-
-        return $quoted;
+        return $this->engine->quoteTable($table);
     }
 
 
@@ -1629,25 +1563,19 @@ class Sql
 
     public function getDatabases()
     {
-        if ($this->engine) {
-            return $this->engine->getDatabases();
-        }
+        return $this->engine->getDatabases();
     }
 
 
     public function getTables($database)
     {
-        if ($this->engine) {
-            return $this->engine->getTables();
-        }
+        return $this->engine->getTables();
     }
 
 
     public function getViews($database)
     {
-        if ($this->engine) {
-            return $this->engine->getViews();
-        }
+        return $this->engine->getViews();
     }
 
 
@@ -1679,8 +1607,6 @@ class Sql
             return false;
         }
 
-        if ($this->engine) {
-            return $this->engine->disconnect();
-        }
+        return $this->engine->disconnect();
     }
 }
