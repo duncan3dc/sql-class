@@ -37,11 +37,7 @@ class Result extends AbstractResult
         $this->mode = $mode;
 
         $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Result";
-        if (class_exists($class)) {
-            $this->engine = new $class($result);
-        } else {
-            $this->engine = null;
-        }
+        $this->engine = new $class($result);
     }
 
 
