@@ -6,7 +6,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
-use duncan3dc\Helpers\Json;
+use duncan3dc\Serial\Json;
 
 class Cache extends AbstractResult
 {
