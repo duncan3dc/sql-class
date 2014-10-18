@@ -20,6 +20,6 @@ class In extends AbstractWhere
         }
 
         $markers = array_fill(0, count($this->values), "?");
-        return "IN (" . implode(",", $markers) . ")";
+        return "IN (" . implode(", ", $markers) . ")";
     }
 }

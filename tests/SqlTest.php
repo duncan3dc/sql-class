@@ -470,7 +470,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
     {
         $this->sql->mode = "mysql";
 
-        $check = "`field1` IN(?,?) ";
+        $check = "`field1` IN (?, ?) ";
         $params = [0, 1];
 
         $where = [
