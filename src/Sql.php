@@ -1176,7 +1176,7 @@ class Sql
 
         $andFlag = false;
 
-        foreach ($where as $key => $val) {
+        foreach ($where as $field => $value) {
 
             # Add the and flag if this isn't the first field
             if ($andFlag) {
@@ -1186,37 +1186,21 @@ class Sql
             }
 
             # Add the field name to the query
-            $query .= $this->quoteField($key);
+            $query .= $this->quoteField($field);
 
-            # If the value is not an array then use a standard comparison
-            if (!is_array($val)) {
-                $query .= "=? ";
+            # Convert arrays to use the in helper
+            if (is_array($value)) {
+                $value = static::in($value);
+            }
+
+            # Any parameters not using a helper should use the standard equals helper
+            if (!is_object($value)) {
+                $value = static::equals($value);
+            }
+
+            $query .= " " . $value->getClause() . " ";
+            foreach ($value->getValues() as $val) {
                 $params[] = $val;
-
-            # Special processing for arrays
-            } else {
-                $first = reset($val);
-                $second = next($val);
-
-                # If the array is only one element (or no elements) then just use it as a regular value
-                if (count($val) < 2) {
-                    $query .= "=? ";
-                    $params[] = $first;
-
-                # If the array is only two elements long and the first element is a valid comparison operator then use it as such
-                } elseif (count($val) == 2 && in_array($first, ["<", "<=", ">", ">=", "=", "<>"], true)) {
-                    $query .= $first . "? ";
-                    $params[] = $second;
-
-                # Otherwise treat the array as a set of values for an IN()
-                } else {
-                    $markers = [];
-                    foreach ($val as $v) {
-                        $markers[] = "?";
-                        $params[] = $v;
-                    }
-                    $query .= " IN(" . implode(",", $markers) . ") ";
-                }
             }
         }
 
@@ -2004,6 +1988,15 @@ class Sql
         return $views;
     }
 
+
+    public static function __callStatic($method, $params)
+    {
+        $class = __NAMESPACE__ . "\\Where\\" . ucfirst($method);
+        if (class_exists($class)) {
+            return new $class(...$params);
+        }
+        throw new \Exception("Invalid method: " . $method);
+    }
 
     /**
      * Close the sql connection
