@@ -4,7 +4,7 @@ namespace duncan3dc\SqlClass;
 
 class SqlTest extends \PHPUnit_Framework_TestCase
 {
-    private $sql;
+    protected $sql;
 
 
     public function __construct()
