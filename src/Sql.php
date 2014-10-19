@@ -976,23 +976,7 @@ class Sql
 
             # Convert arrays to use the in helper
             if (is_array($value)) {
-                $helperMap = [
-                    "<"     =>  "lessThan",
-                    "<="    =>  "lessThanOrEqualTo",
-                    ">"     =>  "greaterThan",
-                    ">="    =>  "greaterThanOrEqualTo",
-                    "="     =>  "equals",
-                    "<>"    =>  "notEqualTo",
-                ];
-                $clause = reset($value);
-                if (count($value) === 2 && isset($helperMap[$clause])) {
-                    $method = $helperMap[$clause];
-                    $val = next($value);
-                    trigger_error("Using arrays for complex where clauses is deprecated in favour of the helper methods, eg Sql::" . $method . "(" . $val . ")", E_USER_DEPRECATED);
-                    $value = static::$method($val);
-                } else {
-                    $value = static::in($value);
-                }
+                $value = static::in($value);
             }
 
             # Any parameters not using a helper should use the standard equals helper
@@ -1070,88 +1054,6 @@ class Sql
         $this->callTriggers(self::TRIGGER_DELETE, $table, $where);
 
         return $result;
-    }
-
-
-    /**
-     * Fetch the next row from the result set
-     */
-    public function _fetch(AbstractResult $result)
-    {
-        trigger_error('Sql::_fetch() is deprecated in favour of using the Result class, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
-        return $result->_fetch();
-    }
-
-
-    /**
-     * Fetch the next row from the result set and clean it up
-     */
-    public function fetch(AbstractResult $result, $style = null)
-    {
-        trigger_error('Sql::fetch() is deprecated in favour of using the Result class, eg $result->fetch()', E_USER_DEPRECATED);
-        return $result->fetch($style);
-    }
-
-
-    /**
-     * Fetch an indiviual value from the result set
-     */
-    public function result(AbstractResult $result, $row, $col)
-    {
-        trigger_error('Sql::result() is deprecated in favour of using the Result class, eg $result->result(0, 0)', E_USER_DEPRECATED);
-        return $result->result($row, $col);
-    }
-
-
-    /**
-     * Seek to a specific record of the result set
-     */
-    public function seek(AbstractResult $result, $row)
-    {
-        trigger_error('Sql::seek() is deprecated in favour of using the Result class, eg $result->seek(0)', E_USER_DEPRECATED);
-        return $result->seek($row);
-    }
-
-
-    /**
-     * Execute the query and fetch the first row from the result set
-     * This is just a shorter way of doing a query() and then a fetch()
-     */
-    public function queryFetch($query, $params = null, $style = null)
-    {
-        trigger_error('queryFetch() is deprecated in favour of method chaining, eg $sql->query($query, $params)->fetch()', E_USER_DEPRECATED);
-        return $this->query($query, $params)->fetch($style);
-    }
-
-
-    /**
-     * Cached version of queryFetch()
-     */
-    public function queryFetchC($query, $params = null, $style = null)
-    {
-        trigger_error('queryFetchC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->fetch()', E_USER_DEPRECATED);
-        return $this->cache($query, $params)->fetch($style);
-    }
-
-
-    /**
-     * Execute the query and get a specific value from the result set
-     * This is just a shorter way of doing a query() and then a result()
-     */
-    public function queryResult($query, $params, $row, $col)
-    {
-        trigger_error('queryResult() is deprecated in favour of method chaining, eg $sql->query($query, $params)->result(0, 0)', E_USER_DEPRECATED);
-        return $this->query($query, $params)->result($row, $col);
-    }
-
-
-    /**
-     * Cached version of queryResult()
-     */
-    public function queryResultC($query, $params, $row, $col)
-    {
-        trigger_error('queryResultC() is deprecated in favour of method chaining, eg $sql->cache($query, $params)->result(0, 0)', E_USER_DEPRECATED);
-        return $this->cache($query, $params)->result($row, $col);
     }
 
 

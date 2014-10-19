@@ -56,7 +56,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
         }
 
         # If no style was specified then use the current setting
-        if (!$style) {
+        if ($style === null) {
             $style = $this->fetchStyle;
         }
 
