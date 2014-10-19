@@ -67,18 +67,6 @@ class Result extends AbstractResult
 
 
     /**
-     * Old method of a raw fetch
-     *
-     * @deprecated use fetch(Sql::FETCH_RAW) instead
-     */
-    public function _fetch()
-    {
-        trigger_error('Result::_fetch() is deprecated in favour of using the raw style fetch, eg $result->fetch(Sql::FETCH_RAW)', E_USER_DEPRECATED);
-        return $this->fetch(FETCH_RAW);
-    }
-
-
-    /**
      * Fetch an indiviual value from the result set
      *
      * @param int $row The index of the row to fetch (zero-based)
