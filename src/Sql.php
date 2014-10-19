@@ -1301,7 +1301,23 @@ class Sql
 
             # Convert arrays to use the in helper
             if (is_array($value)) {
-                $value = static::in($value);
+                $helperMap = [
+                    "<"     =>  "lessThan",
+                    "<="    =>  "lessThanOrEqualTo",
+                    ">"     =>  "greaterThan",
+                    ">="    =>  "greaterThanOrEqualTo",
+                    "="     =>  "equals",
+                    "<>"    =>  "notEqualTo",
+                ];
+                $clause = reset($value);
+                if (count($value) === 2 && isset($helperMap[$clause])) {
+                    $method = $helperMap[$clause];
+                    $val = next($value);
+                    trigger_error("Using arrays for complex where clauses is deprecated in favour of the helper methods, eg Sql::" . $method . "(" . $val . ")", E_USER_DEPRECATED);
+                    $value = static::$method($val);
+                } else {
+                    $value = static::in($value);
+                }
             }
 
             # Any parameters not using a helper should use the standard equals helper
