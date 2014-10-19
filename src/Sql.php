@@ -1,61 +1,172 @@
 <?php
-/**
- * Main class that manages connections to SQL servers
- */
 
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 
+/**
+ * Main class that manages connections to SQL servers
+ */
 class Sql
 {
-    const NO_WHERE_CLAUSE   =   101;    # Allow queries to be created without a where cluase
-    const USE_PHP_TIMEZONE  =   102;    # Set the database timezone to be the same as the php one
+    /**
+     * Allow queries to be created without a where cluase
+     */
+    const NO_WHERE_CLAUSE = 101;
 
-    const INSERT_REPLACE    =   103;    # Mysql extension to replace any existing records with a unique key match
-    const INSERT_IGNORE     =   104;    # Mysql extension to ignore any existing records with a unique key match
+    /**
+     * Set the database timezone to be the same as the php one
+     */
+    const USE_PHP_TIMEZONE = 102;
 
-    const TRIGGER_INSERT    =   105;    # A trigger to be run after a successful insert
-    const TRIGGER_UPDATE    =   106;    # A trigger to be run after a successful update
-    const TRIGGER_DELETE    =   107;    # A trigger to be run after a successful delete
+    /**
+     * Mysql extension to replace any existing records with a unique key match
+     */
+    const INSERT_REPLACE = 103;
 
-    const FETCH_ROW         =   108;    # Return rows as an enumerated array (using column numbers)
-    const FETCH_ASSOC       =   109;    # Return rows as an associative array (using field names)
-    const FETCH_GENERATOR   =   110;    # Return a generator of the first 1 or 2 columns
-    const FETCH_RAW         =   111;    # Return the raw row from the database without performing cleanup
+    /**
+     * Mysql extension to ignore any existing records with a unique key match
+     */
+    const INSERT_IGNORE = 104;
 
-    protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
-    protected $options;                 # An array of all the options this object was created with
+    /**
+     * A trigger to be run after a successful insert
+     */
+    const TRIGGER_INSERT = 105;
 
-    public  $mode;                      # The type of database we're connected to
-    public  $server;                    # The connection to the server
+    /**
+     * A trigger to be run after a successful update
+     */
+    const TRIGGER_UPDATE = 106;
 
-    public  $quoteChars;                # The characters used to alias field names
+    /**
+     * A trigger to be run after a successful delete
+     */
+    const TRIGGER_DELETE = 107;
 
-    public  $attached;                  # An array of the sqlite databases that have been attached
+    /**
+     * Return rows as an enumerated array (using column numbers)
+     */
+    const FETCH_ROW = 108;
 
-    public  $tables;                    # An array of tables defined
+    /**
+     * Return rows as an associative array (using field names)
+     */
+    const FETCH_ASSOC = 109;
 
-    public  $allowNulls;                # A flag to indicate whether nulls should be useds or not
+    /**
+     * Return a generator of the first 1 or 2 columns
+     */
+    const FETCH_GENERATOR = 110;
 
-    public  $cacheOptions;              # An array of options to pass when initiating an Cache instance
-    public  $cacheNext;                 # Internal flag to indicate the next query we run should be done using cache
+    /**
+     * Return the raw row from the database without performing cleanup
+     */
+    const FETCH_RAW = 111;
 
-    public  $triggers;                  # An array of triggers that have been registered
+    /**
+     * @var boolean Flag to indicate whether we are connected to the server yet
+     */
+    protected $connected;
 
-    public  $transaction;               # A flag to indicate whether we are currently in transaction mode or not
+    /**
+     * @var array The options this object was created with
+     */
+    protected $options;
 
-    public  $log;                       # Whether we should log errors to disk or not
-    public  $logDir;                    # The directory to log errors to
+    /**
+     * @var string The type of database we're connected to
+     */
+    public $mode;
 
-    public  $output;                    # Whether the class should output queries or not
-    public  $htmlMode;                  # Whether the output should be html or plain text
+    /**
+     * @var resource The connection to the server
+     */
+    public $server;
 
-    private $query;
-    private $params;
-    private $preparedQuery;
+    /**
+     * @var array The characters used to alias field names
+     */
+    public $quoteChars;
 
+    /**
+     * @var array The sqlite databases that have been attached
+     */
+    public $attached;
+
+    /**
+     * @var array The tables that have been defined and which database they are in
+     */
+    public $tables;
+
+    /**
+     * @var boolean A flag to indicate whether nulls should be used or not
+     */
+    public $allowNulls;
+
+    /**
+     * @var array The options to pass when creating an Cache instance object
+     */
+    public $cacheOptions;
+
+    /**
+     * @var boolean When true the next query we run should be done using cache
+     */
+    protected $cacheNext;
+
+    /**
+     * @var array The triggers that have been registered
+     */
+    protected $triggers;
+
+    /**
+     * @var boolean A flag to indicate whether we are currently in transaction mode or not
+     */
+    protected $transaction;
+
+    /**
+     * @var boolean Whether we should log errors to disk or not
+     */
+    public $log;
+
+    /**
+     * @var string The directory to log errors to
+     */
+    public $logDir;
+
+    /**
+     * @var boolean Whether the class should output queries or not
+     */
+    public $output;
+
+    /**
+     * @var boolean Whether the output should be html or plain text
+     */
+    public $htmlMode;
+
+    /**
+     * @var string The query we are currently attempting to run
+     */
+    protected $query;
+
+    /**
+     * @var array The params for the query we are currently attempting to run
+     */
+    protected $params;
+
+    /**
+     * @var string The emulated prepared query we are currently attempting to run
+     */
+    protected $preparedQuery;
+
+    /**
+     * @var array The server definitions that have been registered
+     */
     protected static $servers = [];
+
+    /**
+     * @var array The instances of the class that have previously been created
+     */
     protected static $instances = [];
 
 
