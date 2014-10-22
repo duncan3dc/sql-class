@@ -70,7 +70,7 @@ class Sql extends AbstractSql
     }
 
 
-    public function getError()
+    public function getErrorMessage()
     {
         return pg_last_error($this->server);
     }

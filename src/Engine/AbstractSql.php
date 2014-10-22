@@ -2,6 +2,7 @@
 
 namespace duncan3dc\SqlClass\Engine;
 
+use duncan3dc\SqlClass\Exceptions\QueryException;
 use duncan3dc\SqlClass\Result;
 
 abstract class AbstractSql
@@ -12,6 +13,13 @@ abstract class AbstractSql
     {
         $this->server = $server;
     }
+
+
+    public function getErrorCode()
+    {
+        return QueryException::UNKNOWN_ERROR;
+    }
+
 
     /**
      * Automatically close the connection on destruction
@@ -33,7 +41,7 @@ abstract class AbstractSql
 
     abstract public function quoteValue($string);
 
-    abstract public function getError();
+    abstract public function getErrorMessage();
 
     abstract public function bulkInsert($table, array $params, $extra = null);
 

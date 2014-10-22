@@ -3,6 +3,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Exceptions\QueryException;
 
 /**
  * Main class that manages connections to SQL servers
@@ -773,7 +774,7 @@ class Sql
             $this->logError();
         }
 
-        throw new \Exception($this->getError());
+        throw new QueryException($this->getErrorMessage(), $this->getErrorCode());
     }
 
 
@@ -796,7 +797,8 @@ class Sql
             return;
         }
 
-        fwrite($file, "Error: " . $this->getError() . "\n");
+        fwrite($file, "Error Message: " . $this->getErrorMessage() . "\n");
+        fwrite($file, "Error Code: " . $this->getErrorCode() . "\n");
 
         fwrite($file, "SQL ERROR\n");
         if ($this->query) {
@@ -826,9 +828,15 @@ class Sql
     }
 
 
-    public function getError()
+    public function getErrorCode()
     {
-        return $this->engine->getError();
+        return $this->engine->getErrorCode();
+    }
+
+
+    public function getErrorMessage()
+    {
+        return $this->engine->getErrorMessage();
     }
 
 
