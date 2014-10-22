@@ -99,9 +99,15 @@ class Sql extends AbstractSql
     }
 
 
-    public function getError()
+    public function getErrorCode()
     {
-        return $this->server->lastErrorMsg() . " (" . $this->server->lastErrorCode() . ")";
+        return $this->server->lastErrorCode();
+    }
+
+
+    public function getErrorMessage()
+    {
+        return $this->server->lastErrorMsg();
     }
 
 

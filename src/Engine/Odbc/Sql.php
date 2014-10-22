@@ -60,7 +60,13 @@ class Sql extends AbstractSql
     }
 
 
-    public function getError()
+    public function getErrorCode()
+    {
+        return odbc_error($this->server);
+    }
+
+
+    public function getErrorMessage()
     {
         if ($this->server) {
             return odbc_errormsg($this->server);
