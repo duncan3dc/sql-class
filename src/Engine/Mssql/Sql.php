@@ -51,7 +51,7 @@ class Sql extends AbstractSql
     }
 
 
-    public function getError()
+    public function getErrorMessage()
     {
         return mssql_get_last_message();
     }

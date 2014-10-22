@@ -71,12 +71,22 @@ class Sql extends AbstractSql
     }
 
 
-    public function getError()
+    public function getErrorCode()
     {
         if ($this->server->connect_error) {
-            return $this->server->connect_error . " (" . $this->server->connect_errno . ")";
+            return $this->server->connect_errno;
         } else {
-            return $this->server->error . " (" . $this->server->errno . ")";
+            return $this->server->errno;
+        }
+    }
+
+
+    public function getErrorMessage()
+    {
+        if ($this->server->connect_error) {
+            return $this->server->connect_error;
+        } else {
+            return $this->server->error;
         }
     }
 
