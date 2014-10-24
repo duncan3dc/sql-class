@@ -131,6 +131,8 @@ class Cache extends AbstractResult
 
         $this->cacheTime = time();
 
+        $umask = umask(0);
+
         Json::encodeToFile($this->dir . "/.data", []);
         Json::encodeToFile($this->dir . "/.sorted", []);
 
@@ -150,6 +152,8 @@ class Cache extends AbstractResult
                 break;
             }
         }
+
+        umask($umask);
 
         Json::encodeToFile($this->dir . "/.data", [
             "totalRows"     =>  $rowNum,
