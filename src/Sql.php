@@ -379,7 +379,7 @@ class Sql
 
         # Or as an includable script with a $tables array defined in it
         } else {
-            require($data);
+            require $data;
         }
 
         $this->tables = array_merge($this->tables, $tables);
