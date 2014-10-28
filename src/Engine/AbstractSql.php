@@ -33,9 +33,7 @@ abstract class AbstractSql
 
     abstract public function query($query, array $params, $preparedQuery);
 
-    abstract public function functions(&$query);
-
-    abstract public function limit(&$query);
+    abstract public function changeQuerySyntax($query);
 
     abstract public function quoteTable($table);
 

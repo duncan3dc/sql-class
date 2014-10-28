@@ -93,7 +93,7 @@ class SqlTest extends AbstractTest
     }
 
 
-    public function testFunctions()
+    public function testChangeQuerySyntax1()
     {
         $query = "SELECT IFNULL(field1,0), SUBSTR(field1,5,3) FROM table1";
 
@@ -105,13 +105,13 @@ class SqlTest extends AbstractTest
         ];
         foreach ($modes as $mode => $check) {
             $this->setMode($mode);
-            $this->callProtectedMethod("functions", $query);
+            $this->callProtectedMethod("changeQuerySyntax", $query);
             $this->assertEquals($check, $query);
         }
     }
 
 
-    public function testLimit()
+    public function testChangeQuerySyntax2()
     {
         $modes = [
             "mysql"    =>  ["SELECT * FROM table1 FETCH FIRST 10 ROWS ONLY", "SELECT * FROM table1 \nLIMIT 10\n"],
@@ -122,7 +122,7 @@ class SqlTest extends AbstractTest
         ];
         foreach ($modes as $mode => list($query, $check)) {
             $this->setMode($mode);
-            $this->callProtectedMethod("limit", $query);
+            $this->callProtectedMethod("changeQuerySyntax", $query);
             $this->assertEquals($check, $query);
         }
     }
