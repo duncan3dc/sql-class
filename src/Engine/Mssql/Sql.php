@@ -20,16 +20,11 @@ class Sql extends AbstractSql
     }
 
 
-    public function functions(&$query)
+    public function changeQuerySyntax($query)
     {
         $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
         $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
-    }
-
-
-    public function limit(&$query)
-    {
-        return;
+        return $query;
     }
 
 

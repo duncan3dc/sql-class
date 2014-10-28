@@ -27,16 +27,12 @@ class Sql extends AbstractSql
     }
 
 
-    public function functions(&$query)
+    public function changeQuerySyntax($query)
     {
         $query = preg_replace("/\bISNULL\(/", "IFNULL(", $query);
         $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
-    }
-
-
-    public function limit(&$query)
-    {
         $query = preg_replace("/\bLIMIT\s+([0-9]+)\b/i", "\nFETCH FIRST $1 ROWS ONLY\n", $query);
+        return $query;
     }
 
 

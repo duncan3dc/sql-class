@@ -37,17 +37,13 @@ class Sql extends AbstractSql
     }
 
 
-    public function functions(&$query)
+    public function changeQuerySyntax($query)
     {
         $query = preg_replace("/\bI[FS]NULL\(/", "COALESCE(", $query);
         $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
         $query = preg_replace("/\FROM_UNIXTIME\(([^,\)]+),(\s*)([^\)]+)\)/", "TO_CHAR(ABSTIME($1), $3)", $query);
-    }
-
-
-    public function limit(&$query)
-    {
         $query = preg_replace("/\bFETCH\s+FIRST\s+([0-9]+)\s+ROW(S?)\s+ONLY\b/i", "\nLIMIT $1\n", $query);
+        return $query;
     }
 
 
