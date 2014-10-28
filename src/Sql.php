@@ -459,8 +459,7 @@ class Sql
         }
 
         $this->quoteChars($query);
-        $this->functions($query);
-        $this->limit($query);
+        $this->changeQuerySyntax($query);
         $this->tableNames($query);
         $this->namedParams($query, $params);
         $this->paramArrays($query, $params);
@@ -570,20 +569,11 @@ class Sql
 
 
     /**
-     * Replace any non-standard functions with the appropriate function for the current mode
+     * Replace any non-standard functions with the appropriate function for the current mode.
      */
-    protected function functions(&$query)
+    protected function changeQuerySyntax(&$query)
     {
-        $this->engine->functions($query);
-    }
-
-
-    /**
-     * Convert any limit usage
-     */
-    protected function limit(&$query)
-    {
-        $this->engine->limit($query);
+        $query = $this->engine->changeQuerySyntax($query);
     }
 
 
