@@ -849,7 +849,9 @@ class Sql
             return;
         }
 
-        if (!preg_match("/\?([a-zA-Z0-9]+)/", $query)) {
+        $pattern = "a-zA-Z0-9_";
+
+        if (!preg_match("/\?([" . $pattern . "]+)/", $query)) {
             return;
         }
 
@@ -857,8 +859,8 @@ class Sql
         $params = [];
 
         reset($oldParams);
-        $this->modifyQuery($query, function($part) use(&$params, &$oldParams) {
-            return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/", function($match) use(&$params, &$oldParams) {
+        $this->modifyQuery($query, function($part) use(&$params, &$oldParams, $pattern) {
+            return preg_replace_callback("/\?([" . $pattern . "]*)([^" . $pattern . "]|$)/", function($match) use(&$params, &$oldParams) {
                 if ($key = $match[1]) {
                     $params[] = $oldParams[$key];
                 } else {

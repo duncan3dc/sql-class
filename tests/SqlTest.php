@@ -420,15 +420,15 @@ class SqlTest extends \PHPUnit_Framework_TestCase
                     AND field4='four'";
 
         $query = "SELECT field1 FROM table1 a
-                JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3=?field3 AND b.field4=?field4
-                JOIN table2 b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3=?field3 AND b.field4=?field4
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='?' AND b.field3=?field3 AND b.field4=?field_4
+                JOIN table2 b ON b.field1=a.field1 AND b.field2='test ? test {test2}' AND b.field3=?field3 AND b.field4=?field_4
                 WHERE field1=?field1
                     AND field2=?field2
                     AND field3=?field3
-                    AND field4=?field4";
+                    AND field4=?field_4";
         $params = [
             "field3"    =>  "three",
-            "field4"    =>  "four",
+            "field_4"   =>  "four",
             "field1"    =>  "one",
             "field2"    =>  "two",
         ];
