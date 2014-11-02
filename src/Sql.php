@@ -5,8 +5,8 @@ namespace duncan3dc\SqlClass;
 use duncan3dc\Helpers\Helper;
 use duncan3dc\SqlClass\Engine\ServerInterface;
 use duncan3dc\SqlClass\Exceptions\QueryException;
+use League\Event\Emitter;
 use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
 use Psr\Log\NullLogger;
 
 /**
@@ -119,6 +119,34 @@ class Sql implements LoggerAwareInterface
     protected $transaction;
 
     /**
+<<<<<<< HEAD
+=======
+     * @var Emitter The Emitter class for handling events
+     */
+    protected $emitter;
+
+    /**
+     * @var boolean $log Whether we should log errors to disk or not
+     */
+    public $log;
+
+    /**
+     * @var string $logDir The directory to log errors to
+     */
+    public $logDir;
+
+    /**
+     * @var boolean $output Whether the class should output queries or not
+     */
+    public $output;
+
+    /**
+     * @var boolean $htmlMode Whether the output should be html or plain text
+     */
+    public $htmlMode;
+
+    /**
+>>>>>>> 4ca6497... Add events, using the League\Events package
      * @var string $query The query we are currently attempting to run
      */
     protected $query;
@@ -248,6 +276,8 @@ class Sql implements LoggerAwareInterface
         }
 
         $this->logger = $logger ?: new NullLogger;
+
+        $this->emitter = new Emitter;
 
         # Don't allow nulls by default
         $this->allowNulls = false;
@@ -725,6 +755,8 @@ class Sql implements LoggerAwareInterface
 
     public function update($table, array $set, $where)
     {
+        $this->emitter->emit("update.before", $table, $set, $where);
+
         $tableName = $this->getTableName($table);
 
         $query = "UPDATE " . $tableName . " SET ";
@@ -743,12 +775,16 @@ class Sql implements LoggerAwareInterface
 
         $result = $this->query($query, $params);
 
+        $this->emitter->emit("update.after", $table, $set, $where);
+
         return $result;
     }
 
 
     public function insert($table, array $params, $extra = null)
     {
+        $this->emitter->emit("insert.before", $table, $params);
+
         $tableName = $this->getTableName($table);
 
         $newParams = [];
@@ -775,6 +811,8 @@ class Sql implements LoggerAwareInterface
         $query .= "INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
 
         $result = $this->query($query, $newParams);
+
+        $this->emitter->emit("insert.after", $table, $params);
 
         return $result;
     }
@@ -902,6 +940,8 @@ class Sql implements LoggerAwareInterface
 
     public function delete($table, $where)
     {
+        $this->emitter->emit("delete.before", $table, $where);
+
         $tableName = $this->getTableName($table);
         $params = null;
 
@@ -921,6 +961,8 @@ class Sql implements LoggerAwareInterface
         }
 
         $result = $this->query($query, $params);
+
+        $this->emitter->emit("delete.after", $table, $where);
 
         return $result;
     }
@@ -1283,6 +1325,21 @@ class Sql implements LoggerAwareInterface
     public function unlockTables()
     {
         return $this->engine->unlockTables();
+    }
+
+
+    /**
+     * Add a listener for events from the emitter.
+     *
+     * @param mixed $event The event to listen for
+     * @param mixed $listener The listener to call back
+     *
+     * @return static
+     */
+    public function addListener($event, $listener)
+    {
+        $this->emitter->addListener($event, $listener);
+        return $this;
     }
 
 
