@@ -756,6 +756,7 @@ class Sql implements LoggerAwareInterface
     public function update($table, array $set, $where)
     {
         $this->emitter->emit("update.before", $table, $set, $where);
+        $this->emitter->emit("update.before." . $table, $set, $where);
 
         $tableName = $this->getTableName($table);
 
@@ -776,6 +777,7 @@ class Sql implements LoggerAwareInterface
         $result = $this->query($query, $params);
 
         $this->emitter->emit("update.after", $table, $set, $where);
+        $this->emitter->emit("update.after." . $table, $set, $where);
 
         return $result;
     }
@@ -784,6 +786,7 @@ class Sql implements LoggerAwareInterface
     public function insert($table, array $params, $extra = null)
     {
         $this->emitter->emit("insert.before", $table, $params);
+        $this->emitter->emit("insert.before." . $table, $params);
 
         $tableName = $this->getTableName($table);
 
@@ -813,6 +816,7 @@ class Sql implements LoggerAwareInterface
         $result = $this->query($query, $newParams);
 
         $this->emitter->emit("insert.after", $table, $params);
+        $this->emitter->emit("insert.after." . $table, $params);
 
         return $result;
     }
@@ -941,6 +945,7 @@ class Sql implements LoggerAwareInterface
     public function delete($table, $where)
     {
         $this->emitter->emit("delete.before", $table, $where);
+        $this->emitter->emit("delete.before." . $table, $where);
 
         $tableName = $this->getTableName($table);
         $params = null;
@@ -963,6 +968,7 @@ class Sql implements LoggerAwareInterface
         $result = $this->query($query, $params);
 
         $this->emitter->emit("delete.after", $table, $where);
+        $this->emitter->emit("delete.after." . $table, $where);
 
         return $result;
     }
