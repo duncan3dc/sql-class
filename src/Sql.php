@@ -31,21 +31,6 @@ class Sql
     const INSERT_IGNORE = 104;
 
     /**
-     * A trigger to be run after a successful insert
-     */
-    const TRIGGER_INSERT = 105;
-
-    /**
-     * A trigger to be run after a successful update
-     */
-    const TRIGGER_UPDATE = 106;
-
-    /**
-     * A trigger to be run after a successful delete
-     */
-    const TRIGGER_DELETE = 107;
-
-    /**
      * Return rows as an enumerated array (using column numbers)
      */
     const FETCH_ROW = 108;
@@ -119,11 +104,6 @@ class Sql
      * @var boolean When true the next query we run should be done using cache
      */
     protected $cacheNext;
-
-    /**
-     * @var array The triggers that have been registered
-     */
-    protected $triggers;
 
     /**
      * @var boolean A flag to indicate whether we are currently in transaction mode or not
@@ -285,13 +265,6 @@ class Sql
 
         $this->output = false;
         $this->htmlMode = false;
-
-        # Create the empty triggers array, with each acceptable type
-        $this->triggers = [
-            self::TRIGGER_INSERT => [],
-            self::TRIGGER_UPDATE => [],
-            self::TRIGGER_DELETE => [],
-        ];
 
         # Don't allow nulls by default
         $this->allowNulls = false;
@@ -855,8 +828,6 @@ class Sql
 
         $result = $this->query($query, $params);
 
-        $this->callTriggers(self::TRIGGER_UPDATE, $table, $set, $where);
-
         return $result;
     }
 
@@ -889,8 +860,6 @@ class Sql
         $query .= "INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
 
         $result = $this->query($query, $newParams);
-
-        $this->callTriggers(self::TRIGGER_INSERT, $table, $params);
 
         return $result;
     }
@@ -1033,8 +1002,6 @@ class Sql
         }
 
         $result = $this->query($query, $params);
-
-        $this->callTriggers(self::TRIGGER_DELETE, $table, $where);
 
         return $result;
     }
@@ -1398,51 +1365,6 @@ class Sql
     public function unlockTables()
     {
         return $this->engine->unlockTables();
-    }
-
-
-    /**
-     * Register a trigger to be called when a query is run using one of the built in methods (update/insert/delete)
-     */
-    public function addTrigger($type, $table, callable $trigger)
-    {
-        if (!array_key_exists($type, $this->triggers)) {
-            throw new \Exception("Invalid trigger type specified");
-        }
-
-        $this->triggers[$type][$table][] = $trigger;
-    }
-
-
-    /**
-     * Call any triggers that were previously registered using addTrigger()
-     */
-    protected function callTriggers($type, $table, $params1, $params2 = null)
-    {
-        if (!isset($this->triggers[$type][$table])) {
-            return true;
-        }
-
-        $triggers = $this->triggers[$type][$table];
-
-        if (!is_array($triggers)) {
-            return true;
-        }
-
-        foreach ($triggers as $trigger) {
-            $result = $trigger([
-                "sql"      =>  $this,
-                "type"     =>  $type,
-                "table"    =>  $table,
-                "params1"  =>  $params1,
-                "params2"  =>  $params2,
-            ]);
-            if (!$result) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
 
