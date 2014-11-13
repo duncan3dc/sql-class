@@ -6,7 +6,7 @@ use duncan3dc\Helpers\Helper;
 use duncan3dc\Serial\Json;
 
 /**
- * Cache results on disk to make future queries faster
+ * Cache results on disk to make future queries faster.
  */
 class Cache extends AbstractResult
 {
@@ -14,22 +14,60 @@ class Cache extends AbstractResult
     const HOUR = 3600;
     const DAY = 86400;
 
-    public $sql;            # A reference to an sql class instance to execute the query over
+    /**
+     * @var Sql $sql A reference to an sql class instance to execute the query over
+     */
+    public $sql;
 
-    public $query;          # The query to be executed
-    public $params;         # The parameters to be used in the query
-    public $hash;           # The hash key of the query
+    /**
+     * @var string $query The query to be executed
+     */
+    public $query;
 
-    public $dir;            # The location of the cache storage
+    /**
+     * @var array $params The parameters to be used in the query
+     */
+    public $params;
 
-    protected $totalRows;   # The total number of rows
-    protected $columnCount; # The number of columns in each row
-    protected $rowLimit;    # The maximum number of rows that we permit to cache
+    /**
+     * @var string $hash The hash key of the query
+     */
+    public $hash;
 
-    public  $timeout;       # How long the data should be cached for
-    public  $cacheTime;     # The time that the data was cached at
+    /**
+     * @var string $dir The location of the cache storage
+     */
+    public $dir;
 
-    public  $indexMap;      # An array that maps the row index to it's position in the sorted array
+    /**
+     * @var int $totalRows The total number of rows
+     */
+    protected $totalRows;
+
+    /**
+     * @var int $columnCount The number of columns in each row
+     */
+    protected $columnCount;
+
+    /**
+     * @var int $rowLimit The maximum number of rows that we permit to cache
+     */
+    protected $rowLimit;
+
+    /**
+     * @var int $timeout How long the data should be cached for
+     */
+    public $timeout;
+
+    /**
+     * @var int $cacheTime The time that the data was cached at
+     */
+    public $cacheTime;
+
+    /**
+     * @var array $indexMap Map the row index to it's position in the sorted array
+     */
+    protected $indexMap;
 
 
     public function __construct(array $options = null)
