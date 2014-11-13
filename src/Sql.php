@@ -6,7 +6,8 @@ use duncan3dc\Helpers\Helper;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 
 /**
- * Main class that manages connections to SQL servers
+ * Main class that manages connections to SQL servers.
+ * @method Where in(array $values) in($value1, $value2, ...) Helper method for IN() clauses
  */
 class Sql
 {
@@ -51,107 +52,107 @@ class Sql
     const FETCH_RAW = 111;
 
     /**
-     * @var duncan3dc\SqlClass\Engine\AbstractSql The instance of the engine class handling the abstraction
+     * @var duncan3dc\SqlClass\Engine\AbstractSql $engine The instance of the engine class handling the abstraction
      */
     protected $engine;
 
     /**
-     * @var boolean Flag to indicate whether we are connected to the server yet
+     * @var boolean $connected Flag to indicate whether we are connected to the server yet
      */
     protected $connected;
 
     /**
-     * @var array The options this object was created with
+     * @var array $options The options this object was created with
      */
     protected $options;
 
     /**
-     * @var string The type of database we're connected to
+     * @var string $mode The type of database we're connected to
      */
     public $mode;
 
     /**
-     * @var resource The connection to the server
+     * @var resource $server The connection to the server
      */
     public $server;
 
     /**
-     * @var array The characters used to alias field names
+     * @var array $quoteChars The characters used to alias field names
      */
     public $quoteChars;
 
     /**
-     * @var array The sqlite databases that have been attached
+     * @var array $attached The sqlite databases that have been attached
      */
     public $attached;
 
     /**
-     * @var array The tables that have been defined and which database they are in
+     * @var array $tables The tables that have been defined and which database they are in
      */
     public $tables;
 
     /**
-     * @var boolean A flag to indicate whether nulls should be used or not
+     * @var boolean $allowNulls A flag to indicate whether nulls should be used or not
      */
     public $allowNulls;
 
     /**
-     * @var array The options to pass when creating an Cache instance object
+     * @var array $cacheOptions The options to pass when creating an Cache instance object
      */
     public $cacheOptions;
 
     /**
-     * @var boolean When true the next query we run should be done using cache
+     * @var boolean $cacheNext When true the next query we run should be done using cache
      */
     protected $cacheNext;
 
     /**
-     * @var boolean A flag to indicate whether we are currently in transaction mode or not
+     * @var boolean $transaction A flag to indicate whether we are currently in transaction mode or not
      */
     protected $transaction;
 
     /**
-     * @var boolean Whether we should log errors to disk or not
+     * @var boolean $log Whether we should log errors to disk or not
      */
     public $log;
 
     /**
-     * @var string The directory to log errors to
+     * @var string $logDir The directory to log errors to
      */
     public $logDir;
 
     /**
-     * @var boolean Whether the class should output queries or not
+     * @var boolean $output Whether the class should output queries or not
      */
     public $output;
 
     /**
-     * @var boolean Whether the output should be html or plain text
+     * @var boolean $htmlMode Whether the output should be html or plain text
      */
     public $htmlMode;
 
     /**
-     * @var string The query we are currently attempting to run
+     * @var string $query The query we are currently attempting to run
      */
     protected $query;
 
     /**
-     * @var array The params for the query we are currently attempting to run
+     * @var array $params The params for the query we are currently attempting to run
      */
     protected $params;
 
     /**
-     * @var string The emulated prepared query we are currently attempting to run
+     * @var string $preparedQuery The emulated prepared query we are currently attempting to run
      */
     protected $preparedQuery;
 
     /**
-     * @var array The server definitions that have been registered
+     * @var array $servers The server definitions that have been registered
      */
     protected static $servers = [];
 
     /**
-     * @var array The instances of the class that have previously been created
+     * @var array Sql[] $instances The instances of the class that have previously been created
      */
     protected static $instances = [];
 
@@ -1072,7 +1073,6 @@ class Sql
      */
     public function fieldSelectC($table, $fields, $where, $orderBy = null)
     {
-
         $this->cacheNext = true;
 
         return $this->fieldSelect($table, $fields, $where, $orderBy);
@@ -1391,14 +1391,16 @@ class Sql
     }
 
     /**
-     * Close the sql connection
+     * Close the sql connection.
+     *
+     * @return void
      */
     public function disconnect()
     {
         if (!$this->connected || !$this->server) {
-            return false;
+            return;
         }
 
-        return $this->engine->disconnect();
+        $this->engine->disconnect();
     }
 }

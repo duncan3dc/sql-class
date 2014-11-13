@@ -13,6 +13,9 @@ class In extends AbstractWhere
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getClause()
     {
         if (count($this->values) < 2) {

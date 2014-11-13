@@ -1,10 +1,10 @@
 <?php
-/**
- * Result class for reading rows for a result set
- */
 
 namespace duncan3dc\SqlClass;
 
+/**
+ * Result class for reading rows for a result set.
+ */
 class Result extends AbstractResult
 {
     /**
