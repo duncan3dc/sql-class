@@ -104,6 +104,24 @@ class SqlTest extends \PHPUnit_Framework_TestCase
     }
 
 
+    public function testQuoteTables()
+    {
+        $table = "table-with_extra+characters=in";
+
+        $modes = [
+            "mssql"    =>  "[table-with_extra+characters=in]",
+            "mysql"    =>  "`table-with_extra+characters=in`",
+            "odbc"     =>  "table-with_extra+characters=in",
+            "sqlite"   =>  "`table-with_extra+characters=in`",
+        ];
+        foreach ($modes as $mode => $check) {
+            $this->sql->mode = $mode;
+            $result = $this->callProtectedMethod("getTableName", $table);
+            $this->assertEquals($check, $result);
+        }
+    }
+
+
     public function testFunctions()
     {
         $query = "SELECT IFNULL(field1,0), SUBSTR(field1,5,3) FROM table1";
@@ -149,7 +167,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             "odbc"     =>  ["SELECT * FROM {table1}", "SELECT * FROM test1.table1"],
             "sqlite"   =>  ["SELECT * FROM {table1}
                             LEFT OUTER JOIN {nosuchtable} ON field2a=field1a", "SELECT * FROM `test1`.`table1`
-                            LEFT OUTER JOIN nosuchtable ON field2a=field1a"],
+                            LEFT OUTER JOIN `nosuchtable` ON field2a=field1a"],
         ];
         foreach ($modes as $mode => list($query, $check)) {
             $this->sql->mode = $mode;
