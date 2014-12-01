@@ -306,12 +306,14 @@ class Sql
 
 
     /**
-     * If we have not already connected then connect to the database now
+     * If we have not already connected then connect to the database now.
+     *
+     * @return static
      */
     public function connect()
     {
         if ($this->connected) {
-            return;
+            return $this;
         }
 
         # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
@@ -365,6 +367,8 @@ class Sql
         if (!$this->server) {
             $this->error();
         }
+
+        return $this;
     }
 
 

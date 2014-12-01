@@ -7,7 +7,14 @@ namespace duncan3dc\SqlClass;
 
 abstract class AbstractResult implements \SeekableIterator, \Countable
 {
+    /**
+     * @var int $position The current (zero based) position in the result set
+     */
     protected $position;
+
+    /**
+     * @var int $fetchStyle The current fetch style (one of the Sql::FETCH_ constants)
+     */
     protected $fetchStyle = Sql::FETCH_ASSOC;
 
     /**

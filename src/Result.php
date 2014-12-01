@@ -7,8 +7,15 @@ namespace duncan3dc\SqlClass;
 
 class Result extends AbstractResult
 {
-    public  $result;    # The result resource
-    public  $mode;      # The type of database this result set is for
+    /**
+     * @var resource $result The result resource
+     */
+    public  $result;
+
+    /**
+     * @var string $mode The type of database this result set is for
+     */
+    public  $mode;
 
 
     /**
