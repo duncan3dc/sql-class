@@ -42,6 +42,7 @@ class Cache extends AbstractResult
             "timeout"       =>  static::DAY,
             "limit"         =>  10000,
             "directories"   =>  3,
+            "permissions"   =>  0777,
         ]);
 
         $this->sql = $options["sql"];
@@ -70,7 +71,7 @@ class Cache extends AbstractResult
 
         # Ensure a cache directory exists for this query
         if (!is_dir($this->dir)) {
-            mkdir($this->dir, 0775, true);
+            mkdir($this->dir, $options["permissions"], true);
         }
 
         # If cache doesn't exist for this query then create it now
