@@ -457,7 +457,7 @@ class Sql
                 $table = $this->quoteField($database) . "." . $this->quoteField($name);
             }
         } else {
-            if (strpos(".", $name) === false) {
+            if (strpos($name, ".") === false) {
                 $table = $this->quoteField($name);
             } else {
                 $table = $name;

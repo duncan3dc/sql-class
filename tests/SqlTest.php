@@ -104,7 +104,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testQuoteTables()
+    public function testQuoteTables1()
     {
         $table = "table-with_extra+characters=in";
 
@@ -118,6 +118,17 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             $this->sql->mode = $mode;
             $result = $this->callProtectedMethod("getTableName", $table);
             $this->assertEquals($check, $result);
+        }
+    }
+    public function testQuoteTables2()
+    {
+        $table = "database.table";
+
+        $modes = ["mssql", "mysql", "odbc", "sqlite"];
+        foreach ($modes as $mode) {
+            $this->sql->mode = $mode;
+            $result = $this->callProtectedMethod("getTableName", $table);
+            $this->assertEquals($table, $result);
         }
     }
 
