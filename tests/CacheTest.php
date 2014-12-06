@@ -105,4 +105,30 @@ class CacheTest extends \PHPUnit_Framework_TestCase
         $result->fetchStyle(Sql::FETCH_ROW);
         $this->assertSame("ok", $result->fetch()[1]);
     }
+
+    public function testDirectoryPermissions()
+    {
+        $base = "/tmp/phpunit_cache";
+        $cache = new Cache([
+            "dir"   =>  $base,
+            "sql"   =>  $this->sql,
+            "query" =>  "SELECT " . time() . " FROM table1",
+        ]);
+
+        # Remove the base path for the cache directories path
+        $path = substr($cache->dir, strlen($base) + 1);
+
+        # Break up the path into each directory so we can test them all
+        $dirs = explode("/", $path);
+        array_unshift($dirs, $base);
+
+        $path = "";
+        foreach ($dirs as $dir) {
+            if (strlen($path) > 0) {
+                $path .= "/";
+            }
+            $path .= $dir;
+            $this->assertSame("0777", substr(sprintf("%o", fileperms($path)), -4));
+        }
+    }
 }
