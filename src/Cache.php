@@ -1,13 +1,13 @@
 <?php
-/**
- * Cache results on disk to make future queries faster
- */
 
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Serial\Json;
 
+/**
+ * Cache results on disk to make future queries faster
+ */
 class Cache extends AbstractResult
 {
     const MINUTE = 60;
@@ -36,9 +36,9 @@ class Cache extends AbstractResult
     {
         $options = Helper::getOptions($options, [
             "dir"           =>  "/tmp/query_cache",
-            "sql"           =>  false,
-            "query"         =>  false,
-            "params"        =>  false,
+            "sql"           =>  null,
+            "query"         =>  null,
+            "params"        =>  null,
             "timeout"       =>  static::DAY,
             "limit"         =>  10000,
             "directories"   =>  3,
@@ -61,17 +61,41 @@ class Cache extends AbstractResult
          * so this reduces that problem by spliting the cache directories into subdirectories
          */
         $this->dir = $options["dir"] . "/";
+        $directories = [];
         for ($i = 0; $i < $options["directories"]; $i++) {
-            $this->dir .= $this->hash[$i] . "/";
+            if (!$dir = substr($this->hash, $i, 1)) {
+                break;
+            }
+            $this->dir .= $dir . "/";
+            $directories[] = $dir;
         }
         $this->dir .= $this->hash;
+        $directories[] = $this->hash;
 
         $this->timeout = $options["timeout"];
         $this->rowLimit = round($options["limit"]);
 
         # Ensure a cache directory exists for this query
         if (!is_dir($this->dir)) {
-            mkdir($this->dir, $options["permissions"], true);
+
+            # Ensure the base directory exists
+            if (!is_dir($options["dir"])) {
+                mkdir($options["dir"], 0777, true);
+                chmod($options["dir"], $options["permissions"]);
+            }
+
+            /**
+             * We can't use the recursive feature of mkdir(), as it's permissions handling is affected by umask().
+             * So we create each directory individually and set the permissions using chmod().
+             */
+            $path = $options["dir"];
+            foreach ($directories as $dir) {
+                $path .= "/" . $dir;
+                if (!is_dir($path)) {
+                    mkdir($path);
+                    chmod($path, $options["permissions"]);
+                }
+            }
         }
 
         # If cache doesn't exist for this query then create it now
