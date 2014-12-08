@@ -168,7 +168,9 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
      */
     final public function rewind()
     {
-        $this->seek(0);
+        if ($this->position > 0) {
+            $this->seek(0);
+        }
     }
 
 
