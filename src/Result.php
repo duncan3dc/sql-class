@@ -166,7 +166,7 @@ class Result extends AbstractResult
             case "sqlite":
                 $this->result->reset();
                 for ($i = 0; $i < $row; $i++) {
-                    $this->fetch($this->result);
+                    $this->result->fetchArray();
                 }
                 break;
 
@@ -204,14 +204,14 @@ class Result extends AbstractResult
 
             case "sqlite":
                 $rows = 0;
-                while ($this->fetch()) {
+                while ($this->result->fetchArray()) {
                     $rows++;
                 }
-                $this->result->reset();
+                $this->seek($this->position);
                 break;
 
             case "mssql":
-                $columns = mssql_num_rows($this->result);
+                $rows = mssql_num_rows($this->result);
                 break;
         }
 
