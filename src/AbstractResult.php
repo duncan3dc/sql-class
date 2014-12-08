@@ -179,8 +179,21 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
      */
     final public function valid()
     {
-        $current = $this->fetch();
-        $this->seek($this->position - 1);
-        return is_array($current);
+        /**
+         * Fetching is the most reliable way to check if we have a valid row.
+         * Other methods were attempted, such as checking the current position against the result set count,
+         * but sqlite lets us down here as the driver doesn't support count, so we have to fetch which screws everything up
+         */
+        $current = $this->getNextRow();
+
+        # If we found a record, then seek back so that it can be fetched
+        if (is_array($current)) {
+            $this->seek($this->position - 1);
+            return true;
+
+        # If we didn't find a record then just return false
+        } else {
+            return false;
+        }
     }
 }
