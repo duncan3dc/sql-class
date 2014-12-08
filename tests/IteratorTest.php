@@ -2,7 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
-class ResultTest extends \PHPUnit_Framework_TestCase
+class IteratorTest extends \PHPUnit_Framework_TestCase
 {
     private $sql;
 
@@ -38,81 +38,85 @@ class ResultTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testCount()
+    public function testWithOneRow()
+    {
+        $this->sql->insert("table1", ["field1" => "row1"]);
+
+        $counter = 0;
+        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(1, $counter);
+    }
+
+
+    public function testWithTwoRows()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
         $this->sql->insert("table1", ["field1" => "row2"]);
 
+        $counter = 0;
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame(2, $result->count());
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(2, $counter);
     }
 
 
-    public function testColumnCount()
+    public function testWithZeroRows()
     {
+        $counter = 0;
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame(2, $result->columnCount());
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(0, $counter);
     }
 
 
-    public function testFetchAssoc1()
-    {
-        $this->sql->insert("table1", ["field1" => "row1"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("row1", $result->fetch()["field1"]);
-    }
-
-    public function testFetchAssoc2()
-    {
-        $this->sql->insert("table1", ["field1" => "row1"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("row1", $result->fetch(Sql::FETCH_ASSOC)["field1"]);
-    }
-
-    public function testFetchAssoc3()
+    public function testMultipleLoopsWithOneRow()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
+
+        $counter = 0;
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $result->fetchStyle(Sql::FETCH_ASSOC);
-        $this->assertSame("row1", $result->fetch()["field1"]);
+        foreach ($result as $null) {
+        }
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(1, $counter);
     }
 
 
-    public function testFetchRow1()
+    public function testMultipleLoopsWithTwoRows()
     {
         $this->sql->insert("table1", ["field1" => "row1"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("row1", $result->fetch(true)[0]);
-    }
+        $this->sql->insert("table1", ["field1" => "row2"]);
 
-    public function testFetchRow2()
-    {
-        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok "]);
+        $counter = 0;
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("ok", $result->fetch(1)[1]);
-    }
-
-    public function testFetchRow3()
-    {
-        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("ok", $result->fetch(Sql::FETCH_ROW)[1]);
-    }
-
-    public function testFetchRow4()
-    {
-        $this->sql->insert("table1", ["field1" => "row1", "field2" => "ok"]);
-        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $result->fetchStyle(Sql::FETCH_ROW);
-        $this->assertSame("ok", $result->fetch()[1]);
+        foreach ($result as $null) {
+        }
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(2, $counter);
     }
 
 
-    public function testFetchRaw()
+    public function testMultipleLoopsWithZeroRows()
     {
-        $this->sql->insert("table1", ["field1" => "row1 "]);
+        $counter = 0;
         $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
-        $this->assertSame("row1 ", $result->fetch(Sql::FETCH_RAW)["field1"]);
+        foreach ($result as $null) {
+        }
+        foreach ($result as $null) {
+            $counter++;
+        }
+        $this->assertSame(0, $counter);
     }
 
 
