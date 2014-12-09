@@ -124,4 +124,36 @@ class WhereTest extends SqlTest
             "field1"    =>  Sql::in(["one"]),
         ]);
     }
+
+
+    public function testNotIn1()
+    {
+        $this->checkQueryParams("`field1` NOT IN (?, ?) ", [
+            "field1"    =>  Sql::notIn("one", "two"),
+        ]);
+    }
+
+
+    public function testNotIn2()
+    {
+        $this->checkQueryParams("`field1` NOT IN (?, ?) ", [
+            "field1"    =>  Sql::notIn(["one", "two"]),
+        ]);
+    }
+
+
+    public function testNotIn3()
+    {
+        $this->checkQueryParams("`field1` <> ? ", [
+            "field1"    =>  Sql::notIn("one"),
+        ]);
+    }
+
+
+    public function testNotIn4()
+    {
+        $this->checkQueryParams("`field1` <> ? ", [
+            "field1"    =>  Sql::notIn(["one"]),
+        ]);
+    }
 }
