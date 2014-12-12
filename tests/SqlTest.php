@@ -9,10 +9,17 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     public function __construct()
     {
+        $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
+        if (file_exists($database)) {
+            unlink($database);
+        }
+
         $this->sql = new \duncan3dc\SqlClass\Sql([
             "mode"      =>  "sqlite",
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);
+
+        $this->sql->attachDatabase($database, "test1");
 
         $this->sql->definitions([
             "table1"    =>  "test1",
@@ -20,6 +27,8 @@ class SqlTest extends \PHPUnit_Framework_TestCase
         ]);
 
         $this->sql->connect();
+
+        $this->sql->query("CREATE TABLE test1.table1 (field1 VARCHAR(10), field2 INT)");
     }
 
 
@@ -510,5 +519,31 @@ class SqlTest extends \PHPUnit_Framework_TestCase
         $args = [&$where, &$null];
         $query = $this->callProtectedMethod("where", $args);
         $this->assertEquals($check, $query);
+    }
+
+
+    public function testExists1()
+    {
+        $this->sql->mode = "sqlite";
+
+        $table = "table1";
+        $params = ["field1" => "row1"];
+
+        $this->sql->insert($table, $params);
+
+        $this->assertEquals(true, $this->sql->exists($table, $params));
+    }
+
+
+    public function testExists2()
+    {
+        $this->sql->mode = "sqlite";
+
+        $table = "table1";
+        $params = ["field1" => "row1"];
+
+        $this->sql->delete($table, $params);
+
+        $this->assertEquals(false, $this->sql->exists($table, $params));
     }
 }

@@ -1626,6 +1626,20 @@ class Sql
 
 
     /**
+     * Check if a record exists without fetching any data from it.
+     *
+     * @param string $table The table name to fetch from
+     * @param array|int $where The where clause to use, or the NO_WHERE_CLAUSE constant
+     *
+     * @return boolean Whether a matching row exists in the table or not
+     */
+    public function exists($table, $where)
+    {
+        return (bool) $this->fieldSelect($table, "1", $where);
+    }
+
+
+    /**
      * Insert a new record into a table, unless it already exists in which case update it
      */
     public function insertOrUpdate($table, array $set, array $where)
