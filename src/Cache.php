@@ -39,7 +39,7 @@ class Cache extends AbstractResult
             "sql"           =>  null,
             "query"         =>  null,
             "params"        =>  null,
-            "timeout"       =>  static::DAY,
+            "timeout"       =>  self::DAY,
             "limit"         =>  10000,
             "directories"   =>  3,
             "permissions"   =>  0777,

@@ -280,9 +280,9 @@ class Sql
 
         # Create the empty triggers array, with each acceptable type
         $this->triggers = [
-            static::TRIGGER_INSERT => [],
-            static::TRIGGER_UPDATE => [],
-            static::TRIGGER_DELETE => [],
+            self::TRIGGER_INSERT => [],
+            self::TRIGGER_UPDATE => [],
+            self::TRIGGER_DELETE => [],
         ];
 
         # Don't allow nulls by default
@@ -330,7 +330,7 @@ class Sql
                     $this->server->set_charset($this->options["charset"]);
                 }
                 if ($timezone = $this->options["timezone"]) {
-                    if ($timezone == static::USE_PHP_TIMEZONE) {
+                    if ($timezone === self::USE_PHP_TIMEZONE) {
                         $timezone = ini_get("date.timezone");
                     }
                     $this->query("SET time_zone='" . $timezone . "'");
@@ -700,7 +700,7 @@ class Sql
             $match = preg_quote($oldFrom) . "([^" . preg_quote($oldTo) . "]*)" . preg_quote($oldTo);
 
             # If we've already checked this regex then don't check it again
-            if (in_array($match, $checked)) {
+            if (in_array($match, $checked, true)) {
                 continue;
             }
             $checked[] = $match;
@@ -948,7 +948,7 @@ class Sql
                         }
 
                         # Postgres does it's own quoting
-                        if (!in_array($this->mode, ["postgres", "redshift"])) {
+                        if (!in_array($this->mode, ["postgres", "redshift"], true)) {
                             $value = "'" . $value . "'";
                         }
                         break;
@@ -1093,13 +1093,13 @@ class Sql
 
         $query = substr($query, 0, -1) . " ";
 
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
         $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_UPDATE, $table, $set, $where);
+        $this->callTriggers(self::TRIGGER_UPDATE, $table, $set, $where);
 
         return $result;
     }
@@ -1123,9 +1123,9 @@ class Sql
             $newParams[] = $val;
         }
 
-        if ($extra == static::INSERT_REPLACE) {
+        if ($extra === self::INSERT_REPLACE) {
             $query = "REPLACE ";
-        } elseif ($extra == static::INSERT_IGNORE) {
+        } elseif ($extra === self::INSERT_IGNORE) {
             $query = "INSERT IGNORE ";
         } else {
             $query = "INSERT ";
@@ -1134,7 +1134,7 @@ class Sql
 
         $result = $this->query($query, $newParams);
 
-        $this->callTriggers(static::TRIGGER_INSERT, $table, $params);
+        $this->callTriggers(self::TRIGGER_INSERT, $table, $params);
 
         return $result;
     }
@@ -1195,9 +1195,9 @@ class Sql
                 }
 
                 $tableName = $this->getTableName($table);
-                if ($extra == static::INSERT_REPLACE) {
+                if ($extra === self::INSERT_REPLACE) {
                     $query = "REPLACE ";
-                } elseif ($extra == static::INSERT_IGNORE) {
+                } elseif ($extra === self::INSERT_IGNORE) {
                     $query = "INSERT IGNORE ";
                 } else {
                     $query = "INSERT ";
@@ -1390,19 +1390,19 @@ class Sql
          * Not all engines support this though, so we have to check which mode we are in
          * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
          */
-        if ($where == static::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"])) {
+        if ($where === self::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"], true)) {
             $query = "TRUNCATE TABLE " . $tableName;
         } else {
             $query = "DELETE FROM " . $tableName . " ";
 
-            if ($where != static::NO_WHERE_CLAUSE) {
+            if ($where !== self::NO_WHERE_CLAUSE) {
                 $query .= "WHERE " . $this->where($where, $params);
             }
         }
 
         $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_DELETE, $table, $where);
+        $this->callTriggers(self::TRIGGER_DELETE, $table, $where);
 
         return $result;
     }
@@ -1529,7 +1529,7 @@ class Sql
         $query .= " FROM " . $table . " ";
 
         $params = null;
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
@@ -1602,7 +1602,7 @@ class Sql
         $query .= " FROM " . $table . " ";
 
         $params = null;
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
@@ -1723,7 +1723,7 @@ class Sql
         $table = trim($table);
 
         # There is a standard function for quoting postgres table names
-        if (in_array($this->mode, ["postgres", "redshift"])) {
+        if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $this->connect();
             return pg_escape_identifier($this->server, $table);
         }
@@ -1966,7 +1966,7 @@ class Sql
             return $this->query($query);
         }
 
-        if (in_array($this->mode, ["postgres", "redshift"])) {
+        if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $query = "LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE";
             return $this->query($query);
         }
