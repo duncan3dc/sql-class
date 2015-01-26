@@ -1,65 +1,176 @@
 <?php
-/**
- * Main class that manages connections to SQL servers
- */
 
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 
+/**
+ * Main class that manages connections to SQL servers
+ */
 class Sql
 {
-    const NO_WHERE_CLAUSE   =   101;    # Allow queries to be created without a where cluase
-    const USE_PHP_TIMEZONE  =   102;    # Set the database timezone to be the same as the php one
+    /**
+     * Allow queries to be created without a where cluase
+     */
+    const NO_WHERE_CLAUSE = 101;
 
-    const INSERT_REPLACE    =   103;    # Mysql extension to replace any existing records with a unique key match
-    const INSERT_IGNORE     =   104;    # Mysql extension to ignore any existing records with a unique key match
+    /**
+     * Set the database timezone to be the same as the php one
+     */
+    const USE_PHP_TIMEZONE = 102;
 
-    const TRIGGER_INSERT    =   105;    # A trigger to be run after a successful insert
-    const TRIGGER_UPDATE    =   106;    # A trigger to be run after a successful update
-    const TRIGGER_DELETE    =   107;    # A trigger to be run after a successful delete
+    /**
+     * Mysql extension to replace any existing records with a unique key match
+     */
+    const INSERT_REPLACE = 103;
 
-    const FETCH_ROW         =   108;    # Return rows as an enumerated array (using column numbers)
-    const FETCH_ASSOC       =   109;    # Return rows as an associative array (using field names)
-    const FETCH_GENERATOR   =   110;    # Return a generator of the first 1 or 2 columns
-    const FETCH_RAW         =   111;    # Return the raw row from the database without performing cleanup
+    /**
+     * Mysql extension to ignore any existing records with a unique key match
+     */
+    const INSERT_IGNORE = 104;
 
-    protected $connected;               # An internal boolean flag to indicate whether we are connected to the server yet
-    protected $options;                 # An array of all the options this object was created with
+    /**
+     * A trigger to be run after a successful insert
+     */
+    const TRIGGER_INSERT = 105;
 
-    public  $mode;                      # The type of database we're connected to
-    public  $server;                    # The connection to the server
+    /**
+     * A trigger to be run after a successful update
+     */
+    const TRIGGER_UPDATE = 106;
 
-    public  $quoteChars;                # The characters used to alias field names
+    /**
+     * A trigger to be run after a successful delete
+     */
+    const TRIGGER_DELETE = 107;
 
-    public  $attached;                  # An array of the sqlite databases that have been attached
+    /**
+     * Return rows as an enumerated array (using column numbers)
+     */
+    const FETCH_ROW = 108;
 
-    public  $tables;                    # An array of tables defined
+    /**
+     * Return rows as an associative array (using field names)
+     */
+    const FETCH_ASSOC = 109;
 
-    public  $allowNulls;                # A flag to indicate whether nulls should be useds or not
+    /**
+     * Return a generator of the first 1 or 2 columns
+     */
+    const FETCH_GENERATOR = 110;
 
-    public  $cacheOptions;              # An array of options to pass when initiating an Cache instance
-    public  $cacheNext;                 # Internal flag to indicate the next query we run should be done using cache
+    /**
+     * Return the raw row from the database without performing cleanup
+     */
+    const FETCH_RAW = 111;
 
-    public  $triggers;                  # An array of triggers that have been registered
+    /**
+     * @var boolean Flag to indicate whether we are connected to the server yet
+     */
+    protected $connected;
 
-    public  $transaction;               # A flag to indicate whether we are currently in transaction mode or not
+    /**
+     * @var array The options this object was created with
+     */
+    protected $options;
 
-    public  $log;                       # Whether we should log errors to disk or not
-    public  $logDir;                    # The directory to log errors to
+    /**
+     * @var string The type of database we're connected to
+     */
+    public $mode;
 
-    public  $output;                    # Whether the class should output queries or not
-    public  $htmlMode;                  # Whether the output should be html or plain text
+    /**
+     * @var resource The connection to the server
+     */
+    public $server;
 
-    private $query;
-    private $params;
-    private $preparedQuery;
+    /**
+     * @var array The characters used to alias field names
+     */
+    public $quoteChars;
 
+    /**
+     * @var array The sqlite databases that have been attached
+     */
+    public $attached;
+
+    /**
+     * @var array The tables that have been defined and which database they are in
+     */
+    public $tables;
+
+    /**
+     * @var boolean A flag to indicate whether nulls should be used or not
+     */
+    public $allowNulls;
+
+    /**
+     * @var array The options to pass when creating an Cache instance object
+     */
+    public $cacheOptions;
+
+    /**
+     * @var boolean When true the next query we run should be done using cache
+     */
+    protected $cacheNext;
+
+    /**
+     * @var array The triggers that have been registered
+     */
+    protected $triggers;
+
+    /**
+     * @var boolean A flag to indicate whether we are currently in transaction mode or not
+     */
+    protected $transaction;
+
+    /**
+     * @var boolean Whether we should log errors to disk or not
+     */
+    public $log;
+
+    /**
+     * @var string The directory to log errors to
+     */
+    public $logDir;
+
+    /**
+     * @var boolean Whether the class should output queries or not
+     */
+    public $output;
+
+    /**
+     * @var boolean Whether the output should be html or plain text
+     */
+    public $htmlMode;
+
+    /**
+     * @var string The query we are currently attempting to run
+     */
+    protected $query;
+
+    /**
+     * @var array The params for the query we are currently attempting to run
+     */
+    protected $params;
+
+    /**
+     * @var string The emulated prepared query we are currently attempting to run
+     */
+    protected $preparedQuery;
+
+    /**
+     * @var array The server definitions that have been registered
+     */
     protected static $servers = [];
+
+    /**
+     * @var array The instances of the class that have previously been created
+     */
     protected static $instances = [];
 
 
-    static function addServer($server, array $options)
+    public static function addServer($server, array $options)
     {
         if (!$server) {
             throw new \Exception("No name specified for the server to add");
@@ -73,7 +184,7 @@ class Sql
     }
 
 
-    static function getInstance($server = null)
+    public static function getInstance($server = null)
     {
 
         # If no server was specified then default to the first one defined
@@ -89,7 +200,7 @@ class Sql
     }
 
 
-    static function getNewInstance($server)
+    public static function getNewInstance($server)
     {
         if (!array_key_exists($server, static::$servers)) {
             throw new \Exception("Unknown SQL Server (" . $server . ")");
@@ -169,9 +280,9 @@ class Sql
 
         # Create the empty triggers array, with each acceptable type
         $this->triggers = [
-            static::TRIGGER_INSERT => [],
-            static::TRIGGER_UPDATE => [],
-            static::TRIGGER_DELETE => [],
+            self::TRIGGER_INSERT => [],
+            self::TRIGGER_UPDATE => [],
+            self::TRIGGER_DELETE => [],
         ];
 
         # Don't allow nulls by default
@@ -195,12 +306,14 @@ class Sql
 
 
     /**
-     * If we have not already connected then connect to the database now
+     * If we have not already connected then connect to the database now.
+     *
+     * @return static
      */
     public function connect()
     {
         if ($this->connected) {
-            return;
+            return $this;
         }
 
         # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
@@ -217,7 +330,7 @@ class Sql
                     $this->server->set_charset($this->options["charset"]);
                 }
                 if ($timezone = $this->options["timezone"]) {
-                    if ($timezone == static::USE_PHP_TIMEZONE) {
+                    if ($timezone === self::USE_PHP_TIMEZONE) {
                         $timezone = ini_get("date.timezone");
                     }
                     $this->query("SET time_zone='" . $timezone . "'");
@@ -254,6 +367,8 @@ class Sql
         if (!$this->server) {
             $this->error();
         }
+
+        return $this;
     }
 
 
@@ -268,7 +383,7 @@ class Sql
 
         # Or as an includable script with a $tables array defined in it
         } else {
-            require($data);
+            require $data;
         }
 
         $this->tables = array_merge($this->tables, $tables);
@@ -342,7 +457,11 @@ class Sql
                 $table = $this->quoteField($database) . "." . $this->quoteField($name);
             }
         } else {
-            $table = $name;
+            if (strpos($name, ".") === false) {
+                $table = $this->quoteField($name);
+            } else {
+                $table = $name;
+            }
         }
 
         return $table;
@@ -581,7 +700,7 @@ class Sql
             $match = preg_quote($oldFrom) . "([^" . preg_quote($oldTo) . "]*)" . preg_quote($oldTo);
 
             # If we've already checked this regex then don't check it again
-            if (in_array($match, $checked)) {
+            if (in_array($match, $checked, true)) {
                 continue;
             }
             $checked[] = $match;
@@ -738,7 +857,9 @@ class Sql
             return;
         }
 
-        if (!preg_match("/\?([a-zA-Z0-9]+)/", $query)) {
+        $pattern = "a-zA-Z0-9_";
+
+        if (!preg_match("/\?([" . $pattern . "]+)/", $query)) {
             return;
         }
 
@@ -746,8 +867,8 @@ class Sql
         $params = [];
 
         reset($oldParams);
-        $this->modifyQuery($query, function($part) use(&$params, &$oldParams) {
-            return preg_replace_callback("/\?([a-zA-Z0-9]*)([^a-zA-Z0-9]|$)/", function($match) use(&$params, &$oldParams) {
+        $this->modifyQuery($query, function($part) use(&$params, &$oldParams, $pattern) {
+            return preg_replace_callback("/\?([" . $pattern . "]*)([^" . $pattern . "]|$)/", function($match) use(&$params, &$oldParams) {
                 if ($key = $match[1]) {
                     $params[] = $oldParams[$key];
                 } else {
@@ -827,7 +948,7 @@ class Sql
                         }
 
                         # Postgres does it's own quoting
-                        if (!in_array($this->mode, ["postgres", "redshift"])) {
+                        if (!in_array($this->mode, ["postgres", "redshift"], true)) {
                             $value = "'" . $value . "'";
                         }
                         break;
@@ -972,13 +1093,13 @@ class Sql
 
         $query = substr($query, 0, -1) . " ";
 
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
         $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_UPDATE, $table, $set, $where);
+        $this->callTriggers(self::TRIGGER_UPDATE, $table, $set, $where);
 
         return $result;
     }
@@ -1002,9 +1123,9 @@ class Sql
             $newParams[] = $val;
         }
 
-        if ($extra == static::INSERT_REPLACE) {
+        if ($extra === self::INSERT_REPLACE) {
             $query = "REPLACE ";
-        } elseif ($extra == static::INSERT_IGNORE) {
+        } elseif ($extra === self::INSERT_IGNORE) {
             $query = "INSERT IGNORE ";
         } else {
             $query = "INSERT ";
@@ -1013,7 +1134,7 @@ class Sql
 
         $result = $this->query($query, $newParams);
 
-        $this->callTriggers(static::TRIGGER_INSERT, $table, $params);
+        $this->callTriggers(self::TRIGGER_INSERT, $table, $params);
 
         return $result;
     }
@@ -1074,9 +1195,9 @@ class Sql
                 }
 
                 $tableName = $this->getTableName($table);
-                if ($extra == static::INSERT_REPLACE) {
+                if ($extra === self::INSERT_REPLACE) {
                     $query = "REPLACE ";
-                } elseif ($extra == static::INSERT_IGNORE) {
+                } elseif ($extra === self::INSERT_IGNORE) {
                     $query = "INSERT IGNORE ";
                 } else {
                     $query = "INSERT ";
@@ -1176,7 +1297,7 @@ class Sql
 
         $andFlag = false;
 
-        foreach ($where as $key => $val) {
+        foreach ($where as $field => $value) {
 
             # Add the and flag if this isn't the first field
             if ($andFlag) {
@@ -1186,37 +1307,37 @@ class Sql
             }
 
             # Add the field name to the query
-            $query .= $this->quoteField($key);
+            $query .= $this->quoteField($field);
 
-            # If the value is not an array then use a standard comparison
-            if (!is_array($val)) {
-                $query .= "=? ";
-                $params[] = $val;
-
-            # Special processing for arrays
-            } else {
-                $first = reset($val);
-                $second = next($val);
-
-                # If the array is only one element (or no elements) then just use it as a regular value
-                if (count($val) < 2) {
-                    $query .= "=? ";
-                    $params[] = $first;
-
-                # If the array is only two elements long and the first element is a valid comparison operator then use it as such
-                } elseif (count($val) == 2 && in_array($first, ["<", "<=", ">", ">=", "=", "<>"], true)) {
-                    $query .= $first . "? ";
-                    $params[] = $second;
-
-                # Otherwise treat the array as a set of values for an IN()
+            # Convert arrays to use the in helper
+            if (is_array($value)) {
+                $helperMap = [
+                    "<"     =>  "lessThan",
+                    "<="    =>  "lessThanOrEqualTo",
+                    ">"     =>  "greaterThan",
+                    ">="    =>  "greaterThanOrEqualTo",
+                    "="     =>  "equals",
+                    "<>"    =>  "notEqualTo",
+                ];
+                $clause = reset($value);
+                if (count($value) === 2 && isset($helperMap[$clause])) {
+                    $method = $helperMap[$clause];
+                    $val = next($value);
+                    trigger_error("Using arrays for complex where clauses is deprecated in favour of the helper methods, eg Sql::" . $method . "(" . $val . ")", E_USER_DEPRECATED);
+                    $value = static::$method($val);
                 } else {
-                    $markers = [];
-                    foreach ($val as $v) {
-                        $markers[] = "?";
-                        $params[] = $v;
-                    }
-                    $query .= " IN(" . implode(",", $markers) . ") ";
+                    $value = static::in($value);
                 }
+            }
+
+            # Any parameters not using a helper should use the standard equals helper
+            if (!is_object($value)) {
+                $value = static::equals($value);
+            }
+
+            $query .= " " . $value->getClause() . " ";
+            foreach ($value->getValues() as $val) {
+                $params[] = $val;
             }
         }
 
@@ -1269,19 +1390,19 @@ class Sql
          * Not all engines support this though, so we have to check which mode we are in
          * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
          */
-        if ($where == static::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"])) {
+        if ($where === self::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"], true)) {
             $query = "TRUNCATE TABLE " . $tableName;
         } else {
             $query = "DELETE FROM " . $tableName . " ";
 
-            if ($where != static::NO_WHERE_CLAUSE) {
+            if ($where !== self::NO_WHERE_CLAUSE) {
                 $query .= "WHERE " . $this->where($where, $params);
             }
         }
 
         $result = $this->query($query, $params);
 
-        $this->callTriggers(static::TRIGGER_DELETE, $table, $where);
+        $this->callTriggers(self::TRIGGER_DELETE, $table, $where);
 
         return $result;
     }
@@ -1408,7 +1529,7 @@ class Sql
         $query .= " FROM " . $table . " ";
 
         $params = null;
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
@@ -1481,7 +1602,7 @@ class Sql
         $query .= " FROM " . $table . " ";
 
         $params = null;
-        if ($where != static::NO_WHERE_CLAUSE) {
+        if ($where !== self::NO_WHERE_CLAUSE) {
             $query .= "WHERE " . $this->where($where, $params);
         }
 
@@ -1501,6 +1622,20 @@ class Sql
         $this->cacheNext = true;
 
         return $this->fieldSelectAll($table, $fields, $where, $orderBy);
+    }
+
+
+    /**
+     * Check if a record exists without fetching any data from it.
+     *
+     * @param string $table The table name to fetch from
+     * @param array|int $where The where clause to use, or the NO_WHERE_CLAUSE constant
+     *
+     * @return boolean Whether a matching row exists in the table or not
+     */
+    public function exists($table, $where)
+    {
+        return (bool) $this->fieldSelect($table, "1", $where);
     }
 
 
@@ -1602,7 +1737,7 @@ class Sql
         $table = trim($table);
 
         # There is a standard function for quoting postgres table names
-        if (in_array($this->mode, ["postgres", "redshift"])) {
+        if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $this->connect();
             return pg_escape_identifier($this->server, $table);
         }
@@ -1845,7 +1980,7 @@ class Sql
             return $this->query($query);
         }
 
-        if (in_array($this->mode, ["postgres", "redshift"])) {
+        if (in_array($this->mode, ["postgres", "redshift"], true)) {
             $query = "LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE";
             return $this->query($query);
         }
@@ -2004,6 +2139,15 @@ class Sql
         return $views;
     }
 
+
+    public static function __callStatic($method, $params)
+    {
+        $class = __NAMESPACE__ . "\\Where\\" . ucfirst($method);
+        if (class_exists($class)) {
+            return new $class(...$params);
+        }
+        throw new \Exception("Invalid method: " . $method);
+    }
 
     /**
      * Close the sql connection
