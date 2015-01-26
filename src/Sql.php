@@ -1063,7 +1063,11 @@ class Sql
                 break;
 
             case "odbc":
-                $errorMsg = odbc_errormsg($this->server);
+                if ($this->server) {
+                    $errorMsg = odbc_errormsg($this->server);
+                } else {
+                    $errorMsg = odbc_errormsg();
+                }
                 break;
 
             case "sqlite":
