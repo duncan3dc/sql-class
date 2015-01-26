@@ -3,10 +3,11 @@ sql-class
 
 A simple database abstraction layer, with an on disk caching facility.  
 
-Class documentation available at http://duncan3dc.github.io/sql-class/  
+Full documentation is available at http://duncan3dc.github.io/sql-class/  
+PHPDoc API documentation is also available at [http://duncan3dc.github.io/sql-class/api/](http://duncan3dc.github.io/sql-class/api/namespaces/duncan3dc.SqlClass.html)  
 
-[![Build Status](https://travis-ci.org/duncan3dc/sql-class.svg?branch=master)](https://travis-ci.org/duncan3dc/sql-class)
-[![Latest Stable Version](https://poser.pugx.org/duncan3dc/sql-class/version.svg)](https://packagist.org/packages/duncan3dc/sql-class)
+[![Build Status](https://img.shields.io/travis/duncan3dc/sql-class.svg)](https://travis-ci.org/duncan3dc/sql-class)
+[![Latest Version](https://img.shields.io/packagist/v/duncan3dc/sql-class.svg)](https://packagist.org/packages/duncan3dc/sql-class)
 
 
 Examples
