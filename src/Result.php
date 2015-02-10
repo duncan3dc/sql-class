@@ -80,7 +80,9 @@ class Result extends AbstractResult
 
         $value = $this->engine->result($row, $col);
 
-        $value = rtrim($value);
+        if (is_string($value)) {
+            $value = rtrim($value);
+        }
 
         return $value;
     }
