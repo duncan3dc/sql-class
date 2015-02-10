@@ -15,6 +15,7 @@ class Sql extends AbstractSql
         if ($server->connect_error) {
             $this->error();
         }
+        $server->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
         if ($options["charset"]) {
             $server->set_charset($options["charset"]);
         }
