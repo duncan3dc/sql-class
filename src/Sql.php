@@ -186,9 +186,11 @@ class Sql
 
     public static function getInstance($server = null)
     {
-
         # If no server was specified then default to the first one defined
         if (!$server) {
+            if (count(static::$servers) < 1) {
+                throw new \Exception("No SQL servers have been defined, use " . static::class . "::addServer() before attempting to get an instance.");
+            }
             $server = array_keys(static::$servers)[0];
         }
 
