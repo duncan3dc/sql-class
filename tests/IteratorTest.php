@@ -9,6 +9,7 @@ class IteratorTest extends AbstractTest
 
     public function testWithOneRow()
     {
+        $this->sql->delete("table1", Sql::NO_WHERE_CLAUSE);
         $this->sql->insert("table1", ["field1" => "row1"]);
 
         $counter = 0;
