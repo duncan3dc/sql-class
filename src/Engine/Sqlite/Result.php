@@ -17,7 +17,9 @@ class Result extends AbstractResult
     {
         $this->result->reset();
         for ($i = 0; $i < $row; $i++) {
-            $this->result->fetchArray();
+            if (!$this->result->fetchArray()) {
+                return false;
+            }
         }
         return true;
     }
