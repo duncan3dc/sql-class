@@ -10,6 +10,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
     protected $database;
     protected $reflection;
     protected $engine;
+    protected $connected;
 
 
     public function setUp()
@@ -24,8 +25,6 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);
 
-        $this->sql->attachDatabase($this->database, "test1");
-
         $this->sql->definitions([
             "table1"    =>  "test1",
             "table2"    =>  "test2",
@@ -34,12 +33,11 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
         $this->reflection = new \ReflectionClass($this->sql);
         $this->engine = $this->reflection->getProperty("engine");
         $this->engine->setAccessible(true);
+        $this->connected = $this->reflection->getProperty("connected");
+        $this->connected->setAccessible(true);
 
         $this->setMode("sqlite");
-
-        $this->sql->connect();
-
-        $this->sql->query("CREATE TABLE test1.table1 (field1 VARCHAR(10), field2 INT)");
+        $this->sql->query("CREATE TABLE {table1} (field1 VARCHAR(10), field2 INT)");
     }
 
 
@@ -56,14 +54,17 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
         $this->sql->mode = $mode;
 
         $class = "\\duncan3dc\\SqlClass\\Engine\\" . ucfirst($mode) . "\\Sql";
+
         if (class_exists($class)) {
             $engine = new $class;
         } else {
             $engine = null;
         }
         $this->engine->setValue($this->sql, $engine);
+
         if ($mode === "sqlite") {
-            $this->sql->connect();
+            $this->connected->setValue($this->sql, false);
+            $this->sql->attachDatabase($this->database, "test1");
         }
     }
 
