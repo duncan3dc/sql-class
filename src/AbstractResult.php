@@ -66,7 +66,9 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
         $row = [];
 
         foreach ($data as $key => $val) {
-            $val = rtrim($val);
+            if (is_string($val)) {
+                $val = rtrim($val);
+            }
 
             if ($style === Sql::FETCH_ASSOC) {
                 $key = strtolower($key);
@@ -87,11 +89,22 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     {
         while ($row = $this->getNextRow()) {
             if ($this->columnCount() > 1) {
-                $key = rtrim(reset($row));
-                $val = rtrim(next($row));
+                $key = reset($row);
+                if (is_string($key)) {
+                    $key = rtrim($key);
+                }
+                $val = next($row);
+                if (is_string($val)) {
+                    $val = rtrim($val);
+                }
+
                 yield $key => $val;
             } else {
-                yield rtrim(reset($row));
+                $val = reset($row);
+                if (is_string($val)) {
+                    $val = rtrim($val);
+                }
+                yield reset($row);
             }
         }
     }
