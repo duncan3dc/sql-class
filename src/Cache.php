@@ -4,12 +4,18 @@ namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 use duncan3dc\Serial\Json;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Cache results on disk to make future queries faster.
  */
-class Cache extends AbstractResult
+class Cache extends AbstractResult implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     const MINUTE = 60;
     const HOUR = 3600;
     const DAY = 86400;
@@ -70,7 +76,7 @@ class Cache extends AbstractResult
     protected $indexMap;
 
 
-    public function __construct(array $options = null)
+    public function __construct(array $options, LoggerInterface $logger = null)
     {
         $options = Helper::getOptions($options, [
             "dir"           =>  "/tmp/query_cache",
@@ -84,6 +90,8 @@ class Cache extends AbstractResult
         ]);
 
         $this->sql = $options["sql"];
+
+        $this->logger = $logger ?: new NullLogger;
 
         # Store the query for other methods to use
         $this->query = $options["query"];
@@ -152,36 +160,22 @@ class Cache extends AbstractResult
 
     protected function isCached()
     {
-        if ($this->sql->output) {
-            echo "checking the cache (" . $this->dir . ")";
-            echo ($this->sql->htmlMode) ? "<br>" : "\n";
-        }
+        $this->logger->debug("checking the cache ({$this->dir})");
 
         # If no status file exists for this cache then presume there isn't any valid data
         if (!file_exists($this->dir . "/.data")) {
-            if ($this->sql->output) {
-                echo "no status file found";
-                echo ($this->sql->htmlMode) ? "<hr>" : "\n";
-            }
+            $this->logger->debug("no status file found");
             return false;
         }
 
         # If the status file is older than the specified timeout then force a refresh
         $this->cacheTime = filectime($this->dir . "/.data");
-        if ($this->sql->output) {
-            echo "cache found (" . date("Y-m-d H:i:s", $this->cacheTime) . ")";
-        }
+        $date = date("Y-m-d H:i:s", $this->cacheTime);
+        $this->logger->debug("cache found ({$date})");
 
         if ($this->cacheTime < (time() - $this->timeout)) {
-            if ($this->sql->output) {
-                echo ($this->sql->htmlMode) ? "<br>" : "\n";
-                echo "cache is too old to use";
-            }
+            $this->logger->debug("cache is too old to use");
             return false;
-        }
-
-        if ($this->sql->output) {
-            echo ($this->sql->htmlMode) ? "<hr>" : "\n";
         }
 
         return true;
