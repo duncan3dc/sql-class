@@ -4,13 +4,20 @@ namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
 use duncan3dc\SqlClass\Exceptions\QueryException;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Main class that manages connections to SQL servers.
+ *
  * @method Where in(array $values) in($value1, $value2, ...) Helper method for IN() clauses
  */
-class Sql
+class Sql implements LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     /**
      * Allow queries to be created without a where cluase
      */
@@ -112,26 +119,6 @@ class Sql
     protected $transaction;
 
     /**
-     * @var boolean $log Whether we should log errors to disk or not
-     */
-    public $log;
-
-    /**
-     * @var string $logDir The directory to log errors to
-     */
-    public $logDir;
-
-    /**
-     * @var boolean $output Whether the class should output queries or not
-     */
-    public $output;
-
-    /**
-     * @var boolean $htmlMode Whether the output should be html or plain text
-     */
-    public $htmlMode;
-
-    /**
      * @var string $query The query we are currently attempting to run
      */
     protected $query;
@@ -219,10 +206,6 @@ class Sql
         $properties = [
             "allowNulls",
             "cacheOptions",
-            "log",
-            "logDir",
-            "output",
-            "htmlMode",
         ];
         foreach ($properties as $property) {
             if (array_key_exists($property, $options)) {
@@ -234,7 +217,7 @@ class Sql
     }
 
 
-    public function __construct(array $options = null)
+    public function __construct(array $options, LoggerInterface $logger = null)
     {
         $options = Helper::getOptions($options, [
             "mode"          =>  "mysql",
@@ -264,15 +247,13 @@ class Sql
             throw new \Exception("Unsupported mode (" . $this->mode . ")");
         }
 
-        $this->output = false;
-        $this->htmlMode = false;
+        if ($logger === null) {
+            $logger = new NullLogger;
+        }
+        $this->setLogger($logger);
 
         # Don't allow nulls by default
         $this->allowNulls = false;
-
-        # Don't log by default
-        $this->log = false;
-        $this->logDir = "/tmp/sql-class-logs";
 
         $this->attached = [];
 
@@ -287,6 +268,21 @@ class Sql
 
         $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
         $this->engine = new $class;
+    }
+
+
+    /**
+     * Set the logger to use.
+     *
+     * @param LoggerInterface $logger Which logger to use
+     *
+     * @return static
+     */
+    public function setLogger(LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+
+        return $this;
     }
 
 
@@ -444,19 +440,7 @@ class Sql
         $preparedQuery = $this->prepareQuery($query, $params);
         $this->preparedQuery = $preparedQuery;
 
-        if ($this->output) {
-            if ($this->htmlMode) {
-                echo "<pre>";
-            }
-
-            echo $preparedQuery;
-
-            if ($this->htmlMode) {
-                echo "<hr>";
-            } else {
-                echo "\n";
-            }
-        }
+        $this->logger->debug($preparedQuery);
 
         if (!$result = $this->engine->query($query, $params, $preparedQuery)) {
             $this->error();
@@ -738,62 +722,15 @@ class Sql
 
     protected function error()
     {
-        # If logging is turned on then log the error details to the log directory
-        if ($this->log) {
-            $this->logError();
-        }
+        $this->logger->error($this->getErrorMessage(), [
+            "code"      =>  $this->getErrorCode(),
+            "query"     =>  $this->query,
+            "params"    =>  $this->params,
+            "prepared"  =>  $this->preparedQuery,
+            "backtrace" =>  debug_backtrace(),
+        ]);
 
         throw new QueryException($this->getErrorMessage(), $this->getErrorCode());
-    }
-
-
-    protected function logError()
-    {
-        if (!$this->log) {
-            return;
-        }
-
-        # Ensure the log directory exists
-        if (!is_dir($this->logDir)) {
-            if (!mkdir($this->logDir, 0775, true)) {
-                return;
-            }
-        }
-
-        $logFile = date("Y-m-d_H-i-s") . ".log";
-
-        if (!$file = fopen($this->logDir . "/" . $logFile, "a")) {
-            return;
-        }
-
-        fwrite($file, "Error Message: " . $this->getErrorMessage() . "\n");
-        fwrite($file, "Error Code: " . $this->getErrorCode() . "\n");
-
-        fwrite($file, "SQL ERROR\n");
-        if ($this->query) {
-            fwrite($file, "Query: " . $this->query . "\n");
-        }
-        if ($this->params) {
-            fwrite($file, "Params: " . print_r($this->params, true) . "\n");
-        }
-        if ($this->preparedQuery) {
-            fwrite($file, "Prepared Query: " . $this->preparedQuery . "\n");
-        }
-        fwrite($file, "\n");
-
-        fwrite($file, print_r(debug_backtrace(), true));
-        fwrite($file, "\n\n");
-
-        fwrite($file, print_r($this, true));
-        fwrite($file, "\n\n");
-
-        fwrite($file, "-----------------------------------------------------------------------------\n");
-        fwrite($file, "-----------------------------------------------------------------------------\n");
-        fwrite($file, "\n\n");
-
-        fclose($file);
-
-        return $logFile;
     }
 
 
@@ -872,15 +809,19 @@ class Sql
 
         $table = $this->getTableName($table);
 
-        if ($output = $this->output) {
-            $this->output = false;
-            echo "BULK INSERT INTO " . $table . " (" . count($params) . " rows)...\n";
+        $logger = null;
+        if (!$this->logger instanceof NullLogger) {
+            $this->logger->debug("BULK INSERT INTO {table} ({rows} rows)", [
+                "table" =>  $table,
+                "rows"  =>  count($params),
+            ]);
+            $this->logger = new NullLogger;
         }
 
         $result = $this->engine->bulkInsert($table, $params, $extra);
 
-        if ($output) {
-            $this->output = true;
+        if ($logger) {
+            $this->logger = $logger;
         }
 
         if (!$result) {
