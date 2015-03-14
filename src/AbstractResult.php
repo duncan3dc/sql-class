@@ -63,22 +63,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
             return $data;
         }
 
-        $row = [];
-
-        foreach ($data as $key => $val) {
-            if (is_string($val)) {
-                $val = rtrim($val);
-            }
-
-            if ($style === Sql::FETCH_ASSOC) {
-                $key = strtolower($key);
-                $row[$key] = $val;
-            } else {
-                $row[] = $val;
-            }
-        }
-
-        return $row;
+        return new Row($data);
     }
 
 
