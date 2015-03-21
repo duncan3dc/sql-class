@@ -2,10 +2,10 @@
 
 namespace duncan3dc\SqlClass\Where;
 
-class GreaterThanOrEqualTo extends AbstractWhere
+class NotGreaterThan extends AbstractWhere
 {
     public function getClause()
     {
-        return ">= ?";
+        return "<= ?";
     }
 }

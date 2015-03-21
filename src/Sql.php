@@ -2148,11 +2148,21 @@ class Sql
 
     public static function __callStatic($method, $params)
     {
-        $class = __NAMESPACE__ . "\\Where\\" . ucfirst($method);
+        $className = ucfirst($method);
+
+        if ($className === "GreaterThanOrEqualTo") {
+            $className = "NotLessThan";
+        } elseif ($className === "LessThanOrEqualTo") {
+            $className = "NotGreaterThan";
+        } elseif ($className === "EqualTo") {
+            $className = "Equals";
+        }
+
+        $class = __NAMESPACE__ . "\\Where\\{$className}";
         if (class_exists($class)) {
             return new $class(...$params);
         }
-        throw new \Exception("Invalid method: " . $method);
+        throw new \Exception("Invalid method: {$method}");
     }
 
     /**
