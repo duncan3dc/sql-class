@@ -2,12 +2,11 @@
 
 namespace duncan3dc\SqlClass\Engine\Mysql;
 
-use duncan3dc\SqlClass\Engine\AbstractSql;
+use duncan3dc\SqlClass\Engine\AbstractServer;
 use duncan3dc\SqlClass\Result as ResultInterface;
-use duncan3dc\SqlClass\Sql as SqlClass;
-use duncan3dc\SqlClass\Result;
+use duncan3dc\SqlClass\Sql;
 
-class Sql extends AbstractSql
+class Server extends AbstractServer
 {
     public function connect(array $options)
     {
@@ -20,7 +19,7 @@ class Sql extends AbstractSql
             $server->set_charset($options["charset"]);
         }
         if ($timezone = $options["timezone"]) {
-            if ($timezone === SqlClass::USE_PHP_TIMEZONE) {
+            if ($timezone === Sql::USE_PHP_TIMEZONE) {
                 $timezone = ini_get("date.timezone");
             }
             $this->query("SET time_zone='" . $timezone . "'");
@@ -121,9 +120,9 @@ class Sql extends AbstractSql
             $values .= ")";
         }
 
-        if ($extra == SqlClass::INSERT_REPLACE) {
+        if ($extra == Sql::INSERT_REPLACE) {
             $query = "REPLACE ";
-        } elseif ($extra == SqlClass::INSERT_IGNORE) {
+        } elseif ($extra == Sql::INSERT_IGNORE) {
             $query = "INSERT IGNORE ";
         } else {
             $query = "INSERT ";
@@ -182,7 +181,7 @@ class Sql extends AbstractSql
 
         $result = $this->query("SHOW DATABASES");
 
-        $result->fetchStyle(SqlClass::FETCH_ROW);
+        $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {
             $databases[] = $row[0];
         }
@@ -198,7 +197,7 @@ class Sql extends AbstractSql
         $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
         $result = $this->query($query);
 
-        $result->fetchStyle(SqlClass::FETCH_ROW);
+        $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {
             $tables[] = $row[0];
         }
@@ -214,7 +213,7 @@ class Sql extends AbstractSql
         $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
         $result = $this->query($query);
 
-        $result->fetchStyle(SqlClass::FETCH_ROW);
+        $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {
             $views[] = $row[0];
         }

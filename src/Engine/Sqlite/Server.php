@@ -2,12 +2,12 @@
 
 namespace duncan3dc\SqlClass\Engine\Sqlite;
 
-use duncan3dc\SqlClass\Engine\AbstractSql;
+use duncan3dc\SqlClass\Engine\AbstractServer;
 use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result as ResultInterface;
-use duncan3dc\SqlClass\Sql as SqlClass;
+use duncan3dc\SqlClass\Sql;
 
-class Sql extends AbstractSql
+class Server extends AbstractServer
 {
     public function connect(array $options)
     {
@@ -120,7 +120,7 @@ class Sql extends AbstractSql
 
     public function getId(ResultInterface $result)
     {
-        return $this->query("SELECT last_insert_rowid()")->fetch(SqlClass::FETCH_ROW)[0];
+        return $this->query("SELECT last_insert_rowid()")->fetch(Sql::FETCH_ROW)[0];
     }
 
 

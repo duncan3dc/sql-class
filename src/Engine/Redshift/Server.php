@@ -3,10 +3,11 @@
 namespace duncan3dc\SqlClass\Engine\Redshift;
 
 use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Engine\Postgres\Server as Postgres;
 use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result as ResultInterface;
 
-class Sql extends \duncan3dc\SqlClass\Engine\Postgres
+class Server extends Postgres
 {
 
     public function query($query, array $params = null, $preparedQuery)
