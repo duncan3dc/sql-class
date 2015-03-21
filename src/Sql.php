@@ -3,6 +3,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Engine\ServerInterface;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -58,7 +59,7 @@ class Sql implements LoggerAwareInterface
     const FETCH_RAW = 111;
 
     /**
-     * @var duncan3dc\SqlClass\Engine\AbstractSql $engine The instance of the engine class handling the abstraction
+     * @var ServerInterface $engine The instance of the engine class handling the abstraction
      */
     protected $engine;
 
@@ -262,7 +263,7 @@ class Sql implements LoggerAwareInterface
         $this->cacheOptions = [];
         $this->cacheNext = false;
 
-        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
+        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Server";
         $this->engine = new $class;
     }
 
