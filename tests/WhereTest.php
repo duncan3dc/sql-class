@@ -102,6 +102,14 @@ class WhereTest extends SqlTest
     }
 
 
+    public function testNotLike()
+    {
+        $this->checkQueryParams("`field1` NOT LIKE ? ", [
+            "field1"    =>  Sql::notLike("one%"),
+        ]);
+    }
+
+
     public function testNotEqualTo()
     {
         $this->checkQueryParams("`field1` <> ? ", [
