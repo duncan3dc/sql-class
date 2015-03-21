@@ -13,11 +13,6 @@ abstract class AbstractWhere
 
     abstract public function getClause();
 
-    public function getValue()
-    {
-        return $this->values[0];
-    }
-
     public function getValues()
     {
         return $this->values;
