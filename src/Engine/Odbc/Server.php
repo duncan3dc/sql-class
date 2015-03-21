@@ -3,11 +3,11 @@
 namespace duncan3dc\SqlClass\Engine\Odbc;
 
 use duncan3dc\Helpers\Helper;
-use duncan3dc\SqlClass\Engine\AbstractSql;
+use duncan3dc\SqlClass\Engine\AbstractServer;
 use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result;
 
-class Sql extends AbstractSql
+class Server extends AbstractServer
 {
     public function connect(array $options)
     {

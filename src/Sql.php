@@ -3,6 +3,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Engine\ServerInterface;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -58,7 +59,7 @@ class Sql implements LoggerAwareInterface
     const FETCH_RAW = 111;
 
     /**
-     * @var duncan3dc\SqlClass\Engine\AbstractSql $engine The instance of the engine class handling the abstraction
+     * @var ServerInterface $engine The instance of the engine class handling the abstraction
      */
     protected $engine;
 
@@ -143,17 +144,17 @@ class Sql implements LoggerAwareInterface
     protected static $instances = [];
 
 
-    public static function addServer($server, array $options)
+    public static function addServer($name, ServerInterface $server)
     {
-        if (!$server) {
+        if (!$name) {
             throw new \Exception("No name specified for the server to add");
         }
 
-        if (array_key_exists($server, static::$servers)) {
-            throw new \Exception("This server (" . $server . ") has already been defined");
+        if (array_key_exists($name, static::$servers)) {
+            throw new \Exception("This server ({$name}) has already been defined");
         }
 
-        static::$servers[$server] = $options;
+        static::$servers[$name] = $server;
     }
 
 
@@ -262,7 +263,7 @@ class Sql implements LoggerAwareInterface
         $this->cacheOptions = [];
         $this->cacheNext = false;
 
-        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Sql";
+        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Server";
         $this->engine = new $class;
     }
 

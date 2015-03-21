@@ -5,7 +5,7 @@ namespace duncan3dc\SqlClass\Engine;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use duncan3dc\SqlClass\Result;
 
-abstract class AbstractSql
+abstract class AbstractServer implements ServerInterface
 {
     /**
      * @var resource $server The resource for the current database connection

@@ -53,7 +53,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
     {
         $this->sql->mode = $mode;
 
-        $class = "\\duncan3dc\\SqlClass\\Engine\\" . ucfirst($mode) . "\\Sql";
+        $class = "\\duncan3dc\\SqlClass\\Engine\\" . ucfirst($mode) . "\\Server";
 
         if (class_exists($class)) {
             $engine = new $class;
