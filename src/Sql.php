@@ -815,6 +815,9 @@ class Sql
         foreach ($params as $val) {
 
             $pos = strpos($tmpQuery, "?");
+            if ($pos === false) {
+                continue;
+            }
 
             $newQuery .= substr($tmpQuery, 0, $pos);
             $tmpQuery = substr($tmpQuery, $pos + 1);
