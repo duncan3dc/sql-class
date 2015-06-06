@@ -421,13 +421,13 @@ class Sql
     /**
      * Get the database that should be used for this table
      */
-    protected function getTableDatabase($name)
+    protected function getTableDatabase($table)
     {
-        if (!array_key_exists($name, $this->tables)) {
+        if (!array_key_exists($table, $this->tables)) {
             return false;
         }
 
-        $database = $this->tables[$name];
+        $database = $this->tables[$table];
 
         # If this table's database depends on the mode
         if (is_array($database)) {
@@ -443,30 +443,32 @@ class Sql
 
 
     /**
-     * Get the full table name (including database)
-     * If the database isn't passed then look it up first
+     * Get the full table name, including the database.
+     *
+     * @param string $table The table name
      */
-    protected function getTableName($name, $database = null)
+    protected function getTableName($table)
     {
-        if (!$database) {
-            $database = $this->getTableDatabase($name);
-        }
+        $database = $this->getTableDatabase($table);
 
+        # If we found a database for this table then include it in the return value
         if ($database) {
+            $database = $this->quoteField($database);
+
             if ($this->mode == "mssql") {
-                $table = $this->quoteField($database) . ".dbo." . $this->quoteField($name);
-            } else {
-                $table = $this->quoteField($database) . "." . $this->quoteField($name);
+                $database .= ".dbo";
             }
-        } else {
-            if (strpos($name, ".") === false) {
-                $table = $this->quoteField($name);
-            } else {
-                $table = $name;
-            }
+
+            return $database . "." . $this->quoteField($table);
         }
 
-        return $table;
+        # If we didn't find a database, and this table already looks like it includes
+        if (strpos($table, ".") !== false) {
+            return $table;
+        }
+
+
+        return $this->quoteField($table);
     }
 
 
