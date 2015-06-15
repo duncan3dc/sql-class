@@ -2,10 +2,10 @@
 
 namespace duncan3dc\SqlClassTests;
 
-use duncan3dc\SqlClass\Cache;
+use duncan3dc\SqlClass\CachedResult;
 use duncan3dc\SqlClass\Sql;
 
-class CacheTest extends AbstractTest
+class CachedResultTest extends AbstractTest
 {
 
     public function testCount()
@@ -77,7 +77,7 @@ class CacheTest extends AbstractTest
     public function testDirectoryPermissions()
     {
         $base = "/tmp/phpunit_cache";
-        $cache = new Cache([
+        $cache = new CachedResult([
             "dir"   =>  $base,
             "sql"   =>  $this->sql,
             "query" =>  "SELECT " . time() . " FROM table1",

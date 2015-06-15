@@ -12,7 +12,7 @@ use Psr\Log\NullLogger;
 /**
  * Cache results on disk to make future queries faster.
  */
-class Cache extends AbstractResult implements LoggerAwareInterface
+class CachedResult extends AbstractResult implements LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
