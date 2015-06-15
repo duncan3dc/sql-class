@@ -103,7 +103,7 @@ class Sql implements LoggerAwareInterface
     public $allowNulls;
 
     /**
-     * @var array $cacheOptions The options to pass when creating an Cache instance object
+     * @var array $cacheOptions The options to pass when creating an CachedResult instance object
      */
     public $cacheOptions;
 
@@ -697,7 +697,7 @@ class Sql implements LoggerAwareInterface
             $options["timeout"] = $timeout;
         }
 
-        return new Cache($options);
+        return new CachedResult($options);
     }
 
 

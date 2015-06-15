@@ -1,6 +1,6 @@
 <?php
 /**
- * Base class that Result/Cache extend from
+ * Base class that Result/CachedResult extend from
  */
 
 namespace duncan3dc\SqlClass;
