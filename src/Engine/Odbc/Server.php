@@ -9,6 +9,29 @@ use duncan3dc\SqlClass\Result as ResultInterface;
 
 class Server extends AbstractServer
 {
+
+    /**
+     * Check if this server supports the TRUNCATE TABLE statement.
+     *
+     * @return bool
+     */
+    public function canTruncateTables()
+    {
+        return false;
+    }
+
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string
+     */
+    public function getQuoteChars()
+    {
+        return '"';
+    }
+
+
     public function connect(array $options)
     {
         return odbc_connect($options["hostname"], $options["username"], $options["password"]);
@@ -18,12 +41,15 @@ class Server extends AbstractServer
     public function query($query, array $params = null, $preparedQuery)
     {
         if (!$result = odbc_prepare($this->server, $query)) {
-            $this->error();
+            return;
         }
+
         $params = Helper::toArray($params);
         if (!odbc_execute($result, $params)) {
-            $this->error();
+            return;
         }
+
+        return new Result($result);
     }
 
 

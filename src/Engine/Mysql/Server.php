@@ -8,25 +8,41 @@ use duncan3dc\SqlClass\Sql;
 
 class Server extends AbstractServer
 {
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string
+     */
+    public function getQuoteChars()
+    {
+        return "`";
+    }
+
+
     public function connect(array $options)
     {
         $server = new \Mysqli($options["hostname"], $options["username"], $options["password"]);
         if ($server->connect_error) {
-            $this->error();
+            return;
         }
+
         $server->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
+
         if ($options["charset"]) {
             $server->set_charset($options["charset"]);
         }
+
         if ($timezone = $options["timezone"]) {
             if ($timezone === Sql::USE_PHP_TIMEZONE) {
                 $timezone = ini_get("date.timezone");
             }
             $this->query("SET time_zone='" . $timezone . "'");
         }
+
         if ($database = $options["database"]) {
             if (!$server->select_db($database)) {
-                $this->error();
+                return;
             }
         }
 
@@ -36,7 +52,9 @@ class Server extends AbstractServer
 
     public function query($query, array $params = null, $preparedQuery)
     {
-        return $this->server->query($preparedQuery);
+        if ($result = $this->server->query($preparedQuery)) {
+            return new Result($result);
+        }
     }
 
 

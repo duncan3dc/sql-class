@@ -8,6 +8,18 @@ use duncan3dc\SqlClass\Result as ResultInterface;
 
 class Server extends AbstractServer
 {
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string[]
+     */
+    public function getQuoteChars()
+    {
+        return ["[", "]"];
+    }
+
+
     public function connect(array $options)
     {
         return mssql_connect($options["hostname"], $options["username"], $options["password"]);
@@ -16,7 +28,9 @@ class Server extends AbstractServer
 
     public function query($query, array $params = null, $preparedQuery)
     {
-        return mssql_query($preparedQuery, $this->server);
+        if ($result = mssql_query($preparedQuery, $this->server)) {
+            return new Result($result);
+        }
     }
 
 

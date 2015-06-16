@@ -1,16 +1,16 @@
 <?php
-/**
- * Base class that Result/CachedResult extend from
- */
 
 namespace duncan3dc\SqlClass;
 
+/**
+ * Base class that Result/CachedResult extend from
+ */
 abstract class AbstractResult implements \SeekableIterator, \Countable
 {
     /**
      * @var int $position The current (zero based) position in the result set
      */
-    protected $position;
+    protected $position = 0;
 
     /**
      * @var int $fetchStyle The current fetch style (one of the Sql::FETCH_ constants)

@@ -3,6 +3,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
+use duncan3dc\SqlClass\Engine\ResultInterface;
 use duncan3dc\SqlClass\Engine\ServerInterface;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use Psr\Log\LoggerAwareInterface;
@@ -69,49 +70,34 @@ class Sql implements LoggerAwareInterface
     protected $connected;
 
     /**
-     * @var array $options The options this object was created with
-     */
-    protected $options;
-
-    /**
-     * @var string $mode The type of database we're connected to
-     */
-    public $mode;
-
-    /**
      * @var resource $server The connection to the server
      */
     public $server;
 
     /**
-     * @var array $quoteChars The characters used to alias field names
-     */
-    public $quoteChars;
-
-    /**
      * @var array $attached The sqlite databases that have been attached
      */
-    public $attached;
+    public $attached = [];
 
     /**
      * @var array $tables The tables that have been defined and which database they are in
      */
-    public $tables;
+    public $tables = [];
 
     /**
      * @var boolean $allowNulls A flag to indicate whether nulls should be used or not
      */
-    public $allowNulls;
+    public $allowNulls = false;
 
     /**
      * @var array $cacheOptions The options to pass when creating an CachedResult instance object
      */
-    public $cacheOptions;
+    public $cacheOptions = [];
 
     /**
      * @var boolean $cacheNext When true the next query we run should be done using cache
      */
-    protected $cacheNext;
+    protected $cacheNext = false;
 
     /**
      * @var boolean $transaction A flag to indicate whether we are currently in transaction mode or not
@@ -134,9 +120,14 @@ class Sql implements LoggerAwareInterface
     protected $preparedQuery;
 
     /**
-     * @var array $servers The server definitions that have been registered
+     * @var ServerInterface[] $servers The server definitions that have been registered
      */
     protected static $servers = [];
+
+    /**
+     * @var array $properties The properties that should be applied to each server when instantiated.
+     */
+    protected static $properties = [];
 
     /**
      * @var array Sql[] $instances The instances of the class that have previously been created
@@ -144,72 +135,56 @@ class Sql implements LoggerAwareInterface
     protected static $instances = [];
 
 
-    public static function addServer($server, array $options)
+    public static function addServer($name, ServerInterface $server, array $properties = null)
     {
-        if (!$server) {
+        if (!$name) {
             throw new \Exception("No name specified for the server to add");
         }
 
-        if (array_key_exists($server, static::$servers)) {
-            throw new \Exception("This server (" . $server . ") has already been defined");
+        if (array_key_exists($name, static::$servers)) {
+            throw new \Exception("This server ({$name}) has already been defined");
         }
 
-        static::$servers[$server] = $options;
+        static::$servers[$name] = $server;
+        static::$properties[$name] = $properties ?: [];
     }
 
 
-    public static function getInstance($server = null)
+    public static function getInstance($name = null)
     {
         # If no server was specified then default to the first one defined
-        if (!$server) {
-            if (count(static::$servers) < 1) {
+        if (!$name) {
+            if (count(static::$names) < 1) {
                 throw new \Exception("No SQL servers have been defined, use " . static::class . "::addServer() before attempting to get an instance.");
             }
-            $server = array_keys(static::$servers)[0];
+            $name = array_keys(static::$servers)[0];
         }
 
-        if (!array_key_exists($server, static::$instances)) {
-            static::$instances[$server] = static::getNewInstance($server);
+        if (!array_key_exists($name, static::$instances)) {
+            static::$instances[$name] = static::getNewInstance($name);
         }
 
-        return static::$instances[$server];
+        return static::$instances[$name];
     }
 
 
-    public static function getNewInstance($server)
+    public static function getNewInstance($name)
     {
-        if (!array_key_exists($server, static::$servers)) {
-            throw new \Exception("Unknown SQL Server (" . $server . ")");
+        if (!array_key_exists($name, static::$servers)) {
+            throw new \Exception("Unknown SQL Server: {$name}");
         }
 
-        $options = static::$servers[$server];
-        $construct = [
-            "mode"          =>  null,
-            "hostname"      =>  null,
-            "username"      =>  null,
-            "password"      =>  null,
-            "database"      =>  null,
-            "charset"       =>  null,
-            "timezone"      =>  null,
-            "definitions"   =>  null,
-        ];
-        foreach ($construct as $key => $null) {
-            if (array_key_exists($key, $options)) {
-                $construct[$key] = $options[$key];
-            } else {
-                unset($construct[$key]);
-            }
-        }
+        $server = static::$servers[$name];
 
-        $sql = new static($construct);
+        $sql = new static($server);
 
         $properties = [
             "allowNulls",
             "cacheOptions",
         ];
         foreach ($properties as $property) {
-            if (array_key_exists($property, $options)) {
-                $sql->$property = $options[$property];
+            if (array_key_exists($property, static::$properties[$name])) {
+                $sql->$property = static::$properties[$name][$property];
             }
         }
 
@@ -217,54 +192,14 @@ class Sql implements LoggerAwareInterface
     }
 
 
-    public function __construct(array $options, LoggerInterface $logger = null)
+    public function __construct(ServerInterface $server, LoggerInterface $logger = null)
     {
-        $options = Helper::getOptions($options, [
-            "mode"          =>  "mysql",
-            "hostname"      =>  "",
-            "username"      =>  "",
-            "password"      =>  "",
-            "database"      =>  false,
-            "charset"       =>  "utf8",
-            "timezone"      =>  false,
-            "definitions"   =>  [],
-        ]);
+        $this->engine = $server;
 
-        $this->options = $options;
-
-        $this->mode = $options["mode"];
-
-        $this->quoteChars = [
-            "mysql"     =>  "`",
-            "postgres"  =>  '"',
-            "redshift"  =>  '"',
-            "odbc"      =>  '"',
-            "sqlite"    =>  "`",
-            "mssql"     =>  ["[", "]"],
-        ];
-
-        if (!array_key_exists($this->mode, $this->quoteChars)) {
-            throw new \Exception("Unsupported mode (" . $this->mode . ")");
+        if ($logger === null) {
+            $logger = new NullLogger;
         }
-
-        $this->logger = $logger ?: new NullLogger;
-
-        # Don't allow nulls by default
-        $this->allowNulls = false;
-
-        $this->attached = [];
-
-        $this->tables = [];
-
-        if ($options["definitions"]) {
-            $this->definitions($options["definitions"]);
-        }
-
-        $this->cacheOptions = [];
-        $this->cacheNext = false;
-
-        $class = __NAMESPACE__ . "\\Engine\\" . ucfirst($this->mode) . "\\Server";
-        $this->engine = new $class;
+        $this->logger = $logger;
     }
 
 
@@ -282,7 +217,7 @@ class Sql implements LoggerAwareInterface
         # Set that we are connected here, because queries can be run as part of the below code, which would cause an infinite loop
         $this->connected = true;
 
-        if (!$this->server = $this->engine->connect($this->options)) {
+        if (!$this->server = $this->engine->connect()) {
             $this->error();
         }
 
@@ -315,8 +250,8 @@ class Sql implements LoggerAwareInterface
      */
     public function attachDatabase($filename, $database = null)
     {
-        if ($this->mode != "sqlite") {
-            throw new \Exception("You can only attach databases when in sqlite mode");
+        if (!$this->engine instanceof Engine\Sqlite\Server) {
+            throw new \Exception("You can only attach databases when using the Sqlite engine");
         }
 
         if (!$database) {
@@ -347,15 +282,6 @@ class Sql implements LoggerAwareInterface
 
         $database = $this->tables[$table];
 
-        # If this table's database depends on the mode
-        if (is_array($database)) {
-            if (array_key_exists($this->mode, $database)) {
-                $database = $database[$this->mode];
-            } else {
-                $database = $database["default"];
-            }
-        }
-
         return $database;
     }
 
@@ -373,7 +299,7 @@ class Sql implements LoggerAwareInterface
         if ($database) {
             $database = $this->quoteField($database);
 
-            if ($this->mode == "mssql") {
+            if (!$this->engine instanceof Engine\Mssql\Server) {
                 $database .= ".dbo";
             }
 
@@ -424,11 +350,13 @@ class Sql implements LoggerAwareInterface
 
         $this->logger->debug($preparedQuery);
 
-        if (!$result = $this->engine->query($query, $params, $preparedQuery)) {
+        $result = $this->engine->query($query, $params, $preparedQuery);
+
+        if (!$result instanceof ResultInterface) {
             $this->error();
         }
 
-        return new Result($result, $this->mode);
+        return new Result($result);
     }
 
 
@@ -466,47 +394,27 @@ class Sql implements LoggerAwareInterface
      */
     protected function quoteChars(&$query)
     {
-        $checked = [];
+        $quoteChar = "`";
 
-        $chars = $this->quoteChars[$this->mode];
+        $chars = $this->engine->getQuoteChars();
         if (is_array($chars)) {
-            $newFrom = $chars[0];
-            $newTo = $chars[1];
+            $start = $chars[0];
+            $end = $chars[1];
         } else {
-            $newFrom = $chars;
-            $newTo = $chars;
+            $start = $chars;
+            $end = $chars;
         }
 
-        foreach ($this->quoteChars as $mode => $chars) {
-            if ($mode == $this->mode) {
-                continue;
-            }
-
-            if (is_array($chars)) {
-                $oldFrom = $chars[0];
-                $oldTo = $chars[1];
-            } else {
-                $oldFrom = $chars;
-                $oldTo = $chars;
-            }
-
-            if ($oldFrom == $newFrom && $oldTo == $newTo) {
-                continue;
-            }
-
-            # Create part of the regex that will represent the quoted field we are trying to find
-            $match = preg_quote($oldFrom) . "([^" . preg_quote($oldTo) . "]*)" . preg_quote($oldTo);
-
-            # If we've already checked this regex then don't check it again
-            if (in_array($match, $checked, true)) {
-                continue;
-            }
-            $checked[] = $match;
-
-            $this->modifyQuery($query, function($part) use($match, $newFrom, $newTo) {
-                return preg_replace("/" . $match . "/", $newFrom . "$1" . $newTo, $part);
-            });
+        if ($start === $quoteChar && $end === $quoteChar) {
+            return;
         }
+
+        # Create part of the regex that will represent the quoted field we are trying to find
+        $match = $quoteChar . "([^" . $quoteChar . "]*)" . $quoteChar;
+
+        $this->modifyQuery($query, function($part) use($match, $start, $end) {
+            return preg_replace("/" . $match . "/", $start . "$1" . $end, $part);
+        });
     }
 
 
@@ -821,7 +729,7 @@ class Sql implements LoggerAwareInterface
             $this->logger = $logger;
         }
 
-        if (!$result) {
+        if (!$result instanceof ResultInterface) {
             $this->error();
         }
 
@@ -926,23 +834,21 @@ class Sql implements LoggerAwareInterface
         $params = null;
 
         /**
-         * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement
-         * Not all engines support this though, so we have to check which mode we are in
-         * Also this statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement
+         * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement.
+         * This statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement.
+         * Also not all engines support this though, so we need to check that too.
          */
-        if ($where === self::NO_WHERE_CLAUSE && !$this->transaction && !in_array($this->mode, ["odbc", "sqlite"], true)) {
-            $query = "TRUNCATE TABLE " . $tableName;
+        if ($where === self::NO_WHERE_CLAUSE && !$this->transaction && $this->engine->canTruncateTables()) {
+            $query = "TRUNCATE TABLE {$tableName}";
         } else {
-            $query = "DELETE FROM " . $tableName . " ";
+            $query = "DELETE FROM {$tableName} ";
 
             if ($where !== self::NO_WHERE_CLAUSE) {
                 $query .= "WHERE " . $this->where($where, $params);
             }
         }
 
-        $result = $this->query($query, $params);
-
-        return $result;
+        return $this->query($query, $params);
     }
 
 
@@ -976,7 +882,7 @@ class Sql implements LoggerAwareInterface
 
         $query = "SELECT ";
 
-        if ($this->mode == "mssql") {
+        if ($this->engine instanceof Engine\Mssql\Server) {
             $query .= "TOP 1 ";
         }
 
@@ -993,18 +899,10 @@ class Sql implements LoggerAwareInterface
             $query .= $this->orderBy($orderBy) . " ";
         }
 
-        switch ($this->mode) {
-
-            case "mysql":
-            case "postgres":
-            case "redshift":
-            case "sqlite":
-                $query .= "LIMIT 1";
-                break;
-
-            case "odbc":
-                $query .= "FETCH FIRST 1 ROW ONLY";
-                break;
+        if ($this->engine instanceof Engine\Odbc\Server) {
+            $query .= "FETCH FIRST 1 ROW ONLY";
+        } elseif (!$this->engine instanceof Engine\Mssql\Server) {
+            $query .= "LIMIT 1";
         }
 
         return $this->query($query, $params)->fetch();
