@@ -35,7 +35,10 @@ class Server extends Postgres
         $query .= $tmpQuery;
 
         $params = Helper::toArray($params);
-        return pg_query_params($this->server, $query, $params);
+
+        if ($result = pg_query_params($this->server, $query, $params)) {
+            return new Result($result);
+        }
     }
 
 

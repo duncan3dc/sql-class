@@ -2,6 +2,7 @@
 
 namespace duncan3dc\SqlClassTests;
 
+use duncan3dc\SqlClass\Engine\Sqlite\Server;
 use duncan3dc\SqlClass\Sql;
 
 abstract class AbstractTest extends \PHPUnit_Framework_TestCase
@@ -20,10 +21,8 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
             unlink($this->database);
         }
 
-        $this->sql = new Sql([
-            "mode"      =>  "sqlite",
-            "database"  =>  "/tmp/phpunit.sqlite",
-        ]);
+        $server = new Server("/tmp/phpunit.sqlite");
+        $this->sql = new Sql($server);
 
         $this->sql->definitions([
             "table1"    =>  "test1",
@@ -56,7 +55,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
         $class = "\\duncan3dc\\SqlClass\\Engine\\" . ucfirst($mode) . "\\Server";
 
         if (class_exists($class)) {
-            $engine = new $class;
+            $engine = new $class("hostname", "username", "password");
         } else {
             $engine = null;
         }

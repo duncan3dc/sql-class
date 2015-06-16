@@ -8,15 +8,58 @@ use duncan3dc\SqlClass\Result as ResultInterface;
 
 class Server extends AbstractServer
 {
-    public function connect(array $options)
+    /**
+     * @var string $hostname The host or ip address of the database server.
+     */
+    protected $hostname;
+
+    /**
+     * @var string $username The user to authenticate with.
+     */
+    protected $username;
+
+    /**
+     * @var string $password The password to authenticate with.
+     */
+    protected $password;
+
+    /**
+     * Create a new instance.
+     *
+     * @param string $hostname The host or ip address of the database server
+     * @param string $username The user to authenticate with
+     * @param string $password The password to authenticate with
+     */
+    public function __construct($hostname, $username, $password)
     {
-        return mssql_connect($options["hostname"], $options["username"], $options["password"]);
+        $this->hostname = $hostname;
+        $this->username = $username;
+        $this->password = $password;
+    }
+
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string[]
+     */
+    public function getQuoteChars()
+    {
+        return ["[", "]"];
+    }
+
+
+    public function connect()
+    {
+        return mssql_connect($this->hostname, $this->username, $this->password);
     }
 
 
     public function query($query, array $params = null, $preparedQuery)
     {
-        return mssql_query($preparedQuery, $this->server);
+        if ($result = mssql_query($preparedQuery, $this->server)) {
+            return new Result($result);
+        }
     }
 
 

@@ -8,26 +8,108 @@ use duncan3dc\SqlClass\Sql;
 
 class Server extends AbstractServer
 {
-    public function connect(array $options)
+    /**
+     * @var string $hostname The host or ip address of the database server.
+     */
+    protected $hostname;
+
+    /**
+     * @var string $username The user to authenticate with.
+     */
+    protected $username;
+
+    /**
+     * @var string $password The password to authenticate with.
+     */
+    protected $password;
+
+    /**
+     * @var string $database The database to use.
+     */
+    protected $database;
+
+    protected $charset;
+    protected $timezone;
+
+
+    /**
+     * Create a new instance.
+     *
+     * @param string $hostname The host or ip address of the database server
+     * @param string $username The user to authenticate with
+     * @param string $password The password to authenticate with
+     */
+    public function __construct($hostname, $username, $password)
     {
-        $server = new \Mysqli($options["hostname"], $options["username"], $options["password"]);
+        $this->hostname = $hostname;
+        $this->username = $username;
+        $this->password = $password;
+    }
+
+    public function setCharset($charset)
+    {
+        $this->charset = $charset;
+
+        if ($this->server) {
+            $server->set_charset($this->charset);
+        }
+    }
+
+    public function setTimezone($timezone)
+    {
+        if ($timezone === Sql::USE_PHP_TIMEZONE) {
+            $timezone = ini_get("date.timezone");
+        }
+
+        $this->timezone = $timezone;
+
+        if ($this->server) {
+            $this->query("SET time_zone = ?", $this->timezone);
+        }
+    }
+
+    public function setDatabase($database)
+    {
+        $this->database = $database;
+
+        if ($this->server) {
+            if (!$this->server->select_db($this->database)) {
+                throw new \InvalidArgumentException("Failed to switch to database {$database}");
+            }
+        }
+    }
+
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string
+     */
+    public function getQuoteChars()
+    {
+        return "`";
+    }
+
+
+    public function connect()
+    {
+        $server = new \Mysqli($this->hostname, $this->username, $this->password);
         if ($server->connect_error) {
-            $this->error();
+            return;
         }
+
         $server->options(\MYSQLI_OPT_INT_AND_FLOAT_NATIVE, true);
-        if ($options["charset"]) {
-            $server->set_charset($options["charset"]);
+
+        if ($this->charset) {
+            $this->setCharset($this->charset);
         }
-        if ($timezone = $options["timezone"]) {
-            if ($timezone === Sql::USE_PHP_TIMEZONE) {
-                $timezone = ini_get("date.timezone");
-            }
-            $this->query("SET time_zone='" . $timezone . "'");
+
+        if ($this->timezone) {
+            $this->setTimezone($this->timezone);
         }
-        if ($database = $options["database"]) {
-            if (!$server->select_db($database)) {
-                $this->error();
-            }
+
+        if ($this->database) {
+            $this->setDatabase($this->database);
         }
 
         return $server;
@@ -36,7 +118,9 @@ class Server extends AbstractServer
 
     public function query($query, array $params = null, $preparedQuery)
     {
-        return $this->server->query($preparedQuery);
+        if ($result = $this->server->query($preparedQuery)) {
+            return new Result($result);
+        }
     }
 
 

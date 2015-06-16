@@ -9,12 +9,60 @@ use duncan3dc\SqlClass\Result as ResultInterface;
 
 class Server extends AbstractServer
 {
-    public function connect(array $options)
+    /**
+     * @var string $hostname The host or ip address of the database server.
+     */
+    protected $hostname;
+
+    /**
+     * @var string $username The user to authenticate with.
+     */
+    protected $username;
+
+    /**
+     * @var string $password The password to authenticate with.
+     */
+    protected $password;
+
+    /**
+     * @var string $database The database to use.
+     */
+    protected $database;
+
+
+    /**
+     * Create a new instance.
+     *
+     * @param string $hostname The host or ip address of the database server
+     * @param string $username The user to authenticate with
+     * @param string $password The password to authenticate with
+     * @param string $database The database to use
+     */
+    public function __construct($hostname, $username, $password, $database)
     {
-        $connect = "host=" . $options["hostname"] . " ";
-        $connect .= "user=" . $options["username"] . " ";
-        $connect .= "password=" . $options["password"] . " ";
-        $connect .= "dbname= " . $options["database"] . " ";
+        $this->hostname = $hostname;
+        $this->username = $username;
+        $this->password = $password;
+        $this->database = $database;
+    }
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string
+     */
+    public function getQuoteChars()
+    {
+        return '"';
+    }
+
+
+    public function connect()
+    {
+        $connect = "host=" . $this->hostname . " ";
+        $connect .= "user=" . $this->username . " ";
+        $connect .= "password=" . $this->password . " ";
+        $connect .= "dbname= " . $this->database . " ";
         return pg_connect($connect, \PGSQL_CONNECT_FORCE_NEW);
     }
 
@@ -33,7 +81,10 @@ class Server extends AbstractServer
         $query .= $tmpQuery;
 
         $params = Helper::toArray($params);
-        return pg_query_params($this->server, $query, $params);
+
+        if ($result = pg_query_params($this->server, $query, $params)) {
+            return new Result($result);
+        }
     }
 
 
@@ -87,15 +138,15 @@ class Server extends AbstractServer
 
         foreach ($params as $row) {
             if (!pg_put_line($this->server, implode("\t", $row) . "\n")) {
-                $this->error();
+                return;
             }
         }
 
         if (pg_put_line($this->server, "\\.\n")) {
-            $this->error();
+            return;
         }
 
-        $result = new Result(pg_end_copy($this->server), $this->mode);
+        return new Result(pg_end_copy($this->server));
     }
 
 

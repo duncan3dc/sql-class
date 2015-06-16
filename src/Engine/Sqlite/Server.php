@@ -9,16 +9,51 @@ use duncan3dc\SqlClass\Sql;
 
 class Server extends AbstractServer
 {
-    public function connect(array $options)
+    /**
+     * @var string $database The filename containing the database.
+     */
+    protected $database;
+
+    public function __construct($database)
     {
-        return new \Sqlite3($options["database"]);
+        $this->database = $database;
+    }
+
+    /**
+     * Check if this server supports the TRUNCATE TABLE statement.
+     *
+     * @return bool
+     */
+    public function canTruncateTables()
+    {
+        return false;
+    }
+
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string
+     */
+    public function getQuoteChars()
+    {
+        return '`';
+    }
+
+
+    public function connect()
+    {
+        return new \Sqlite3($this->database);
     }
 
 
     public function query($query, array $params = null, $preparedQuery)
     {
         if (!is_array($params)) {
-            return $this->server->query($preparedQuery);
+            if ($result = $this->server->query($preparedQuery)) {
+                return new Result($result);
+            }
+            return;
         }
 
         # If we have some parameters then we must convert them to the sqlite format
@@ -32,8 +67,8 @@ class Server extends AbstractServer
         }
         $newQuery .= $query;
 
-        if (!$result = $this->server->prepare($newQuery)) {
-            $this->error();
+        if (!$statement = $this->server->prepare($newQuery)) {
+            return;
         }
 
         foreach ($params as $key => $val) {
@@ -61,10 +96,12 @@ class Server extends AbstractServer
                     $type = SQLITE3_TEXT;
             }
 
-            $result->bindValue(":var" . $key, $val, $type);
+            $statement->bindValue(":var" . $key, $val, $type);
         }
 
-        return $result->execute();
+        if ($result = $statement->execute()) {
+            return new Result($result);
+        }
     }
 
 
@@ -91,6 +128,8 @@ class Server extends AbstractServer
 
     public function quoteValue($value)
     {
+        $this->sql->connect();
+
         return "'" . $this->server->escapeString($value) . "'";
     }
 

@@ -6,6 +6,23 @@ use duncan3dc\SqlClass\Result;
 
 interface ServerInterface
 {
+
+    /**
+     * Check if this server supports the TRUNCATE TABLE statement.
+     *
+     * @return bool
+     */
+    public function canTruncateTables();
+
+
+    /**
+     * Get the quote characters that this engine uses for quoting identifiers.
+     *
+     * @return string|string[] Can either be a single quote character that it used, or an array of 2 elements (1 for the start and 1 for the end character)
+     */
+    public function getQuoteChars();
+
+
     /**
      * Connect to the database using the supplied credentials.
      *
@@ -15,7 +32,7 @@ interface ServerInterface
      *
      * @return static
      */
-    public function connect(array $options);
+    public function connect();
 
 
     /**

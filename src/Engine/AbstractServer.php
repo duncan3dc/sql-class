@@ -36,9 +36,20 @@ abstract class AbstractServer implements ServerInterface
 
 
     /**
+     * Check if this server supports the TRUNCATE TABLE statement.
+     *
+     * @return bool
+     */
+    public function canTruncateTables()
+    {
+        return true;
+    }
+
+
+    /**
      * Connect to the database using the supplied credentials.
      */
-    abstract public function connect(array $options);
+    abstract public function connect();
 
 
     /**
