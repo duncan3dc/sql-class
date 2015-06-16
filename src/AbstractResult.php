@@ -41,12 +41,13 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
      *
      * @param int $style One of the fetch style constants from the Sql class (Sql::FETCH_ROW, Sql::FETCH_ASSOC or Sql::FETCH_RAW)
      *
-     * @return array|null
+     * @return array|Generator|null
      */
     public function fetch($style = null)
     {
         if ($style === Sql::FETCH_GENERATOR) {
-            return $this->generator();
+            trigger_error('Sql::fetch(Sql::FETCH_GENERATOR) is deprecated in favour of using the getValues() method, eg $result->getValues()', E_USER_DEPRECATED);
+            return $this->getValues();
         }
 
         # If the fetch fails then there are no rows left to retrieve
@@ -81,9 +82,11 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
 
 
     /**
-     * Get a generator function to fetch from
+     * Get a generator function to fetch from.
+     *
+     * @return Generator
      */
-    public function generator()
+    public function getValues()
     {
         while ($row = $this->getNextRow()) {
             if ($this->columnCount() > 1) {

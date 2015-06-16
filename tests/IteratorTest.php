@@ -122,6 +122,8 @@ class IteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testGenerator1()
     {
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
+
         $this->sql->insert("table1", ["field1" => "row1"]);
         $this->sql->insert("table1", ["field1" => "row2"]);
 
@@ -135,6 +137,8 @@ class IteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testGenerator2()
     {
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
+
         $this->sql->insert("table1", ["field1" => "row1"]);
 
         $rows = $this->sql->fieldSelectAll("table1", "field1", Sql::NO_WHERE_CLAUSE)->fetch(Sql::FETCH_GENERATOR);
@@ -145,6 +149,8 @@ class IteratorTest extends \PHPUnit_Framework_TestCase
 
     public function testGenerator3()
     {
+        error_reporting(E_ALL ^ E_USER_DEPRECATED);
+
         $this->sql->insert("table1", ["field1" => "key", "field2"  =>  "val"]);
 
         $rows = $this->sql->fieldSelectAll("table1", ["field1", "field2"], Sql::NO_WHERE_CLAUSE)->fetch(Sql::FETCH_GENERATOR);
