@@ -231,6 +231,17 @@ class Sql implements LoggerAwareInterface
 
 
     /**
+     * Get the logger in use.
+     *
+     * @return LoggerInterface
+     */
+    public function getLogger()
+    {
+        return $this->logger;
+    }
+
+
+    /**
      * If we have not already connected then connect to the database now.
      *
      * @return static
@@ -638,7 +649,7 @@ class Sql implements LoggerAwareInterface
     }
 
 
-    protected function error()
+    public function error()
     {
         $this->logger->error($this->getErrorMessage(), [
             "code"      =>  $this->getErrorCode(),
@@ -664,89 +675,28 @@ class Sql implements LoggerAwareInterface
     }
 
 
-    public function update($table, array $set, $where)
+    public function table($table)
     {
         $tableName = $this->getTableName($table);
+        return new Table($tableName, $this);
+    }
 
-        $query = "UPDATE " . $tableName . " SET ";
 
-        $params = [];
-        foreach ($set as $key => $val) {
-            $query .= $this->quoteField($key) . "=?,";
-            $params[] = $val;
-        }
-
-        $query = substr($query, 0, -1) . " ";
-
-        if ($where !== self::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where, $params);
-        }
-
-        $result = $this->query($query, $params);
-
-        return $result;
+    public function update($table, array $set, $where)
+    {
+        return $this->table($table)->update($set, $where);
     }
 
 
     public function insert($table, array $params, $extra = null)
     {
-        $tableName = $this->getTableName($table);
-
-        $newParams = [];
-        $fields = "";
-        $values = "";
-        foreach ($params as $key => $val) {
-            if ($fields) {
-                $fields .= ",";
-                $values .= ",";
-            }
-
-            $fields .= $this->quoteField($key);
-            $values .= "?";
-            $newParams[] = $val;
-        }
-
-        if ($extra === self::INSERT_REPLACE) {
-            $query = "REPLACE ";
-        } elseif ($extra === self::INSERT_IGNORE) {
-            $query = "INSERT IGNORE ";
-        } else {
-            $query = "INSERT ";
-        }
-        $query .= "INTO " . $tableName . " (" . $fields . ") VALUES (" . $values . ")";
-
-        $result = $this->query($query, $newParams);
-
-        return $result;
+        return $this->table($table)->insert($params, $extra);
     }
+
 
     public function bulkInsert($table, array $params, $extra = null)
     {
-        # Ensure we have a connection to run this query on
-        $this->connect();
-
-        $table = $this->getTableName($table);
-
-        $logger = null;
-        if (!$this->logger instanceof NullLogger) {
-            $this->logger->debug("BULK INSERT INTO {table} ({rows} rows)", [
-                "table" =>  $table,
-                "rows"  =>  count($params),
-            ]);
-            $this->logger = new NullLogger;
-        }
-
-        $result = $this->engine->bulkInsert($table, $params, $extra);
-
-        if ($logger) {
-            $this->logger = $logger;
-        }
-
-        if (!$result instanceof ResultInterface) {
-            $this->error();
-        }
-
-        return $result;
+        return $this->table($table)->bulkInsert($params, $extra);
     }
 
 
@@ -768,7 +718,9 @@ class Sql implements LoggerAwareInterface
             throw new \Exception("Invalid where clause specified, must be an array");
         }
 
-        $params = Helper::toArray($params);
+        if (!is_array($params)) {
+            $params = [];
+        }
 
         $query = "";
 
@@ -843,27 +795,8 @@ class Sql implements LoggerAwareInterface
 
     public function delete($table, $where)
     {
-        $tableName = $this->getTableName($table);
-        $params = null;
-
-        /**
-         * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement.
-         * This statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement.
-         * Also not all engines support this though, so we need to check that too.
-         */
-        if ($where === self::NO_WHERE_CLAUSE && !$this->transaction && $this->engine->canTruncateTables()) {
-            $query = "TRUNCATE TABLE {$tableName}";
-        } else {
-            $query = "DELETE FROM {$tableName} ";
-
-            if ($where !== self::NO_WHERE_CLAUSE) {
-                $query .= "WHERE " . $this->where($where, $params);
-            }
-        }
-
-        return $this->query($query, $params);
+        return $this->table($table)->delete($where);
     }
-
 
     /**
      * Grab the first row from a table using the standard select statement
@@ -871,7 +804,7 @@ class Sql implements LoggerAwareInterface
      */
     public function select($table, $where, $orderBy = null)
     {
-        return $this->fieldSelect($table, "*", $where, $orderBy);
+        return $this->table($table)->select($where, $orderBy);
     }
 
 
@@ -880,9 +813,7 @@ class Sql implements LoggerAwareInterface
      */
     public function selectC($table, $where, $orderBy = null)
     {
-        $this->cacheNext = true;
-
-        return $this->select($table, $where, $orderBy);
+        return $this->table($table)->cacheNext()->select($where, $orderBy);
     }
 
 
@@ -891,34 +822,7 @@ class Sql implements LoggerAwareInterface
      */
     public function fieldSelect($table, $fields, $where, $orderBy = null)
     {
-        $table = $this->getTableName($table);
-
-        $query = "SELECT ";
-
-        if ($this->engine instanceof Engine\Mssql\Server) {
-            $query .= "TOP 1 ";
-        }
-
-        $query .= $this->selectFields($fields);
-
-        $query .= " FROM " . $table . " ";
-
-        $params = null;
-        if ($where !== self::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where, $params);
-        }
-
-        if ($orderBy) {
-            $query .= $this->orderBy($orderBy) . " ";
-        }
-
-        if ($this->engine instanceof Engine\Odbc\Server) {
-            $query .= "FETCH FIRST 1 ROW ONLY";
-        } elseif (!$this->engine instanceof Engine\Mssql\Server) {
-            $query .= "LIMIT 1";
-        }
-
-        return $this->query($query, $params)->fetch();
+        return $this->table($table)->fieldSelect($fields, $where, $orderBy);
     }
 
 
@@ -927,9 +831,7 @@ class Sql implements LoggerAwareInterface
      */
     public function fieldSelectC($table, $fields, $where, $orderBy = null)
     {
-        $this->cacheNext = true;
-
-        return $this->fieldSelect($table, $fields, $where, $orderBy);
+        return $this->table($table)->cacheNext()->fieldSelect($fields, $where, $orderBy);
     }
 
 
@@ -939,7 +841,7 @@ class Sql implements LoggerAwareInterface
      */
     public function selectAll($table, $where, $orderBy = null)
     {
-        return $this->fieldSelectAll($table, "*", $where, $orderBy);
+        return $this->table($table)->selectAll($where, $orderBy);
     }
 
 
@@ -948,9 +850,7 @@ class Sql implements LoggerAwareInterface
      */
     public function selectAllC($table, $where, $orderBy = null)
     {
-        $this->cacheNext = true;
-
-        return $this->selectAll($table, $where, $orderBy);
+        return $this->table($table)->cacheNext()->selectAll($where, $orderBy);
     }
 
 
@@ -959,24 +859,7 @@ class Sql implements LoggerAwareInterface
      */
     public function fieldSelectAll($table, $fields, $where, $orderBy = null)
     {
-        $table = $this->getTableName($table);
-
-        $query = "SELECT ";
-
-        $query .= $this->selectFields($fields);
-
-        $query .= " FROM " . $table . " ";
-
-        $params = null;
-        if ($where !== self::NO_WHERE_CLAUSE) {
-            $query .= "WHERE " . $this->where($where, $params);
-        }
-
-        if ($orderBy) {
-            $query .= $this->orderBy($orderBy) . " ";
-        }
-
-        return $this->query($query, $params);
+        return $this->table($table)->fieldSelectAll($fields, $where, $orderBy);
     }
 
 
@@ -985,9 +868,7 @@ class Sql implements LoggerAwareInterface
      */
     public function fieldSelectAllC($table, $fields, $where, $orderBy = null)
     {
-        $this->cacheNext = true;
-
-        return $this->fieldSelectAll($table, $fields, $where, $orderBy);
+        return $this->table($table)->cacheNext()->fieldSelectAll($fields, $where, $orderBy);
     }
 
 
@@ -1001,7 +882,7 @@ class Sql implements LoggerAwareInterface
      */
     public function exists($table, $where)
     {
-        return (bool) $this->fieldSelect($table, "1", $where);
+        return $this->table($table)->exists($where);
     }
 
 
@@ -1010,14 +891,7 @@ class Sql implements LoggerAwareInterface
      */
     public function insertOrUpdate($table, array $set, array $where)
     {
-        if ($this->select($table, $where)) {
-            $result = $this->update($table, $set, $where);
-        } else {
-            $params = array_merge($where, $set);
-            $result = $this->insert($table, $params);
-        }
-
-        return $result;
+        return $this->table($table)->insertOrUpdate($set, $where);
     }
 
 
@@ -1026,7 +900,7 @@ class Sql implements LoggerAwareInterface
      */
     public function updateOrInsert($table, array $set, array $where)
     {
-        return $this->insertOrUpdate($table, $set, $where);
+        return $this->table($table)->insertOrUpdate($set, $where);
     }
 
 
@@ -1134,6 +1008,17 @@ class Sql implements LoggerAwareInterface
         $this->transaction = true;
 
         return true;
+    }
+
+
+    /**
+     * Check if the object is currently in transaction mode.
+     *
+     * @return bool
+     */
+    public function isTransaction()
+    {
+        return $this->transaction;
     }
 
 
