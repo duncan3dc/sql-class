@@ -1150,6 +1150,21 @@ class Sql
         return $result;
     }
 
+
+    /**
+     * Allow multiple rows to be inserted much more efficiently.
+     *
+     * @param string $table The table to insert the records into
+     * @param int $limit The maximum number of rows to insert at a time
+     *
+     * @return BulkInsert
+     */
+    public function delayedInsert($table, $limit = 10000)
+    {
+        return new BulkInsert($this, $table, $limit);
+    }
+
+
     public function bulkInsert($table, array $params, $extra = null)
     {
         # Ensure we have a connection to run this query on
