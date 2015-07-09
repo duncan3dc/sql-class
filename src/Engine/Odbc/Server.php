@@ -159,9 +159,9 @@ class Server extends AbstractServer
             $values .= ")";
         }
 
-        $query = "INSERT INTO " . $table . " (" . $fields . ") VALUES " . $values;
+        $query = "INSERT INTO {$table} ({$fields}) VALUES {$values}";
 
-        return $this->query($query, $newParams);
+        return $this->sql->query($query, $newParams);
     }
 
 
@@ -216,7 +216,7 @@ class Server extends AbstractServer
     public function lockTables(array $tables)
     {
         foreach ($tables as $table) {
-            $this->query("LOCK TABLE " . $table . " IN EXCLUSIVE MODE ALLOW READ");
+            $this->sql->query("LOCK TABLE {$table} IN EXCLUSIVE MODE ALLOW READ");
         }
 
         # If none of the locks failed then report success
@@ -226,7 +226,7 @@ class Server extends AbstractServer
 
     public function unlockTables()
     {
-        return $this->query("COMMIT");
+        return $this->sql->query("COMMIT");
     }
 
 

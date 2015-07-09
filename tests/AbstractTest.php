@@ -56,6 +56,7 @@ abstract class AbstractTest extends \PHPUnit_Framework_TestCase
 
         if (class_exists($class)) {
             $engine = new $class("hostname", "username", "password");
+            $engine->setSql($this->sql);
         } else {
             $engine = null;
         }

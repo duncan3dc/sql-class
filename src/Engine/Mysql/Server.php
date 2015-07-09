@@ -64,7 +64,7 @@ class Server extends AbstractServer
         $this->timezone = $timezone;
 
         if ($this->server) {
-            $this->query("SET time_zone = ?", $this->timezone);
+            $this->sql->query("SET time_zone = ?", $this->timezone);
         }
     }
 
@@ -213,7 +213,7 @@ class Server extends AbstractServer
         }
         $query .= "INTO " . $table . " (" . $fields . ") VALUES " . $values;
 
-        return $this->query($query, $newParams);
+        return $this->sql->query($query, $newParams);
     }
 
 
@@ -249,13 +249,13 @@ class Server extends AbstractServer
 
     public function lockTables(array $tables)
     {
-        return $this->query("LOCK TABLES " . implode(",", $tables) . " WRITE");
+        return $this->sql->query("LOCK TABLES " . implode(",", $tables) . " WRITE");
     }
 
 
     public function unlockTables()
     {
-        return $this->query("UNLOCK TABLES");
+        return $this->sql->query("UNLOCK TABLES");
     }
 
 
@@ -263,7 +263,7 @@ class Server extends AbstractServer
     {
         $databases = [];
 
-        $result = $this->query("SHOW DATABASES");
+        $result = $this->sql->query("SHOW DATABASES");
 
         $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {
@@ -279,7 +279,7 @@ class Server extends AbstractServer
         $tables = [];
 
         $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='BASE TABLE'";
-        $result = $this->query($query);
+        $result = $this->sql->query($query);
 
         $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {
@@ -295,7 +295,7 @@ class Server extends AbstractServer
         $views = [];
 
         $query = "SHOW FULL TABLES IN " . $this->quoteTable($database) . " WHERE table_type='VIEW'";
-        $result = $this->query($query);
+        $result = $this->sql->query($query);
 
         $result->fetchStyle(Sql::FETCH_ROW);
         foreach ($result as $row) {

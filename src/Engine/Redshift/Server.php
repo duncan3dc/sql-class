@@ -85,7 +85,7 @@ class Server extends Postgres
 
         $query = "INSERT INTO {$table} ({$fields}) VALUES {$values}";
 
-        return $this->query($query, $newParams);
+        return $this->sql->query($query, $newParams);
     }
 
 
@@ -97,7 +97,7 @@ class Server extends Postgres
 
     public function startTransaction()
     {
-        return $this->query("START TRANSACTION");
+        return $this->sql->query("START TRANSACTION");
     }
 
 

@@ -134,7 +134,7 @@ class Server extends AbstractServer
             $fields .= $this->quoteField($key);
         }
 
-        $this->query("COPY " . $table . " (" . $fields . ") FROM STDIN");
+        $this->sql->query("COPY {$table} ({$fields}) FROM STDIN");
 
         foreach ($params as $row) {
             if (!pg_put_line($this->server, implode("\t", $row) . "\n")) {
@@ -158,37 +158,37 @@ class Server extends AbstractServer
 
     public function startTransaction()
     {
-        return $this->query("SET AUTOCOMMIT = OFF");
+        return $this->sql->query("SET AUTOCOMMIT = OFF");
     }
 
 
     public function endTransaction()
     {
-        return $this->query("SET AUTOCOMMIT = ON");
+        return $this->sql->query("SET AUTOCOMMIT = ON");
     }
 
 
     public function commit()
     {
-        return $this->query("COMMIT");
+        return $this->sql->query("COMMIT");
     }
 
 
     public function rollback()
     {
-        return $this->query("ROLLBACK");
+        return $this->sql->query("ROLLBACK");
     }
 
 
     public function lockTables(array $tables)
     {
-        return $this->query("LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE");
+        return $this->sql->query("LOCK TABLE " . implode(",", $tables) . " IN EXCLUSIVE MODE");
     }
 
 
     public function unlockTables()
     {
-        return $this->query("COMMIT");
+        return $this->sql->query("COMMIT");
     }
 
 

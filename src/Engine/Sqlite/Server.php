@@ -159,7 +159,7 @@ class Server extends AbstractServer
 
     public function getId(ResultInterface $result)
     {
-        return $this->query("SELECT last_insert_rowid()")->fetch(Sql::FETCH_ROW)[0];
+        return $this->sql->query("SELECT last_insert_rowid()")->fetch(Sql::FETCH_ROW)[0];
     }
 
 

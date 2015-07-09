@@ -196,6 +196,7 @@ class Sql implements LoggerAwareInterface
     public function __construct(ServerInterface $server, LoggerInterface $logger = null)
     {
         $this->engine = $server;
+        $this->engine->setSql($this);
 
         if ($logger === null) {
             $logger = new NullLogger;

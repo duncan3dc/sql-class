@@ -4,13 +4,19 @@ namespace duncan3dc\SqlClass\Engine;
 
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use duncan3dc\SqlClass\Result;
+use duncan3dc\SqlClass\Sql;
 
 abstract class AbstractServer implements ServerInterface
 {
     /**
-     * @var resource $server The resource for the current database connection
+     * @var resource $server The resource for the current database connection.
      */
     protected $server;
+
+    /**
+     * @var Sql $sql The Sql instance this server is injected into.
+     */
+    protected $sql;
 
 
     /**
@@ -18,11 +24,28 @@ abstract class AbstractServer implements ServerInterface
      *
      * @param resource $server The resource (returned by the appropriate connect function)
      *
-     * @return void
+     * @return static
      */
     public function setServer($server)
     {
         $this->server = $server;
+
+        return $this;
+    }
+
+
+    /**
+     * Set the parent Sql instancs.
+     *
+     * @param Sql $sql The Sql instance this server is injected into
+     *
+     * @return static
+     */
+    public function setSql(Sql $sql)
+    {
+        $this->sql = $sql;
+
+        return $this;
     }
 
 

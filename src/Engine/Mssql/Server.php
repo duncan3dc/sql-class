@@ -116,7 +116,7 @@ class Server extends AbstractServer
     {
         $databases = [];
 
-        $result = $this->query("SELECT name FROM master..sysdatabases");
+        $result = $this->sql->query("SELECT name FROM master..sysdatabases");
         foreach ($result as $row) {
             $databases[] = $row["name"];
         }
@@ -130,7 +130,7 @@ class Server extends AbstractServer
         $tables = [];
 
         $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
-        $result = $this->query($query);
+        $result = $this->sql->query($query);
 
         foreach ($result as $row) {
             $tables[] = $row["name"];
@@ -145,7 +145,7 @@ class Server extends AbstractServer
         $views = [];
 
         $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
-        $result = $this->query($query);
+        $result = $this->sql->query($query);
 
         foreach ($result as $row) {
             $views[] = $row["name"];
