@@ -95,17 +95,6 @@ class Server extends AbstractServer
     }
 
 
-    public function bulkInsert($table, array $params, $extra = null)
-    {
-        foreach ($params as $newParams) {
-            if (!$this->insert($table, $newParams)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
     public function getId(ResultInterface $result)
     {
         throw new NotImplementedException("getId() not available in this mode");

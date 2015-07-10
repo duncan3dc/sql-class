@@ -126,45 +126,6 @@ class Server extends AbstractServer
     }
 
 
-    public function bulkInsert($table, array $params, $extra = null)
-    {
-        $fields = "";
-        $first = reset($params);
-        foreach ($first as $key => $val) {
-            if ($fields) {
-                $fields .= ",";
-            }
-            $fields .= $this->quoteField($key);
-        }
-
-        $newParams = [];
-        $values = "";
-
-        foreach ($params as $row) {
-            if ($values) {
-                $values .= ",";
-            }
-            $values .= "(";
-            $first = true;
-
-            foreach ($row as $key => $val) {
-                if ($first) {
-                    $first = false;
-                } else {
-                    $values .= ",";
-                }
-                $values .= "?";
-                $newParams[] = $val;
-            }
-            $values .= ")";
-        }
-
-        $query = "INSERT INTO {$table} ({$fields}) VALUES {$values}";
-
-        return $this->sql->query($query, $newParams);
-    }
-
-
     public function getId(ResultInterface $result)
     {
         throw new NotImplementedException("getId() not available in this mode");

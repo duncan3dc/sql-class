@@ -146,17 +146,6 @@ class Server extends AbstractServer
     }
 
 
-    public function bulkInsert($table, array $params, $extra = null)
-    {
-        foreach ($params as $newParams) {
-            if (!$this->insert($table, $newParams)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
     public function getId(ResultInterface $result)
     {
         return $this->sql->query("SELECT last_insert_rowid()")->fetch(Sql::FETCH_ROW)[0];

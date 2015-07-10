@@ -3,6 +3,7 @@
 namespace duncan3dc\SqlClass\Engine;
 
 use duncan3dc\SqlClass\Exceptions\QueryException;
+use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Result;
 use duncan3dc\SqlClass\Sql;
 
@@ -130,14 +131,18 @@ abstract class AbstractServer implements ServerInterface
     }
 
 
+    public function bulkInsert($table, array $params, $extra = null)
+    {
+        throw new NotImplementedException("bulkInsert() not available in this mode");
+    }
+
+
     /**
      * Get the error message text of the last error.
      *
      * @return string
      */
     abstract public function getErrorMessage();
-
-    abstract public function bulkInsert($table, array $params, $extra = null);
 
     abstract public function getId(Result $result);
 

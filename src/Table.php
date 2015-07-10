@@ -2,6 +2,7 @@
 
 namespace duncan3dc\SqlClass;
 
+use duncan3dc\SqlClass\Exceptions\NotImplementedException;
 use duncan3dc\SqlClass\Engine\ResultInterface;
 use Psr\Log\NullLogger;
 
@@ -135,17 +136,29 @@ class Table
             $this->sql->setLogger(new NullLogger);
         }
 
-        $result = $this->sql->getEngine()->bulkInsert($this->table, $params, $extra);
+        try {
+            $result = $this->sql->getEngine()->bulkInsert($this->table, $params, $extra);
+        } catch (NotImplementedException $e) {
+            foreach ($params as $newParams) {
+                $result = $this->insert($newParams);
+                if (!$result) {
+                    break;
+                }
+            }
+        }
 
         if ($logger) {
             $this->sql->setLogger($logger);
         }
 
-        if (!$result instanceof ResultInterface) {
-            $this->sql->error();
+        if ($result instanceof Result) {
+            return $result;
+        }
+        if ($result instanceof ResultInterface) {
+            return new Result($result);
         }
 
-        return $result;
+        $this->sql->error();
     }
 
 
