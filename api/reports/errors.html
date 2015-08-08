@@ -8,17 +8,17 @@
     <meta name="author" content=""/>
     <meta name="description" content=""/>
 
-    <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
-    <link href="https://netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.min.css" rel="stylesheet">
+    <link href="../css/bootstrap-combined.no-icons.min.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
     <link href="../css/prism.css" rel="stylesheet" media="all"/>
     <link href="../css/template.css" rel="stylesheet" media="all"/>
     
     <!--[if lt IE 9]>
-    <script src="https://html5shim.googlecode.com/svn/trunk/html5.js" type="text/javascript"></script>
+    <script src="../js/html5.js"></script>
     <![endif]-->
-    <script src="https://code.jquery.com/jquery-1.11.0.min.js" type="text/javascript"></script>
-    <script src="https://code.jquery.com/ui/1.10.4/jquery-ui.min.js" type="text/javascript"></script>
-    <script src="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+    <script src="../js/jquery-1.11.0.min.js"></script>
+    <script src="../js/ui/1.10.4/jquery-ui.min.js"></script>
+    <script src="../js/bootstrap.min.js"></script>
     <script src="../js/jquery.smooth-scroll.js"></script>
     <script src="../js/prism.min.js"></script>
     <!-- TODO: Add http://jscrollpane.kelvinluck.com/ to style the scrollbars for browsers not using webkit-->
@@ -67,12 +67,12 @@
                         <ul class="dropdown-menu">
                             <li>
                                 <a href="../reports/errors.html">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="icon-list-alt"></i>&#160;Errors <span class="label label-info pull-right">45</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="icon-list-alt"></i>&#160;Errors <span class="label label-info pull-right">48</span>
                                 </a>
                             </li>
                             <li>
                                 <a href="../reports/markers.html">
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    <i class="icon-list-alt"></i>&#160;Markers <span class="label label-info pull-right">0</span>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                <i class="icon-list-alt"></i>&#160;Markers <span class="label label-info pull-right">0</span>
                                 </a>
                             </li>
                             <li>
@@ -99,18 +99,19 @@
                 <li class="nav-header">Navigation</li>
                                                                             <li><a href="#Result.php"><i class="icon-file"></i> Result.php</a></li>
                                                                                                     <li><a href="#Sql.php"><i class="icon-file"></i> Sql.php</a></li>
+                                                                                                    <li><a href="#Where/AbstractWhere.php"><i class="icon-file"></i> Where/AbstractWhere.php</a></li>
+                                                                                                    <li><a href="#Where/In.php"><i class="icon-file"></i> Where/In.php</a></li>
                                                                                                     <li><a href="#AbstractResult.php"><i class="icon-file"></i> AbstractResult.php</a></li>
                                                                                                     <li><a href="#Cache.php"><i class="icon-file"></i> Cache.php</a></li>
-                                                                                                    <li><a href="#Where/AbstractWhere.php"><i class="icon-file"></i> Where/AbstractWhere.php</a></li>
                                                                                                     <li><a href="#Where/Like.php"><i class="icon-file"></i> Where/Like.php</a></li>
                                                                                                     <li><a href="#Where/LessThan.php"><i class="icon-file"></i> Where/LessThan.php</a></li>
-                                                                                                    <li><a href="#Where/In.php"><i class="icon-file"></i> Where/In.php</a></li>
                                                                                                     <li><a href="#Where/NotIn.php"><i class="icon-file"></i> Where/NotIn.php</a></li>
-                                                                                                    <li><a href="#Where/LessThanOrEqualTo.php"><i class="icon-file"></i> Where/LessThanOrEqualTo.php</a></li>
                                                                                                     <li><a href="#Where/NotEqualTo.php"><i class="icon-file"></i> Where/NotEqualTo.php</a></li>
-                                                                                                    <li><a href="#Where/GreaterThanOrEqualTo.php"><i class="icon-file"></i> Where/GreaterThanOrEqualTo.php</a></li>
                                                                                                     <li><a href="#Where/Equals.php"><i class="icon-file"></i> Where/Equals.php</a></li>
                                                                                                     <li><a href="#Where/GreaterThan.php"><i class="icon-file"></i> Where/GreaterThan.php</a></li>
+                                                                                                    <li><a href="#Where/NotLike.php"><i class="icon-file"></i> Where/NotLike.php</a></li>
+                                                                                                    <li><a href="#Where/NotLessThan.php"><i class="icon-file"></i> Where/NotLessThan.php</a></li>
+                                                                                                    <li><a href="#Where/NotGreaterThan.php"><i class="icon-file"></i> Where/NotGreaterThan.php</a></li>
                                                                     </ul>
         </div>
 
@@ -152,6 +153,58 @@
                         <h3>
                             <i class="icon-file"></i>
                             Sql.php
+                            <small style="float: right;padding-right: 10px;">1</small>
+                        </h3>
+                        <div>
+                            <table class="table markers table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Line</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>0</td>
+                                        <td>No summary was found for this file</td>
+                                    </tr>
+                                                            </tbody>
+                            </table>
+                        </div>
+                                    </div>
+                            <div class="package-contents">
+                                            <a name="Where/AbstractWhere.php" id="Where/AbstractWhere.php"></a>
+                        <h3>
+                            <i class="icon-file"></i>
+                            Where/AbstractWhere.php
+                            <small style="float: right;padding-right: 10px;">1</small>
+                        </h3>
+                        <div>
+                            <table class="table markers table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Line</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>0</td>
+                                        <td>No summary was found for this file</td>
+                                    </tr>
+                                                            </tbody>
+                            </table>
+                        </div>
+                                    </div>
+                            <div class="package-contents">
+                                            <a name="Where/In.php" id="Where/In.php"></a>
+                        <h3>
+                            <i class="icon-file"></i>
+                            Where/In.php
                             <small style="float: right;padding-right: 10px;">1</small>
                         </h3>
                         <div>
@@ -301,32 +354,6 @@
                         </div>
                                     </div>
                             <div class="package-contents">
-                                            <a name="Where/AbstractWhere.php" id="Where/AbstractWhere.php"></a>
-                        <h3>
-                            <i class="icon-file"></i>
-                            Where/AbstractWhere.php
-                            <small style="float: right;padding-right: 10px;">1</small>
-                        </h3>
-                        <div>
-                            <table class="table markers table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Line</th>
-                                    <th>Description</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>0</td>
-                                        <td>No summary was found for this file</td>
-                                    </tr>
-                                                            </tbody>
-                            </table>
-                        </div>
-                                    </div>
-                            <div class="package-contents">
                                             <a name="Where/Like.php" id="Where/Like.php"></a>
                         <h3>
                             <i class="icon-file"></i>
@@ -399,32 +426,6 @@
                         </div>
                                     </div>
                             <div class="package-contents">
-                                            <a name="Where/In.php" id="Where/In.php"></a>
-                        <h3>
-                            <i class="icon-file"></i>
-                            Where/In.php
-                            <small style="float: right;padding-right: 10px;">1</small>
-                        </h3>
-                        <div>
-                            <table class="table markers table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Line</th>
-                                    <th>Description</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>0</td>
-                                        <td>No summary was found for this file</td>
-                                    </tr>
-                                                            </tbody>
-                            </table>
-                        </div>
-                                    </div>
-                            <div class="package-contents">
                                             <a name="Where/NotIn.php" id="Where/NotIn.php"></a>
                         <h3>
                             <i class="icon-file"></i>
@@ -461,42 +462,6 @@
                         </div>
                                     </div>
                             <div class="package-contents">
-                                            <a name="Where/LessThanOrEqualTo.php" id="Where/LessThanOrEqualTo.php"></a>
-                        <h3>
-                            <i class="icon-file"></i>
-                            Where/LessThanOrEqualTo.php
-                            <small style="float: right;padding-right: 10px;">3</small>
-                        </h3>
-                        <div>
-                            <table class="table markers table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Line</th>
-                                    <th>Description</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>0</td>
-                                        <td>No summary was found for this file</td>
-                                    </tr>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>5</td>
-                                        <td>No summary for class \duncan3dc\SqlClass\Where\LessThanOrEqualTo</td>
-                                    </tr>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>7</td>
-                                        <td>No summary for method getClause()</td>
-                                    </tr>
-                                                            </tbody>
-                            </table>
-                        </div>
-                                    </div>
-                            <div class="package-contents">
                                             <a name="Where/NotEqualTo.php" id="Where/NotEqualTo.php"></a>
                         <h3>
                             <i class="icon-file"></i>
@@ -522,42 +487,6 @@
                                         <td>error</td>
                                         <td>5</td>
                                         <td>No summary for class \duncan3dc\SqlClass\Where\NotEqualTo</td>
-                                    </tr>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>7</td>
-                                        <td>No summary for method getClause()</td>
-                                    </tr>
-                                                            </tbody>
-                            </table>
-                        </div>
-                                    </div>
-                            <div class="package-contents">
-                                            <a name="Where/GreaterThanOrEqualTo.php" id="Where/GreaterThanOrEqualTo.php"></a>
-                        <h3>
-                            <i class="icon-file"></i>
-                            Where/GreaterThanOrEqualTo.php
-                            <small style="float: right;padding-right: 10px;">3</small>
-                        </h3>
-                        <div>
-                            <table class="table markers table-bordered">
-                                <thead>
-                                <tr>
-                                    <th>Type</th>
-                                    <th>Line</th>
-                                    <th>Description</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>0</td>
-                                        <td>No summary was found for this file</td>
-                                    </tr>
-                                                                    <tr>
-                                        <td>error</td>
-                                        <td>5</td>
-                                        <td>No summary for class \duncan3dc\SqlClass\Where\GreaterThanOrEqualTo</td>
                                     </tr>
                                                                     <tr>
                                         <td>error</td>
@@ -640,6 +569,114 @@
                             </table>
                         </div>
                                     </div>
+                            <div class="package-contents">
+                                            <a name="Where/NotLike.php" id="Where/NotLike.php"></a>
+                        <h3>
+                            <i class="icon-file"></i>
+                            Where/NotLike.php
+                            <small style="float: right;padding-right: 10px;">3</small>
+                        </h3>
+                        <div>
+                            <table class="table markers table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Line</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>0</td>
+                                        <td>No summary was found for this file</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>5</td>
+                                        <td>No summary for class &quot;&quot;</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>7</td>
+                                        <td>No summary for method &quot;&quot;</td>
+                                    </tr>
+                                                            </tbody>
+                            </table>
+                        </div>
+                                    </div>
+                            <div class="package-contents">
+                                            <a name="Where/NotLessThan.php" id="Where/NotLessThan.php"></a>
+                        <h3>
+                            <i class="icon-file"></i>
+                            Where/NotLessThan.php
+                            <small style="float: right;padding-right: 10px;">3</small>
+                        </h3>
+                        <div>
+                            <table class="table markers table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Line</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>0</td>
+                                        <td>No summary was found for this file</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>5</td>
+                                        <td>No summary for class &quot;&quot;</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>7</td>
+                                        <td>No summary for method &quot;&quot;</td>
+                                    </tr>
+                                                            </tbody>
+                            </table>
+                        </div>
+                                    </div>
+                            <div class="package-contents">
+                                            <a name="Where/NotGreaterThan.php" id="Where/NotGreaterThan.php"></a>
+                        <h3>
+                            <i class="icon-file"></i>
+                            Where/NotGreaterThan.php
+                            <small style="float: right;padding-right: 10px;">3</small>
+                        </h3>
+                        <div>
+                            <table class="table markers table-bordered">
+                                <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Line</th>
+                                    <th>Description</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>0</td>
+                                        <td>No summary was found for this file</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>5</td>
+                                        <td>No summary for class &quot;&quot;</td>
+                                    </tr>
+                                                                    <tr>
+                                        <td>error</td>
+                                        <td>7</td>
+                                        <td>No summary for method &quot;&quot;</td>
+                                    </tr>
+                                                            </tbody>
+                            </table>
+                        </div>
+                                    </div>
                     </div>
     </section>
 
@@ -680,7 +717,7 @@
                 <section class="span10 offset1">
                     <hr />
                     Documentation is powered by <a href="http://www.phpdoc.org/">phpDocumentor </a> and authored
-                    on January 26th, 2015 at 12:59.
+                    on August 8th, 2015 at 13:42.
                 </section>
             </section>
         </section>
