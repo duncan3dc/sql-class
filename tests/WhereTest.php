@@ -1,6 +1,8 @@
 <?php
 
-namespace duncan3dc\SqlClass;
+namespace duncan3dc\SqlClassTests;
+
+use duncan3dc\SqlClass\Sql;
 
 class WhereTest extends SqlTest
 {

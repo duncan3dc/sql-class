@@ -1,6 +1,8 @@
 <?php
 
-namespace duncan3dc\SqlClass;
+namespace duncan3dc\SqlClassTests;
+
+use duncan3dc\SqlClass\Sql;
 
 class SqlTest extends \PHPUnit_Framework_TestCase
 {
@@ -14,7 +16,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             unlink($database);
         }
 
-        $this->sql = new \duncan3dc\SqlClass\Sql([
+        $this->sql = new Sql([
             "mode"      =>  "sqlite",
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);
@@ -40,7 +42,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
 
     protected function callProtectedMethod($methodName, &$params)
     {
-        $class = new \ReflectionClass(__NAMESPACE__ . "\\Sql");
+        $class = new \ReflectionClass(Sql::class);
 
         $method = $class->getMethod($methodName);
 

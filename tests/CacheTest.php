@@ -1,6 +1,9 @@
 <?php
 
-namespace duncan3dc\SqlClass;
+namespace duncan3dc\SqlClassTests;
+
+use duncan3dc\SqlClass\Cache;
+use duncan3dc\SqlClass\Sql;
 
 class CacheTest extends \PHPUnit_Framework_TestCase
 {
@@ -15,7 +18,7 @@ class CacheTest extends \PHPUnit_Framework_TestCase
             unlink($this->database);
         }
 
-        $this->sql = new \duncan3dc\SqlClass\Sql([
+        $this->sql = new Sql([
             "mode"      =>  "sqlite",
             "database"  =>  "/tmp/phpunit.sqlite",
         ]);

@@ -20,6 +20,9 @@
 		"phpunit/phpunit": "^4.7"
 	},
 	"autoload": {
-		"psr-4": {"duncan3dc\\SqlClass\\": "src/"}
+		"psr-4": {
+			"duncan3dc\\SqlClass\\": "src/",
+			"duncan3dc\\SqlClassTests\\": "tests/"
+		}
 	}
 }
