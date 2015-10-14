@@ -170,4 +170,12 @@ class WhereTest extends SqlTest
             "field1"    =>  Sql::notIn(["one"]),
         ]);
     }
+
+
+    public function testBetween()
+    {
+        $this->checkQueryParams("`field1` BETWEEN ? AND ? ", [
+            "field1"    =>  Sql::between("one", "two"),
+        ]);
+    }
 }
