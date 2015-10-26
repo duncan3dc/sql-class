@@ -200,6 +200,18 @@ class Result extends AbstractResult
 
             case "odbc":
                 $rows = odbc_num_rows($this->result);
+                # The above function is unreliable, so if we got a zero count then double check it
+                if ($rows < 1) {
+                    $rows = 0;
+
+                    $position = $this->position;
+                    $this->seek(0);
+                    while ($this->getNextRow()) {
+                        ++$rows;
+                    }
+
+                    $this->seek($position);
+                }
                 break;
 
             case "sqlite":
