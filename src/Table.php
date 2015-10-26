@@ -3,13 +3,13 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\SqlClass\Exceptions\NotImplementedException;
-use duncan3dc\SqlClass\Engine\ResultInterface;
+use duncan3dc\SqlClass\Engine\ResultInterface as EngineResultInterface;
 use Psr\Log\NullLogger;
 
 /**
  * Handle queries for an individual table.
  */
-class Table
+class Table implements TableInterface
 {
     /**
      * @var string $table The name of the table to query.
@@ -154,7 +154,7 @@ class Table
         if ($result instanceof Result) {
             return $result;
         }
-        if ($result instanceof ResultInterface) {
+        if ($result instanceof EngineResultInterface) {
             return new Result($result);
         }
 

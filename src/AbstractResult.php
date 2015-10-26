@@ -5,7 +5,7 @@ namespace duncan3dc\SqlClass;
 /**
  * Base class that Result/CachedResult extend from
  */
-abstract class AbstractResult implements \SeekableIterator, \Countable
+abstract class AbstractResult implements ResultInterface
 {
     /**
      * @var int $position The current (zero based) position in the result set

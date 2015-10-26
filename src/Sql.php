@@ -3,7 +3,7 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
-use duncan3dc\SqlClass\Engine\ResultInterface;
+use duncan3dc\SqlClass\Engine\ResultInterface as EngineResultInterface;
 use duncan3dc\SqlClass\Engine\ServerInterface;
 use duncan3dc\SqlClass\Exceptions\QueryException;
 use Psr\Log\LoggerAwareInterface;
@@ -16,49 +16,9 @@ use Psr\Log\NullLogger;
  *
  * @method Where in(array $values) in($value1, $value2, ...) Helper method for IN() clauses
  */
-class Sql implements LoggerAwareInterface
+class Sql implements SqlInterface, LoggerAwareInterface
 {
     use LoggerAwareTrait;
-
-    /**
-     * Allow queries to be created without a where cluase
-     */
-    const NO_WHERE_CLAUSE = 101;
-
-    /**
-     * Set the database timezone to be the same as the php one
-     */
-    const USE_PHP_TIMEZONE = 102;
-
-    /**
-     * Mysql extension to replace any existing records with a unique key match
-     */
-    const INSERT_REPLACE = 103;
-
-    /**
-     * Mysql extension to ignore any existing records with a unique key match
-     */
-    const INSERT_IGNORE = 104;
-
-    /**
-     * Return rows as an enumerated array (using column numbers)
-     */
-    const FETCH_ROW = 108;
-
-    /**
-     * Return rows as an associative array (using field names)
-     */
-    const FETCH_ASSOC = 109;
-
-    /**
-     * Return a generator of the first 1 or 2 columns
-     */
-    const FETCH_GENERATOR = 110;
-
-    /**
-     * Return the raw row from the database without performing cleanup
-     */
-    const FETCH_RAW = 111;
 
     /**
      * @var ServerInterface $engine The instance of the engine class handling the abstraction
@@ -392,7 +352,7 @@ class Sql implements LoggerAwareInterface
 
         $result = $this->engine->query($query, $params, $preparedQuery);
 
-        if (!$result instanceof ResultInterface) {
+        if (!$result instanceof EngineResultInterface) {
             $this->error();
         }
 
@@ -701,7 +661,7 @@ class Sql implements LoggerAwareInterface
     }
 
 
-    public function getId(Result $result)
+    public function getId(ResultInterface $result)
     {
         if (!$id = $this->engine->getId($result)) {
             throw new \Exception("Failed to retrieve the last inserted row id");
