@@ -67,7 +67,7 @@ class Table
     }
 
 
-    public function update(array $set, $where)
+    public function update(array $set, array $where)
     {
         $query = "UPDATE {$this->table} SET ";
 
@@ -79,7 +79,7 @@ class Table
 
         $query = substr($query, 0, -1) . " ";
 
-        if ($where !== Sql::NO_WHERE_CLAUSE) {
+        if (count($where) > 0) {
             $query .= "WHERE " . $this->sql->where($where, $params);
         }
 
@@ -162,26 +162,35 @@ class Table
     }
 
 
-    public function delete($where)
+    public function delete(array $where)
     {
+        if (count($where) < 1) {
+            throw new \BadMethodCallException("No where clause was specified, use the truncate() method to emtpy a table");
+        }
+
         $params = null;
 
+        $query = "DELETE FROM {$this->table}
+                WHERE " . $this->sql->where($where, $params);
+
+        return $this->sql->query($query, $params);
+    }
+
+
+    public function truncate()
+    {
         /**
          * If this is a complete empty of the table then the TRUNCATE TABLE statement is a lot faster than issuing a DELETE statement.
          * This statement is not transaction safe, so if we are currently in a transaction then we do not issue the TRUNCATE statement.
          * Also not all engines support this though, so we need to check that too.
          */
-        if ($where === Sql::NO_WHERE_CLAUSE && !$this->sql->isTransaction() && $this->sql->getEngine()->canTruncateTables()) {
+        if (!$this->sql->isTransaction() && $this->sql->getEngine()->canTruncateTables()) {
             $query = "TRUNCATE TABLE {$this->table}";
         } else {
-            $query = "DELETE FROM {$this->table} ";
-
-            if ($where !== Sql::NO_WHERE_CLAUSE) {
-                $query .= "WHERE " . $this->sql->where($where, $params);
-            }
+            $query = "DELETE FROM {$this->table}";
         }
 
-        return $this->sql->query($query, $params);
+        return $this->sql->query($query);
     }
 
 
@@ -189,7 +198,7 @@ class Table
      * Grab the first row from a table using the standard select statement
      * This is a convience method for a fieldSelect() where all fields are required
      */
-    public function select($where, $orderBy = null)
+    public function select(array $where, $orderBy = null)
     {
         return $this->fieldSelect("*", $where, $orderBy);
     }
@@ -198,7 +207,7 @@ class Table
     /**
      * Grab specific fields from the first row from a table using the standard select statement
      */
-    public function fieldSelect($fields, $where, $orderBy = null)
+    public function fieldSelect($fields, array $where, $orderBy = null)
     {
         $query = "SELECT ";
 
@@ -211,7 +220,7 @@ class Table
         $query .= " FROM {$this->table} ";
 
         $params = null;
-        if ($where !== Sql::NO_WHERE_CLAUSE) {
+        if (count($where) > 0) {
             $query .= "WHERE " . $this->sql->where($where, $params);
         }
 
@@ -233,7 +242,7 @@ class Table
      * Create a standard select statement and return the result
      * This is a convience method for a fieldSelectAll() where all fields are required
      */
-    public function selectAll($where, $orderBy = null)
+    public function selectAll(array $where, $orderBy = null)
     {
         return $this->fieldSelectAll("*", $where, $orderBy);
     }
@@ -242,7 +251,7 @@ class Table
     /**
      * Create a standard select statement and return the result
      */
-    public function fieldSelectAll($fields, $where, $orderBy = null)
+    public function fieldSelectAll($fields, array $where, $orderBy = null)
     {
         $query = "SELECT ";
 
@@ -251,7 +260,7 @@ class Table
         $query .= " FROM {$this->table} ";
 
         $params = null;
-        if ($where !== Sql::NO_WHERE_CLAUSE) {
+        if (count($where) > 0) {
             $query .= "WHERE " . $this->sql->where($where, $params);
         }
 
@@ -266,11 +275,11 @@ class Table
     /**
      * Check if a record exists without fetching any data from it.
      *
-     * @param array|int $where The where clause to use, or the NO_WHERE_CLAUSE constant
+     * @param array $where The where clause to use
      *
      * @return boolean Whether a matching row exists in the table or not
      */
-    public function exists($where)
+    public function exists(array $where)
     {
         return (bool) $this->fieldSelect("1", $where);
     }
