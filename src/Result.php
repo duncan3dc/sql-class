@@ -200,17 +200,23 @@ class Result extends AbstractResult
 
             case "odbc":
                 $rows = odbc_num_rows($this->result);
+
                 # The above function is unreliable, so if we got a zero count then double check it
                 if ($rows < 1) {
                     $rows = 0;
 
-                    $position = $this->position;
-                    $this->seek(0);
-                    while ($this->getNextRow()) {
-                        ++$rows;
+                    /**
+                     * If it is an update/delete then we just have to trust the odbc_num_rows() result,
+                     * however it is some kind of select, then we can manually count the rows returned.
+                     */
+                    if (odbc_num_fields($this->result) > 0) {
+                        $position = $this->position;
+                        $this->seek(0);
+                        while ($this->getNextRow()) {
+                            ++$rows;
+                        }
+                        $this->seek($position);
                     }
-
-                    $this->seek($position);
                 }
                 break;
 
