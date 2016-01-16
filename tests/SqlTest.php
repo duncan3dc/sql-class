@@ -199,7 +199,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function testQueryParams()
+    public function testQueryParams1()
     {
         $checkQuery = "SELECT * FROM test
             WHERE field1=?
@@ -247,6 +247,58 @@ class SqlTest extends \PHPUnit_Framework_TestCase
             ["assoc" => "marker7a"],
             ["assoc1" => "marker8a", "assoc2" => "marker8b"],
         ];
+
+        $args = [&$query, &$params];
+        $this->callProtectedMethod("paramArrays", $args);
+        $this->assertEquals($checkQuery, $query);
+        $this->assertEquals($checkParams, $params);
+    }
+    public function testQueryParams2()
+    {
+        $checkQuery = "SELECT * FROM table
+                    WHERE field1 REGEXP '^-?[0-9]+$' <> 1
+                        AND field2 BETWEEN ? AND ?
+                        AND field3 NOT IN (?,?)
+                        AND field4 = ?";
+        $checkParams = [
+            100,
+            200,
+            "4",
+            "9",
+            "ok",
+        ];
+
+        $query = "SELECT * FROM table
+                    WHERE field1 REGEXP '^-?[0-9]+$' <> 1
+                        AND field2 BETWEEN ? AND ?
+                        AND field3 NOT IN ?
+                        AND field4 = ?";
+        $params = [
+            100,
+            200,
+            ["4", "9"],
+            "ok",
+        ];
+
+        $args = [&$query, &$params];
+        $this->callProtectedMethod("paramArrays", $args);
+        $this->assertEquals($checkQuery, $query);
+        $this->assertEquals($checkParams, $params);
+    }
+    public function testQueryParams3()
+    {
+        $checkQuery = "INSERT INTO table
+                    (field1, field2, field3, fiedl4)
+                    VALUES (?,?,?,?)";
+        $checkParams = [
+            "value1",
+            "value2",
+            "",
+            "value4",
+        ];
+
+        $query = $checkQuery;
+        $params = $checkParams;
 
         $args = [&$query, &$params];
         $this->callProtectedMethod("paramArrays", $args);

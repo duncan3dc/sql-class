@@ -810,47 +810,53 @@ class Sql
             return;
         }
 
-        $tmpQuery = $query;
-        $newQuery = "";
         $newParams = [];
 
-        foreach ($params as $val) {
+        $this->modifyQuery($query, function ($part) use (&$params, &$newParams) {
+            $newPart = "";
+            $tmpPart = $part;
 
-            $pos = strpos($tmpQuery, "?");
-            if ($pos === false) {
-                continue;
-            }
-
-            $newQuery .= substr($tmpQuery, 0, $pos);
-            $tmpQuery = substr($tmpQuery, $pos + 1);
-
-            if (is_array($val)) {
-                if (count($val) > 1) {
-                    $markers = [];
-                    foreach ($val as $v) {
-                        $markers[] = "?";
-                        $newParams[] = $v;
-                    }
-                    $newQuery .= "(" . implode(",", $markers) . ")";
-
-                # If the array is only 1 element long then convert it to an = (or <> for NOT IN)
-                } else {
-                    $newQuery = preg_replace("/\s*\bNOT\s+IN\s*$/i", "<>", $newQuery);
-                    $newQuery = preg_replace("/\s*\bIN\s*$/i", "=", $newQuery);
-                    $newQuery .= "?";
-                    $newParams[] = reset($val);
+            while (count($params) > 0) {
+                $pos = strpos($tmpPart, "?");
+                if ($pos === false) {
+                    break;
                 }
 
-            # If this is just a straight value then don't do anything to it
-            } else {
-                $newQuery .= "?";
-                $newParams[] = $val;
+                $val = array_shift($params);
+
+                $newPart .= substr($tmpPart, 0, $pos);
+                $tmpPart = substr($tmpPart, $pos + 1);
+
+                # If this is just a straight value then don't do anything to it
+                if (!is_array($val)) {
+                    $newPart .= "?";
+                    $newParams[] = $val;
+                    continue;
+                }
+
+                # If the array is only 1 element long then convert it to an = (or <> for NOT IN)
+                if (count($val) === 1) {
+                    $newPart = preg_replace("/\s*\bNOT\s+IN\s*$/i", "<>", $newPart);
+                    $newPart = preg_replace("/\s*\bIN\s*$/i", "=", $newPart);
+                    $newPart .= "?";
+                    $newParams[] = reset($val);
+                    continue;
+                }
+
+                # Convert each element of the array to a separate marker
+                $markers = [];
+                foreach ($val as $v) {
+                    $markers[] = "?";
+                    $newParams[] = $v;
+                }
+                $newPart .= "(" . implode(",", $markers) . ")";
             }
-        }
 
-        $newQuery .= $tmpQuery;
+            $newPart .= $tmpPart;
 
-        $query = $newQuery;
+            return $newPart;
+        });
+
         $params = $newParams;
     }
 
