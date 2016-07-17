@@ -1336,7 +1336,7 @@ class Sql
                     "="     =>  "equals",
                     "<>"    =>  "notEqualTo",
                 ];
-                $clause = reset($value);
+                $clause = (string) reset($value);
                 if (count($value) === 2 && isset($helperMap[$clause])) {
                     $method = $helperMap[$clause];
                     $val = next($value);
