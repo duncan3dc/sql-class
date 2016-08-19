@@ -3,7 +3,6 @@
 namespace duncan3dc\SqlClass;
 
 use duncan3dc\Helpers\Helper;
-use duncan3dc\Serial\Json;
 
 /**
  * Cache results on disk to make future queries faster
