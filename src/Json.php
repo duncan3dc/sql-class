@@ -43,7 +43,7 @@ class Json
         }
 
         if (file_put_contents($path, $string) === false) {
-            throw new FileException("Failed to write the file: {$path}");
+            throw new \Exception("Failed to write the file: {$path}");
         }
     }
 
@@ -58,13 +58,13 @@ class Json
     public static function decodeFromFile($path)
     {
         if (!is_file($path)) {
-            throw new FileException("File does not exist: {$path}");
+            throw new \Exception("File does not exist: {$path}");
         }
 
         $string = file_get_contents($path);
 
         if ($string === false) {
-            throw new FileException("Failed to read the file: {$path}");
+            throw new \Exception("Failed to read the file: {$path}");
         }
 
         if (!$string) {
