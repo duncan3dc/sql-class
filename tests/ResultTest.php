@@ -151,4 +151,127 @@ class ResultTest extends \PHPUnit_Framework_TestCase
             $this->assertSame("val", $val);
         }
     }
+
+
+    public function testGroupBy1()
+    {
+        $this->sql->bulkInsert("table1", [
+            [
+                "field1"    =>  "key1",
+                "field2"    =>  "group1",
+            ],
+            [
+                "field1"    =>  "key2",
+                "field2"    =>  "group2",
+            ],
+            [
+                "field1"    =>  "key3",
+                "field2"    =>  "group1",
+            ],
+            [
+                "field1"    =>  "key4",
+                "field2"    =>  "group2",
+            ],
+        ]);
+
+        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $data = $result->groupBy("field2");
+
+        $this->assertSame([
+            "group1" => [
+                [
+                    "field1"    =>  "key1",
+                    "field2"    =>  "group1",
+                ],
+                [
+                    "field1"    =>  "key3",
+                    "field2"    =>  "group1",
+                ],
+            ],
+            "group2"    =>  [
+                [
+                    "field1"    =>  "key2",
+                    "field2"    =>  "group2",
+                ],
+                [
+                    "field1"    =>  "key4",
+                    "field2"    =>  "group2",
+                ],
+            ],
+        ], $data);
+    }
+    public function testGroupBy2()
+    {
+        $this->sql->bulkInsert("table1", [
+            [
+                "field1"    =>  "key1",
+                "field2"    =>  "group1",
+            ],
+            [
+                "field1"    =>  "key1",
+                "field2"    =>  "group1",
+            ],
+            [
+                "field1"    =>  "key2",
+                "field2"    =>  "group1",
+            ],
+            [
+                "field1"    =>  "key1",
+                "field2"    =>  "group2",
+            ],
+        ]);
+
+        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $data = $result->groupBy("field1", "field2");
+
+        $this->assertSame([
+            "key1"  =>  [
+                "group1"    =>  [
+                    [
+                        "field1"    =>  "key1",
+                        "field2"    =>  "group1",
+                    ],
+                    [
+                        "field1"    =>  "key1",
+                        "field2"    =>  "group1",
+                    ],
+                ],
+                "group2"    =>  [
+                    [
+                        "field1"    =>  "key1",
+                        "field2"    =>  "group2",
+                    ],
+                ],
+            ],
+            "key2"  =>  [
+                "group1"    =>  [
+                    [
+                        "field1"    =>  "key2",
+                        "field2"    =>  "group1",
+                    ],
+                ],
+            ],
+        ], $data);
+    }
+    public function testGroupBy3()
+    {
+        $this->sql->insert("table1", [
+            "field1"    =>  "key",
+            "field2"    =>  "value",
+        ]);
+
+        $result = $this->sql->selectAll("table1", Sql::NO_WHERE_CLAUSE);
+        $data = $result->groupBy(function (array $row) {
+            return "group";
+        });
+
+        $this->assertSame([
+            "group" => [
+                [
+                    "field1"    =>  "key",
+                    "field2"    =>  "value",
+                ],
+            ],
+        ], $data);
+    }
 }

@@ -101,6 +101,40 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
 
 
     /**
+     * Create an array keyed by the specified field.
+     *
+     * @return array
+     */
+    public function groupBy(...$keys)
+    {
+        $data = [];
+
+        while ($row = $this->getNextRow()) {
+
+            $position = &$data;
+
+            foreach ($keys as $key) {
+                if (is_callable($key)) {
+                    $value = $key($row);
+                } else {
+                    $value = $row[$key];
+                }
+
+                if (!array_key_exists($value, $position)) {
+                    $position[$value] = [];
+                }
+                $position = &$position[$value];
+            }
+
+            $position[] = $row;
+            unset($position);
+        }
+
+        return $data;
+    }
+
+
+    /**
      * Internal method to fetch the next row from the result set
      *
      * @return array|null
