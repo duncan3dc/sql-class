@@ -2209,9 +2209,10 @@ class Sql
                 break;
         }
 
-        // If the disconnect was successful, set class property to reflect it
-        if($result != false)
+        # If the disconnect was successful, set class property to reflect it
+        if ($result) {
             $this->connected = false;
+        }
 
         return $result;
     }

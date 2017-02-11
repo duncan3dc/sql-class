@@ -2,7 +2,9 @@
 
 namespace duncan3dc\SqlClassTests;
 
+use duncan3dc\ObjectIntruder\Intruder;
 use duncan3dc\SqlClass\Sql;
+use Mockery;
 
 class SqlTest extends \PHPUnit_Framework_TestCase
 {
@@ -618,5 +620,66 @@ class SqlTest extends \PHPUnit_Framework_TestCase
         $this->sql->delete($table, $params);
 
         $this->assertEquals(false, $this->sql->exists($table, $params));
+    }
+
+
+    public function testDisconnect1()
+    {
+        $sql = new Intruder($this->sql);
+
+        $sql->mode = "mysql";
+        $sql->connected = false;
+        $sql->server = (object) ["connect_error" => null];
+
+        $this->assertFalse($this->sql->disconnect());
+    }
+    public function testDisconnect2()
+    {
+        $sql = new Intruder($this->sql);
+
+        $sql->mode = "mysql";
+        $sql->connected = true;
+        $sql->server = null;
+
+        $this->assertFalse($this->sql->disconnect());
+    }
+    public function testDisconnect3()
+    {
+        $sql = new Intruder($this->sql);
+
+        $sql->mode = "mysql";
+        $sql->connected = true;
+        $sql->server = (object) ["connect_error" => "Couldn't Connect"];
+
+        $this->assertFalse($this->sql->disconnect());
+    }
+    public function testDisconnect4()
+    {
+        $sql = new Intruder($this->sql);
+
+        $sql->mode = "mysql";
+        $sql->connected = true;
+
+        $server = Mockery::mock();
+        $server->connect_error = null;
+        $server->shouldReceive("close")->andReturn(false);
+        $sql->server = $server;
+
+        $this->assertFalse($this->sql->disconnect());
+    }
+    public function testDisconnect5()
+    {
+        $sql = new Intruder($this->sql);
+
+        $sql->mode = "mysql";
+        $sql->connected = true;
+
+        $server = Mockery::mock();
+        $server->connect_error = null;
+        $server->shouldReceive("close")->andReturn(true);
+        $sql->server = $server;
+
+        $this->assertTrue($this->sql->disconnect());
+        $this->assertFalse($sql->connected);
     }
 }
