@@ -217,6 +217,7 @@ class Sql
             "database"      =>  null,
             "charset"       =>  null,
             "timezone"      =>  null,
+            "port"          =>  null,
             "definitions"   =>  null,
         ];
         foreach ($construct as $key => $null) {
@@ -257,6 +258,7 @@ class Sql
             "database"      =>  false,
             "charset"       =>  "utf8",
             "timezone"      =>  false,
+            "port"          =>  0,
             "definitions"   =>  [],
         ]);
 
@@ -271,6 +273,7 @@ class Sql
             "odbc"      =>  '"',
             "sqlite"    =>  "`",
             "mssql"     =>  ["[", "]"],
+            "mssqlsrv"  =>  ["[", "]"],
         ];
 
         if (!array_key_exists($this->mode, $this->quoteChars)) {
@@ -364,6 +367,16 @@ class Sql
             case "mssql":
                 $this->server = mssql_connect($this->options["hostname"], $this->options["username"], $this->options["password"]);
                 break;
+
+            case "mssqlsrv":
+                if (!$port = $this->options["port"]) {
+                    $port = 1433;
+                }
+                $this->server = sqlsrv_connect("tcp:" . $this->options["hostname"] . ",{$port}", [
+                    "Uid"   =>  $this->options["username"],
+                    "PWD"   =>  $this->options["password"],
+                ]);
+                break;
         }
 
         if (!$this->server) {
@@ -455,7 +468,7 @@ class Sql
         if ($database) {
             $database = $this->quoteField($database);
 
-            if ($this->mode == "mssql") {
+            if (substr($this->mode, 0, 5) === "mssql") {
                 $database .= ".dbo";
             }
 
@@ -628,6 +641,11 @@ class Sql
                     $this->error();
                 }
                 break;
+
+            case "mssqlsrv":
+                if (!$result = sqlsrv_query($this->server, $preparedQuery)) {
+                    $this->error();
+                }
         }
 
         if (!$result) {
@@ -736,6 +754,7 @@ class Sql
                 break;
 
             case "mssql":
+            case "mssqlsrv":
                 $query = preg_replace("/\bIFNULL\(/", "ISNULL(", $query);
                 break;
         }
@@ -747,6 +766,7 @@ class Sql
             case "redshift":
             case "odbc":
             case "mssql":
+            case "mssqlsrv":
                 $query = preg_replace("/\bSUBSTR\(/", "SUBSTRING(", $query);
                 break;
 
@@ -955,6 +975,7 @@ class Sql
                                 $value = $this->server->escapeString($value);
                                 break;
                             case "mssql":
+                            case "mssqlsrv":
                             case "odbc":
                                 $value = str_replace("'", "''", $value);
                                 break;
@@ -1089,6 +1110,14 @@ class Sql
 
             case "mssql":
                 $errorMsg = mssql_get_last_message();
+                break;
+
+            case "mssqlsrv":
+                $errorMsg = "";
+                foreach (sqlsrv_errors() as $error) {
+                    $errorMsg .= $error["message"] . " (" . $error["code"] . ") [" . $error["SQLSTATE"] . "]\n";
+                }
+                $errorMsg = trim($errorMsg);
                 break;
         }
 
@@ -1537,7 +1566,7 @@ class Sql
 
         $query = "SELECT ";
 
-        if ($this->mode == "mssql") {
+        if (substr($this->mode, 0, 5) === "mssql") {
             $query .= "TOP 1 ";
         }
 
@@ -2085,6 +2114,7 @@ class Sql
                 break;
 
             case "mssql":
+            case "mssqlsrv":
                 $query = "SELECT name FROM master..sysdatabases";
                 break;
 
@@ -2112,6 +2142,7 @@ class Sql
                 break;
 
             case "mssql":
+            case "mssqlsrv":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.tables";
                 break;
 
@@ -2139,6 +2170,7 @@ class Sql
                 break;
 
             case "mssql":
+            case "mssqlsrv":
                 $query = "SELECT name FROM " . $this->quoteTable($database) . ".sys.views";
                 break;
 
@@ -2206,6 +2238,10 @@ class Sql
 
             case "mssql":
                 $result = mssql_close($this->server);
+                break;
+
+            case "mssqlsrv":
+                $result = sqlsrv_close($this->server);
                 break;
         }
 

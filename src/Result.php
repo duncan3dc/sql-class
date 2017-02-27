@@ -68,6 +68,20 @@ class Result extends AbstractResult
             case "mssql":
                 $row = mssql_fetch_assoc($this->result);
                 break;
+
+            case "mssqlsrv":
+                sqlsrv_fetch($this->result, SQLSRV_SCROLL_ABSOLUTE, $this->position);
+                $row = sqlsrv_fetch_array($this->result, SQLSRV_FETCH_ASSOC);
+
+                if ($row) {
+                    foreach ($row as &$value) {
+                        if ($value instanceof \DateTime) {
+                            $value = $value->format(\DateTime::ISO8601);
+                        }
+                    }
+                }
+                unset($value);
+                break;
         }
 
         # If the fetch fails then there are no rows left to retrieve
@@ -130,6 +144,10 @@ class Result extends AbstractResult
             case "mssql":
                 $value = mssql_result($this->result, $row, $col);
                 break;
+
+            case "mssqlsrv":
+                $value = sqlsrv_result($this->result, $row, $col);
+                break;
         }
 
         $value = rtrim($value);
@@ -160,6 +178,7 @@ class Result extends AbstractResult
                 break;
 
             case "odbc":
+            case "mssqlsrv":
                 # The odbc driver doesn't support seeking, so we fetch specific rows in getNextRow(), and here all we need to do is set the current position instance variable
                 break;
 
@@ -231,6 +250,10 @@ class Result extends AbstractResult
             case "mssql":
                 $rows = mssql_num_rows($this->result);
                 break;
+
+            case "mssqlsrv":
+                $rows = sqlsrv_num_rows($this->result);
+                break;
         }
 
         if ($rows === false || $rows < 0) {
@@ -271,6 +294,10 @@ class Result extends AbstractResult
             case "mssql":
                 $columns = mssql_num_fields($this->result);
                 break;
+
+            case "mssqlsrv":
+                $columns = sqlsrv_num_fields($this->result);
+                break;
         }
 
         if ($columns === false || $columns < 0) {
@@ -310,6 +337,10 @@ class Result extends AbstractResult
 
             case "mssql":
                 mssql_free_result($this->result);
+                break;
+
+            case "mssqlsrv":
+                sqlsrv_free_stmt($this->result);
                 break;
         }
     }
