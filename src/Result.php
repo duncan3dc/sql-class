@@ -309,6 +309,25 @@ class Result extends AbstractResult
 
 
     /**
+     * Get an array containing only the specified column for each row.
+     *
+     * @param string $column The column to retrieve.
+     *
+     * @return array
+     */
+    public function getArrayOfColumn($column)
+    {
+        $result = iterator_to_array($this->result);
+
+        if (!is_array($result)) {
+            throw new \RuntimeException("Could not retrieve array from iterator");
+        }
+
+        return array_column($result, $column);
+    }
+
+
+    /**
      * Free the memory used by the result resource
      *
      * @return void
