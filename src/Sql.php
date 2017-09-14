@@ -1172,7 +1172,11 @@ class Sql
         if ($extra === self::INSERT_REPLACE) {
             $query = "REPLACE ";
         } elseif ($extra === self::INSERT_IGNORE) {
-            $query = "INSERT IGNORE ";
+            if ($this->mode === "sqlite") {
+                $query = "INSERT OR IGNORE ";
+            } else {
+                $query = "INSERT IGNORE ";
+            }
         } else {
             $query = "INSERT ";
         }
@@ -1244,7 +1248,11 @@ class Sql
                 if ($extra === self::INSERT_REPLACE) {
                     $query = "REPLACE ";
                 } elseif ($extra === self::INSERT_IGNORE) {
-                    $query = "INSERT IGNORE ";
+                    if ($this->mode === "sqlite") {
+                        $query = "INSERT OR IGNORE ";
+                    } else {
+                        $query = "INSERT IGNORE ";
+                    }
                 } else {
                     $query = "INSERT ";
                 }
@@ -1282,7 +1290,7 @@ class Sql
             default:
                 $result = true;
                 foreach ($params as $newParams) {
-                    if (!$this->insert($table, $newParams)) {
+                    if (!$this->insert($table, $newParams, $extra)) {
                         $result = false;
                         break;
                     }
