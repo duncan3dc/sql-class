@@ -1309,7 +1309,7 @@ class Sql
     }
 
 
-    public function getId(AbstractResult $result)
+    public function getId($result)
     {
         $id = false;
 
