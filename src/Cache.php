@@ -2,8 +2,6 @@
 
 namespace duncan3dc\SqlClass;
 
-use duncan3dc\Helpers\Helper;
-
 /**
  * Cache results on disk to make future queries faster
  */
@@ -33,7 +31,7 @@ class Cache extends AbstractResult
 
     public function __construct(array $options = null)
     {
-        $options = Helper::getOptions($options, [
+        $options = array_merge([
             "dir"           =>  "/tmp/query_cache",
             "sql"           =>  null,
             "query"         =>  null,
@@ -42,7 +40,7 @@ class Cache extends AbstractResult
             "limit"         =>  10000,
             "directories"   =>  3,
             "permissions"   =>  0777,
-        ]);
+        ], $options);
 
         $this->sql = $options["sql"];
 

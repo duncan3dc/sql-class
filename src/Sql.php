@@ -2,8 +2,6 @@
 
 namespace duncan3dc\SqlClass;
 
-use duncan3dc\Helpers\Helper;
-
 /**
  * Main class that manages connections to SQL servers
  */
@@ -248,9 +246,9 @@ class Sql
     }
 
 
-    public function __construct(array $options = null)
+    public function __construct(array $options = [])
     {
-        $options = Helper::getOptions($options, [
+        $options = array_merge([
             "mode"          =>  "mysql",
             "hostname"      =>  "",
             "username"      =>  "",
@@ -260,7 +258,7 @@ class Sql
             "timezone"      =>  false,
             "port"          =>  0,
             "definitions"   =>  [],
-        ]);
+        ], $options);
 
         $this->options = $options;
 
@@ -563,7 +561,7 @@ class Sql
                 }
                 $query .= $tmpQuery;
 
-                $params = Helper::toArray($params);
+                $params = is_array($params) ? $params : [];
                 if (!$result = pg_query_params($this->server, $query, $params)) {
                     $this->error();
                 }
@@ -573,7 +571,7 @@ class Sql
                 if (!$result = odbc_prepare($this->server, $query)) {
                     $this->error();
                 }
-                $params = Helper::toArray($params);
+                $params = is_array($params) ? $params : [];
                 if (!odbc_execute($result, $params)) {
                     $this->error();
                 }
@@ -1345,7 +1343,7 @@ class Sql
             throw new \Exception("Invalid where clause specified, must be an array");
         }
 
-        $params = Helper::toArray($params);
+        $params = is_array($params) ? $params : [];
 
         $query = "";
 
@@ -2011,7 +2009,7 @@ class Sql
          */
         $this->unlockTables();
 
-        $tables = Helper::toArray($tables);
+        $tables = is_array($tables) ? $tables : [];
 
         if ($this->mode == "odbc") {
             foreach ($tables as $table) {
