@@ -4,14 +4,15 @@ namespace duncan3dc\SqlClassTests;
 
 use duncan3dc\SqlClass\Cache;
 use duncan3dc\SqlClass\Sql;
+use PHPUnit\Framework\TestCase;
 
-class CacheTest extends \PHPUnit_Framework_TestCase
+class CacheTest extends TestCase
 {
     private $sql;
     private $database;
 
 
-    public function __construct()
+    public function setUp(): void
     {
         $this->database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
         if (file_exists($this->database)) {
@@ -36,7 +37,7 @@ class CacheTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function __destruct()
+    public function tearDown(): void
     {
         unset($this->sql);
         unlink($this->database);

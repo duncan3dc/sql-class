@@ -3,13 +3,14 @@
 namespace duncan3dc\SqlClassTests;
 
 use duncan3dc\SqlClass\Sql;
+use PHPUnit\Framework\TestCase;
 
-class ResultTest extends \PHPUnit_Framework_TestCase
+class ResultTest extends TestCase
 {
     protected $sql;
 
 
-    public function __construct()
+    public function setUp(): void
     {
         $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
         if (file_exists($database)) {
@@ -34,7 +35,7 @@ class ResultTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function __destruct()
+    public function tearDown(): void
     {
         unset($this->sql);
     }

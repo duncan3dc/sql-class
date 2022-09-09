@@ -7,9 +7,9 @@ use duncan3dc\SqlClass\Sql;
 class WhereTest extends SqlTest
 {
 
-    public function __construct()
+    public function setUp(): void
     {
-        parent::__construct();
+        parent::setUp();
         $this->sql->mode = "mysql";
     }
 

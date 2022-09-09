@@ -5,13 +5,14 @@ namespace duncan3dc\SqlClassTests;
 use duncan3dc\ObjectIntruder\Intruder;
 use duncan3dc\SqlClass\Sql;
 use Mockery;
+use PHPUnit\Framework\TestCase;
 
-class SqlTest extends \PHPUnit_Framework_TestCase
+class SqlTest extends TestCase
 {
     protected $sql;
 
 
-    public function __construct()
+    public function setUp(): void
     {
         $database = "/tmp/phpunit_" . microtime(true) . ".sqlite";
         if (file_exists($database)) {
@@ -36,7 +37,7 @@ class SqlTest extends \PHPUnit_Framework_TestCase
     }
 
 
-    public function __destruct()
+    public function tearDown(): void
     {
         $this->sql->mode = false;
     }
