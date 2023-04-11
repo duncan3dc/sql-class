@@ -665,7 +665,7 @@ class Sql
             return;
         }
 
-        $parts = preg_split($regex, $query, null, PREG_SPLIT_DELIM_CAPTURE);
+        $parts = preg_split($regex, $query, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         $query = "";
 
