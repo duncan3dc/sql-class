@@ -13,6 +13,9 @@ class Cache extends AbstractResult
 
     public $sql;            # A reference to an sql class instance to execute the query over
 
+    /** @var AbstractResult */
+    private $result;
+
     public $query;          # The query to be executed
     public $params;         # The parameters to be used in the query
     public $hash;           # The hash key of the query
