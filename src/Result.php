@@ -203,6 +203,7 @@ class Result extends AbstractResult
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     public function count()
     {
 

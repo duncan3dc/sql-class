@@ -250,6 +250,7 @@ class Cache extends AbstractResult
      *
      * @return int
      */
+    #[\ReturnTypeWillChange]
     public function count()
     {
         return $this->totalRows;

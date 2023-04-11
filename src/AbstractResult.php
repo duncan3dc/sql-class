@@ -67,7 +67,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
         $row = [];
 
         foreach ($data as $key => $val) {
-            $val = rtrim($val);
+            $val = rtrim((string) $val);
 
             if ($style === Sql::FETCH_ASSOC) {
                 $key = strtolower($key);
@@ -91,10 +91,10 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
         while ($row = $this->getNextRow()) {
             if ($this->columnCount() > 1) {
                 $key = rtrim(reset($row));
-                $val = rtrim(next($row));
+                $val = rtrim((string) next($row));
                 yield $key => $val;
             } else {
-                yield rtrim(reset($row));
+                yield rtrim((string) reset($row));
             }
         }
     }
@@ -160,6 +160,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
      *
      * @return void
      */
+    #[\ReturnTypeWillChange]
     abstract public function seek($row);
 
 
@@ -174,6 +175,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     /**
      * http://php.net/manual/en/class.iterator.php
      */
+    #[\ReturnTypeWillChange]
     final public function current()
     {
         $current = $this->fetch();
@@ -185,6 +187,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     /**
      * http://php.net/manual/en/class.iterator.php
      */
+    #[\ReturnTypeWillChange]
     final public function key()
     {
         return $this->position;
@@ -194,6 +197,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     /**
      * http://php.net/manual/en/class.iterator.php
      */
+    #[\ReturnTypeWillChange]
     final public function next()
     {
         $this->fetch();
@@ -203,6 +207,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     /**
      * http://php.net/manual/en/class.iterator.php
      */
+    #[\ReturnTypeWillChange]
     final public function rewind()
     {
         if ($this->position > 0) {
@@ -214,6 +219,7 @@ abstract class AbstractResult implements \SeekableIterator, \Countable
     /**
      * http://php.net/manual/en/class.iterator.php
      */
+    #[\ReturnTypeWillChange]
     final public function valid()
     {
         /**

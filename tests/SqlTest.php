@@ -662,7 +662,7 @@ class SqlTest extends TestCase
         $sql->connected = true;
 
         $server = Mockery::mock();
-        $server->connect_error = null;
+        @$server->connect_error = null;
         $server->shouldReceive("close")->andReturn(false);
         $sql->server = $server;
 
@@ -676,7 +676,7 @@ class SqlTest extends TestCase
         $sql->connected = true;
 
         $server = Mockery::mock();
-        $server->connect_error = null;
+        @$server->connect_error = null;
         $server->shouldReceive("close")->andReturn(true);
         $sql->server = $server;
 
