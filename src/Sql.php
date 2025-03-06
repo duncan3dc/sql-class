@@ -486,7 +486,7 @@ class Sql
     /**
      * Execute an sql query
      */
-    public function query($query, array $params = null)
+    public function query($query, ?array $params = null)
     {
         # If the next query should be cached then run the cache function instead
         if ($this->cacheNext) {
@@ -999,7 +999,7 @@ class Sql
     /**
      * Convienience method to create a cached query instance
      */
-    public function cache($query, array $params = null, $timeout = null)
+    public function cache($query, ?array $params = null, $timeout = null)
     {
         $options = array_merge($this->cacheOptions, [
             "sql"     =>  $this,
